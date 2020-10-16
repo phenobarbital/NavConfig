@@ -8,10 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
 from asyncdb.providers.mcache import mcache
 from asyncdb.providers.mredis import mredis
-from io import StringIO
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.CRITICAL)
+
 
 #### TODO: Feature Toggles
 class Singleton(type):
@@ -114,30 +111,10 @@ class navigatorConfig(metaclass=Singleton):
         else:
             # pluggable types
             if env_type == 'drive':
+                from navconfig.loaders import driveLoader
                 try:
-                    file_id = os.getenv('NAVCONFIG_DRIVE_ID')
-                    client = os.getenv('NAVCONFIG_DRIVE_CLIENT')
-                    if file_id and client:
-                        gauth = GoogleAuth()
-                        gauth.LoadCredentialsFile(client)
-                        if gauth.credentials is None:
-                            gauth.LocalWebserverAuth() # Creates local webserver and auto handles authentication.
-                            # Save the current credentials to a file
-                        elif gauth.access_token_expired:
-                            gauth.Refresh()
-                        else:
-                            gauth.Authorize()
-                        gauth.SaveCredentialsFile(client)
-                        drive = GoogleDrive(gauth)
-                        print("Google Auth Success")
-                        env = drive.CreateFile({'id': file_id})
-                        content = env.GetContentString()
-                        if content:
-                            filelike = StringIO(content)
-                            filelike.seek(0)
-                            dotenv_values(stream=filelike)
-                    else:
-                        raise Exception('Config Google Drive Error: you need to provide **NAVCONFIG_DRIVE_CLIENT** for client configuration')
+                    d = driveLoader()
+                    d.load_enviroment()
                 except Exception as err:
                     print('Error Reading from Google Drive', err)
 
