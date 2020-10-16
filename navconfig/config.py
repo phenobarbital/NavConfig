@@ -2,11 +2,16 @@ import os
 import importlib
 import sys
 import types
+import logging
 from configparser import RawConfigParser, ConfigParser
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from asyncdb.providers.mcache import mcache
 from asyncdb.providers.mredis import mredis
+from io import StringIO
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.CRITICAL)
 
 #### TODO: Feature Toggles
 class Singleton(type):
@@ -44,7 +49,6 @@ class navigatorConfig(metaclass=Singleton):
             self._mem.close()
 
     def __init__(self, site_root=None):
-        print(self.__initialized)
         if(self.__initialized): return
         self.__initialized = True
         # this only load at first time
@@ -54,10 +58,10 @@ class navigatorConfig(metaclass=Singleton):
         # get the current environment
         environment = os.getenv('ENV', '')
         self.ENV = environment
-        # get the environment file
-        env_path = site_root.joinpath('env', environment, '.env')
-        # load dotenv
-        load_dotenv(dotenv_path=env_path)
+        # getting type of enviroment consummer:
+        env_type = os.getenv('NAVCONFIG_ENV', 'file') # file by default
+        # get the environment
+        self.load_enviroment(env_type)
         # and get the config file declared in the environment file
         config_file = os.getenv('CONFIG_FILE', '/etc/troc/navigator.ini')
         self._ini = ConfigParser()
@@ -102,6 +106,40 @@ class navigatorConfig(metaclass=Singleton):
             # memcache not working
             self._mem = None
 
+    def load_enviroment(self, env_type: str = 'file'):
+        if env_type == 'file':
+            env_path = self.site_root.joinpath('env', self.ENV, '.env')
+            # load dotenv
+            load_dotenv(dotenv_path=env_path)
+        else:
+            # pluggable types
+            if env_type == 'drive':
+                try:
+                    file_id = os.getenv('NAVCONFIG_DRIVE_ID')
+                    client = os.getenv('NAVCONFIG_DRIVE_CLIENT')
+                    if file_id and client:
+                        gauth = GoogleAuth()
+                        gauth.LoadCredentialsFile(client)
+                        if gauth.credentials is None:
+                            gauth.LocalWebserverAuth() # Creates local webserver and auto handles authentication.
+                            # Save the current credentials to a file
+                        elif gauth.access_token_expired:
+                            gauth.Refresh()
+                        else:
+                            gauth.Authorize()
+                        gauth.SaveCredentialsFile(client)
+                        drive = GoogleDrive(gauth)
+                        print("Google Auth Success")
+                        env = drive.CreateFile({'id': file_id})
+                        content = env.GetContentString()
+                        if content:
+                            filelike = StringIO(content)
+                            filelike.seek(0)
+                            dotenv_values(stream=filelike)
+                    else:
+                        raise Exception('Config Google Drive Error: you need to provide **NAVCONFIG_DRIVE_CLIENT** for client configuration')
+                except Exception as err:
+                    print('Error Reading from Google Drive', err)
 
     @property
     def site_root(self):

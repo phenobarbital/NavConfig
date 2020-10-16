@@ -19,7 +19,6 @@ SERVICES_DIR = BASE_DIR.joinpath('services')
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 EXTENSION_DIR = BASE_DIR.joinpath('extensions')
 
-print('Connection one')
 config = navigatorConfig(BASE_DIR)
 ENV = config.ENV
 DEBUG = os.getenv('DEBUG', False)

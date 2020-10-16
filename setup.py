@@ -27,6 +27,7 @@ setup(
         'numpy >= 1.11.1',
         'asyncio==3.4.3',
         'python-dotenv==0.14.0',
+        'PyDrive==1.3.1',
         'asyncdb'
     ],
     dependency_links=[
