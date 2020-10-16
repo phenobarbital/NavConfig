@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""DataIntegration
-    Aiohttp service for execution of Tasks in Navigator.
+"""NavConfig
+    Configuration Service for Navigator and DataIntegrator.
 See:
-https://bitbucket.org/mobileinsight1/navapi/src/master/
+https://github.com/phenobarbital/NavConfig
 """
 
 from setuptools import setup, find_packages
@@ -11,7 +11,7 @@ setup(
     name='navconfig',
     version=open("VERSION").read().strip(),
     python_requires=">=3.7.0",
-    url='https://bitbucket.org/mobileinsight1/navapi/',
+    url='https://github.com/phenobarbital/NavConfig',
     description='Configuration tool for Navigator Services',
     long_description='Configuration tool for Navigator Services',
     classifiers=[
@@ -23,9 +23,16 @@ setup(
     author='Jesus Lara',
     author_email='jlara@trocglobal.com',
     packages=find_packages(),
-    install_requires=['numpy >= 1.11.1', 'asyncio==3.4.3'],
+    install_requires=[
+        'numpy >= 1.11.1',
+        'asyncio==3.4.3',
+        'python-dotenv==0.14.0'
+    ],
+    dependency_links=[
+        'git@github.com:phenobarbital/asyncdb.git#egg=asyncdb'
+    ],
     project_urls={  # Optional
-        'Source': 'https://bitbucket.org/mobileinsight1/navapi/',
+        'Source': 'https://github.com/phenobarbital/NavConfig',
         'Funding': 'https://paypal.me/phenobarbital',
         'Say Thanks!': 'https://saythanks.io/to/phenobarbital',
     },

@@ -10,6 +10,7 @@ T-ROC Navigator NavConfig is a tool for configuration of services under Navigato
 
  * ConfigParser
  * AsyncDB
+ * Python-Dotenv
 
 ### What is AsyncDB? ###
 
@@ -27,7 +28,8 @@ The main goal of Navigator is to provide data sources to Navigator-Next (FrontEn
 
 * Python >= 3.8
 * asyncio (https://pypi.python.org/pypi/asyncio/)
-* aiohttp >= 3.6.2
+* asyncdb
+* python-dotenv
 
 ### Contribution guidelines ###
 
