@@ -26,10 +26,11 @@ setup(
     install_requires=[
         'numpy >= 1.11.1',
         'asyncio==3.4.3',
-        'python-dotenv==0.14.0'
+        'python-dotenv==0.14.0',
+        'asyncdb'
     ],
     dependency_links=[
-        'git@github.com:phenobarbital/asyncdb.git#egg=asyncdb'
+        'git+https://github.com/phenobarbital/asyncdb.git#egg=asyncdb'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',

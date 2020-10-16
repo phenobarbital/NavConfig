@@ -1,4 +1,12 @@
 # get settings
+import os
+import logging
+
+from .config import navigatorConfig
+config = navigatorConfig()
+
+DEBUG = os.getenv('DEBUG', False)
+
 try:
     from settings.settings import *
 except ImportError:
@@ -20,7 +28,6 @@ if DEBUG:
     loglevel = logging.DEBUG
 else:
     loglevel = logging.INFO
-
 logging_config = dict(
     version = 1,
     formatters = {

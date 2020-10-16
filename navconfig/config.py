@@ -9,8 +9,21 @@ from asyncdb.providers.mcache import mcache
 from asyncdb.providers.mredis import mredis
 
 #### TODO: Feature Toggles
+class Singleton(type):
+    _instances = {}
 
-class navigatorConfig:
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__new__(cls, *args, **kwargs)
+            setattr(cls, '__initialized', True)
+        return cls._instances[cls]
+
+class navigatorConfig(metaclass=Singleton):
     """
     navigatorConfig.
         Class for Navigator configuration
@@ -24,18 +37,16 @@ class navigatorConfig:
     _conffile = 'navigator.ini'
     _site_path = ''
     _debug = False
-
-    # singleton class
-    def __new__(cls, site_root=None):
-        if not hasattr(cls, 'instance') or not cls.instance:
-            cls.instance = super().__new__(cls)
-        return cls.instance
+    __initialized = False
 
     def __del__(self):
         if self._mem:
             self._mem.close()
 
     def __init__(self, site_root=None):
+        print(self.__initialized)
+        if(self.__initialized): return
+        self.__initialized = True
         # this only load at first time
         if not site_root:
             site_root = Path(__file__).resolve().parent.parent
@@ -90,6 +101,7 @@ class navigatorConfig:
             print(err)
             # memcache not working
             self._mem = None
+
 
     @property
     def site_root(self):
