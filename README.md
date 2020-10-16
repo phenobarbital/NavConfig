@@ -4,7 +4,7 @@ T-ROC Navigator NavConfig is a tool for configuration of services under Navigato
 
 ## Quickstart ##
 
-(TODO)
+(TODO for installation using pip)
 
 ## Dependencies ##
 
@@ -25,7 +25,9 @@ The main goal of Navigator is to provide data sources to Navigator-Next (FrontEn
 
 ### Requirements ###
 
-* Python >= 3.7
+* Python >= 3.8
+* asyncio (https://pypi.python.org/pypi/asyncio/)
+* aiohttp >= 3.6.2
 
 ### Contribution guidelines ###
 
