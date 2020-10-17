@@ -134,3 +134,8 @@ target/
 
 # Mac
 .DS_Store
+
+# Ignore the credentials
+file_env
+client_secrets.json
+credentials.txt
