@@ -14,6 +14,10 @@ else:
 if not BASE_DIR:
     BASE_DIR = Path(sys.prefix).resolve().parent
 
+
+# adding SITE ROOT for compatibility with Django
+SITE_ROOT = BASE_DIR
+
 # for running DataIntegrator
 SERVICES_DIR = BASE_DIR.joinpath('services')
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
