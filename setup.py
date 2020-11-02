@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""NavConfig
+"""NavConfig.
+
     Configuration Service for Navigator and DataIntegrator.
 See:
 https://github.com/phenobarbital/NavConfig
