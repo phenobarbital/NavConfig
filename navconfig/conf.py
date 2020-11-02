@@ -5,7 +5,6 @@ from .config import navigatorConfig
 config = navigatorConfig()
 
 DEBUG = os.getenv('DEBUG', False)
-sys.path.append(str(SITE_ROOT))
 
 try:
     from settings.settings import *
@@ -22,7 +21,10 @@ User Local Settings
 try:
     from settings.local_settings import *
 except ImportError:
-    pass
+    try:
+        from navigator.settings.local_settings import *
+    except ImportError:
+        pass
 
 """
 Logging
