@@ -7,8 +7,8 @@ config = navigatorConfig()
 
 DEBUG = os.getenv('DEBUG', False)
 BASE_DIR = os.getenv('BASE_DIR', config.site_root)
-print('BASE DIR: ', BASE_DIR)
-sys.path.append(BASE_DIR)
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
 try:
     from settings.settings import *
