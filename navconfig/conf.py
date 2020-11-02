@@ -1,16 +1,19 @@
-# get settings
-import os
 import logging
 
 from .config import navigatorConfig
 config = navigatorConfig()
 
 DEBUG = os.getenv('DEBUG', False)
+sys.path.append(str(SITE_ROOT))
 
 try:
     from settings.settings import *
 except ImportError:
-    print('Its recommended to use a settings/settings module to customize Navigator Configuration')
+    # running inside django project:
+    try:
+        from navigator.settings.settings import *
+    except ImportError:
+        print('Its recommended to use a settings/settings module to customize Navigator Configuration')
 
 """
 User Local Settings
