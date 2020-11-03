@@ -16,7 +16,6 @@ class driveLoader(BaseLoader):
         if self.file_id and client:
             gauth = GoogleAuth()
             gauth.LoadCredentialsFile(client)
-            print('SETTINGS', gauth.settings)
             if gauth.credentials is None:
                 # Authenticate if they're not there
                 gauth.LocalWebserverAuth() # Creates local webserver and auto handles authentication.
