@@ -12,7 +12,7 @@ if BASE_DIR not in sys.path:
 
 try:
     from settings.settings import *
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     # running inside django project:
     try:
         from navigator.settings.settings import *
@@ -24,7 +24,7 @@ User Local Settings
 """
 try:
     from settings.local_settings import *
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     try:
         from navigator.settings.local_settings import *
     except (ImportError, ModuleNotFoundError):
