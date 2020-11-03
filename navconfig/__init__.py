@@ -6,24 +6,27 @@ from .config import navigatorConfig
 def is_virtualenv():
     return (hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
 
-# get Project PATH
-if is_virtualenv():
-    BASE_DIR = Path(sys.prefix).resolve().parent
-else:
-    BASE_DIR = Path(os.path.abspath(os.path.dirname(__file__))).resolve().parent.parent
-if not BASE_DIR:
-    BASE_DIR = Path(sys.prefix).resolve().parent
+# PROJECT PATH IS DEFINED?
+SITE_ROOT = os.getenv('SITE_ROOT', None)
 
+if not SITE_ROOT:
+    # get Project PATH
+    if is_virtualenv():
+        SITE_ROOT = Path(sys.prefix).resolve().parent
+    else:
+        SITE_ROOT = Path(os.path.abspath(os.path.dirname(__file__))).resolve().parent.parent
+    if not SITE_ROOT:
+        SITE_ROOT = Path(sys.prefix).resolve().parent
 
-# adding SITE ROOT for compatibility with Django
-SITE_ROOT = BASE_DIR
+# adding BASE_DIR for compatibility with Django
+BASE_DIR = os.getenv('BASE_DIR', SITE_ROOT)
 
 # for running DataIntegrator
 SERVICES_DIR = BASE_DIR.joinpath('services')
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 EXTENSION_DIR = BASE_DIR.joinpath('extensions')
 
-config = navigatorConfig(BASE_DIR)
+config = navigatorConfig(SITE_ROOT)
 ENV = config.ENV
 DEBUG = os.getenv('DEBUG', False)
 # SECURITY WARNING: keep the secret key used in production secret!
