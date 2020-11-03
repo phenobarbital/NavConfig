@@ -27,7 +27,7 @@ try:
 except ImportError:
     try:
         from navigator.settings.local_settings import *
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         pass
 
 """
