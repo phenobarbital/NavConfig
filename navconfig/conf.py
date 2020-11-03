@@ -22,10 +22,7 @@ User Local Settings
 try:
     from settings.local_settings import *
 except (ImportError, ModuleNotFoundError):
-    try:
-        from navigator.settings.local_settings import *
-    except (ImportError, ModuleNotFoundError):
-        pass
+    pass
 
 """
 Logging
