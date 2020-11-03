@@ -14,10 +14,7 @@ try:
     from settings.settings import *
 except (ImportError, ModuleNotFoundError):
     # running inside django project:
-    try:
-        from navigator.settings.settings import *
-    except (ImportError, ModuleNotFoundError):
-        print('Its recommended to use a settings/settings module to customize Navigator Configuration')
+    print('Its recommended to use a settings/settings module to customize Navigator Configuration')
 
 """
 User Local Settings
