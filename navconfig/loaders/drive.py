@@ -37,3 +37,13 @@ class driveLoader(BaseLoader):
                 self.load_from_string(content)
         except Exception as err:
             raise Exception('Error loading Environment: {}'.format(err))
+
+    def save_enviroment(self, path:str=None):
+        try:
+            env = self.drive.CreateFile({'id': self.file_id})
+            content = env.GetContentString()
+            if content:
+                with open(path, 'w+') as f:
+                    f.write(content)
+        except Exception as err:
+            raise Exception('Error Saving Environment: {}'.format(err))

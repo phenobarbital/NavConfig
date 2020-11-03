@@ -28,6 +28,7 @@ class Singleton(type):
 class navigatorConfig(metaclass=Singleton):
     """
     navigatorConfig.
+
         Class for Navigator configuration
     """
     _self = None
@@ -102,6 +103,17 @@ class navigatorConfig(metaclass=Singleton):
             print(err)
             # memcache not working
             self._mem = None
+
+    def save_environment(self, env_type: str = 'drive'):
+        env_path = self.site_root.joinpath('env', self.ENV, '.env')
+        # pluggable types
+        if env_type == 'drive':
+            from navconfig.loaders import driveLoader
+            try:
+                d = driveLoader()
+                d.save_enviroment(env_path)
+            except Exception as err:
+                print('Error Reading Environment from Google Drive', err)
 
     def load_enviroment(self, env_type: str = 'file'):
         if env_type == 'file':

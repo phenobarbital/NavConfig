@@ -16,7 +16,7 @@ except ImportError:
     # running inside django project:
     try:
         from navigator.settings.settings import *
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         print('Its recommended to use a settings/settings module to customize Navigator Configuration')
 
 """
