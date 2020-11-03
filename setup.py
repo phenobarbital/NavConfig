@@ -29,6 +29,8 @@ setup(
         'asyncio==3.4.3',
         'python-dotenv==0.15.0',
         'PyDrive==1.3.1',
+        'pylibmc==1.6.1',
+        'objectpath==0.6.1',
         'asyncdb'
     ],
     dependency_links=[
