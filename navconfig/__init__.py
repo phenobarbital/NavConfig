@@ -17,6 +17,8 @@ if not SITE_ROOT:
         SITE_ROOT = Path(os.path.abspath(os.path.dirname(__file__))).resolve().parent.parent
     if not SITE_ROOT:
         SITE_ROOT = Path(sys.prefix).resolve().parent
+else:
+    SITE_ROOT = Path(SITE_ROOT).resolve()
 
 # adding BASE_DIR for compatibility with Django
 BASE_DIR = os.getenv('BASE_DIR', SITE_ROOT)
