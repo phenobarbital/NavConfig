@@ -21,7 +21,11 @@ else:
     SITE_ROOT = Path(SITE_ROOT).resolve()
 
 # adding BASE_DIR for compatibility with Django
-BASE_DIR = os.getenv('BASE_DIR', SITE_ROOT)
+BASE_DIR = os.getenv('BASE_DIR', None)
+if not BASE_DIR:
+    BASE_DIR = SITE_ROOT
+else:
+    BASE_DIR = Path(BASE_DIR).resolve()
 
 # for running DataIntegrator
 SERVICES_DIR = BASE_DIR.joinpath('services')
