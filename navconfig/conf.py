@@ -7,8 +7,14 @@ config = navigatorConfig()
 
 DEBUG = os.getenv('DEBUG', False)
 BASE_DIR = os.getenv('BASE_DIR', config.site_root)
+SETTINGS_DIR = BASE_DIR.joinpath('settings')
+
 if BASE_DIR not in sys.path:
-    sys.path.append(BASE_DIR)
+    sys.path.append(str(BASE_DIR))
+
+if SETTINGS_DIR not in sys.path:
+    sys.path.append((SETTINGS_DIR))
+
 
 try:
     from settings.settings import *

@@ -118,8 +118,14 @@ class navigatorConfig(metaclass=Singleton):
     def load_enviroment(self, env_type: str = 'file'):
         if env_type == 'file':
             env_path = self.site_root.joinpath('env', self.ENV, '.env')
-            # load dotenv
-            load_dotenv(dotenv_path=env_path)
+            # warning if env_path is an empty file or doesnt exists
+            if env_path.exists():
+                if os.stat(str(env_path)).st_size == 0:
+                    raise FileExistsError('Empty Environment File: {}'.format(env_path))
+                # load dotenv
+                load_dotenv(dotenv_path=env_path)
+            else:
+                raise FileNotFoundError('Environment file not found: {}'.format(env_path))
         else:
             # pluggable types
             if env_type == 'drive':
