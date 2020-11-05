@@ -9,11 +9,11 @@ DEBUG = os.getenv('DEBUG', False)
 BASE_DIR = os.getenv('BASE_DIR', config.site_root)
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 
-if BASE_DIR not in sys.path:
+if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-if SETTINGS_DIR not in sys.path:
-    sys.path.append((SETTINGS_DIR))
+if str(SETTINGS_DIR) not in sys.path:
+    sys.path.append(str(SETTINGS_DIR))
 
 
 try:
