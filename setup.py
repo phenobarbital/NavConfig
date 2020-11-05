@@ -25,7 +25,7 @@ setup(
     author_email='jlara@trocglobal.com',
     packages=find_packages(),
     install_requires=[
-        'numpy >= 1.11.1',
+        'numpy==1.19.2',
         'asyncio==3.4.3',
         'python-dotenv==0.15.0',
         'PyDrive==1.3.1',
