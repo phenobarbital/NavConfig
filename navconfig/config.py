@@ -155,6 +155,11 @@ class navigatorConfig(metaclass=Singleton):
         """
         self._ini.read(files)
 
+    def addEnv(self, file):
+        if file.exists() and file.is_file():
+            if os.stat(str(file)).st_size == 0:
+                load_dotenv(dotenv_path=file)
+
     def getboolean(self, value, section=None, fallback=None):
         """
         getboolean.
