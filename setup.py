@@ -34,7 +34,7 @@ setup(
         'asyncdb'
     ],
     dependency_links=[
-        'git+https://github.com/phenobarbital/asyncdb.git#egg=asyncdb'
+        'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
