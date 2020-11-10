@@ -1,12 +1,13 @@
 import os
 import sys
 import logging
+from pathlib import Path
 
 from .config import navigatorConfig
 config = navigatorConfig()
 
 DEBUG = os.getenv('DEBUG', False)
-BASE_DIR = os.getenv('BASE_DIR', config.site_root)
+BASE_DIR = Path(os.getenv('BASE_DIR', config.site_root)).resolve()
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 
 if str(BASE_DIR) not in sys.path:
