@@ -248,6 +248,12 @@ class navigatorConfig(metaclass=Singleton):
             Interface for get variable from differents sources
         """
         val = None
+        # if not val and if section, get from INI
+        if section is not None:
+            try:
+                val = self._ini.get(section, key)
+            except Exception:
+                pass
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
@@ -262,16 +268,6 @@ class navigatorConfig(metaclass=Singleton):
             val = self._mem.get(key)
             if val:
                 return val
-        # if not val and if section, get from INI
-        if not val and section is not None:
-            try:
-                val = self._ini.get(section, key)
-                if not val:
-                    return fallback
-                else:
-                    return val
-            except Exception:
-                return fallback
         # last: check if value exists on ini
         for section in self._ini.sections():
             try:
