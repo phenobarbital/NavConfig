@@ -31,6 +31,7 @@ setup(
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
+        'python-logstash-async==2.2.0',
         'asyncdb'
     ],
     dependency_links=[
