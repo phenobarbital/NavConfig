@@ -28,6 +28,8 @@ HANDLERS = config.get(
     section='logging',
     fallback=['console', 'StreamHandler']
 )
+if isinstance(HANDLERS, str):
+    HANDLERS = HANDLERS.split(',')
 
 logging_config = dict(
     version=1,
