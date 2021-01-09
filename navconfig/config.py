@@ -245,6 +245,18 @@ class navigatorConfig(metaclass=Singleton):
                 continue
         return fallback
 
+    def getlist(self, key, section=None, fallback: list = None):
+        """
+        getlist.
+            Get an string and convert to list
+        """
+        val = None
+        if section is not None:
+            try:
+                val = self._ini.get(section, key)
+            except Exception:
+                pass
+
     def get(self, key, section=None, fallback=None):
         """
         get.
