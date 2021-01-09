@@ -13,7 +13,7 @@ migrations/
 migrations/*
 apps/troc/migrations/
 apps/troc/migrations/__init__.py
-
+settings/
 # Distribution / packaging
 .Python
 env/
