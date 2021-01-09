@@ -59,7 +59,10 @@ class navigatorConfig(metaclass=Singleton):
         # getting type of enviroment consummer:
         env_type = os.getenv('NAVCONFIG_ENV', 'file') # file by default
         # get the environment
-        self.load_enviroment(env_type)
+        try:
+            self.load_enviroment(env_type)
+        except FileNotFoundError:
+            logging.error('Environment File Missing, using current env + INI file.')
         # and get the config file declared in the environment file
         config_file = os.getenv('CONFIG_FILE', '/etc/troc/navigator.ini')
         self._ini = ConfigParser()
