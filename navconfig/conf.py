@@ -9,7 +9,7 @@ config = navigatorConfig()
 DEBUG = os.getenv('DEBUG', False)
 BASE_DIR = Path(os.getenv('BASE_DIR', config.site_root)).resolve()
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
-print(SETTINGS_DIR)
+print('SETTINGS PATH: ', SETTINGS_DIR)
 
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
