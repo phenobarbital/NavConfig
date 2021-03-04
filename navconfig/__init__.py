@@ -38,7 +38,6 @@ ENV = config.ENV
 DEBUG = os.getenv('DEBUG', False)
 # SECURITY WARNING: keep the secret key used in production secret!
 PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
-LOCAL_DEVELOPMENT = (DEBUG == True and sys.argv[0] == 'run.py')
 
 # Add Path Navigator to Sys path
 sys.path.append(str(BASE_DIR))
