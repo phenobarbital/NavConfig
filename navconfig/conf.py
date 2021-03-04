@@ -6,7 +6,7 @@ from pathlib import Path
 from .config import navigatorConfig
 config = navigatorConfig()
 
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = bool(os.getenv('DEBUG', False))
 BASE_DIR = Path(os.getenv('BASE_DIR', config.site_root)).resolve()
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 print('SETTINGS PATH: ', SETTINGS_DIR)

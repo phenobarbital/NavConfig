@@ -35,7 +35,7 @@ EXTENSION_DIR = BASE_DIR.joinpath('extensions')
 config = navigatorConfig(SITE_ROOT)
 
 ENV = config.ENV
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = bool(os.getenv('DEBUG', False))
 # SECURITY WARNING: keep the secret key used in production secret!
 PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
 
