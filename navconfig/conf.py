@@ -19,6 +19,11 @@ if str(BASE_DIR) not in sys.path:
 if str(SETTINGS_DIR) not in sys.path:
     sys.path.append(str(SETTINGS_DIR))
 
+# CACHE INFO
+CACHE_HOST = config.get('CACHEHOST', fallback='localhost')
+CACHE_PORT = config.get('CACHEPORT', fallback=6379)
+CACHE_URL = "redis://{}:{}".format(CACHE_HOST, CACHE_PORT)
+
 try:
     from settings.settings import *
 except (ImportError, ModuleNotFoundError) as err:
