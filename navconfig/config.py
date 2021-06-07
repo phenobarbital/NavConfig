@@ -160,7 +160,12 @@ class navigatorConfig(metaclass=Singleton):
 
     def addEnv(self, file):
         if file.exists() and file.is_file():
-            load_dotenv(dotenv_path=file)
+            try:
+                load_dotenv(dotenv_path=file)
+            except Exception as err:
+                raise
+        else:
+            raise Exception('Failed to load ENV file')
 
     def getboolean(self, value, section=None, fallback=None):
         """
