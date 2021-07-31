@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 setup(
     name='navconfig',
     version=open("VERSION").read().strip(),
-    python_requires=">=3.7.0",
+    python_requires=">=3.8.0",
     url='https://github.com/phenobarbital/NavConfig',
     description='Configuration tool for Navigator Services',
     long_description='Configuration tool for Navigator Services',
@@ -19,7 +19,7 @@ setup(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     author='Jesus Lara',
     author_email='jlara@trocglobal.com',
@@ -31,8 +31,7 @@ setup(
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
-        'python-logstash-async==2.2.0',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
+        'python-logstash-async==2.2.0'
     ],
     dependency_links=[
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
