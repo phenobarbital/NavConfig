@@ -126,7 +126,7 @@ class navigatorConfig(metaclass=Singleton):
                 if os.stat(str(env_path)).st_size == 0:
                     raise FileExistsError('Empty Environment File: {}'.format(env_path))
                 # load dotenv
-                load_dotenv(dotenv_path=env_path)
+                load_dotenv(dotenv_path=env_path, override=False)
             else:
                 raise FileNotFoundError('Environment file not found: {}'.format(env_path))
         else:
@@ -161,7 +161,7 @@ class navigatorConfig(metaclass=Singleton):
     def addEnv(self, file):
         if file.exists() and file.is_file():
             try:
-                load_dotenv(dotenv_path=file)
+                load_dotenv(dotenv_path=file, override=False)
             except Exception as err:
                 raise
         else:
@@ -288,14 +288,6 @@ class navigatorConfig(metaclass=Singleton):
             val = self._mem.get(key)
             if val:
                 return val
-        # last: check if value exists on ini
-        for section in self._ini.sections():
-            try:
-                val = self._ini.get(section, key)
-                if val:
-                    return val
-            except Exception:
-                continue
         return fallback
 
     """
