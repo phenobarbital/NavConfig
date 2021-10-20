@@ -25,13 +25,15 @@ setup(
     author_email='jlara@trocglobal.com',
     packages=find_packages(),
     install_requires=[
+        "wheel==0.37.0",
         'asyncio==3.4.3',
         'python-dotenv==0.15.0',
         'configparser==5.0.1',
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
-        'python-logstash-async==2.2.0'
+        'python-logstash-async==2.2.0',
+        'asyncdb==1.7.18'
     ],
     dependency_links=[
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
