@@ -3,7 +3,6 @@ requires = [
     'setuptools >= 47',
     'wheel >= 0.37.0',
     'toml >= 0.10.2',
-    'asyncdb > 1.7.17',
     'flit'
 ]
 
