@@ -6,8 +6,41 @@ import logging
 from configparser import RawConfigParser, ConfigParser
 from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
-from asyncdb.providers.mcache import mcache
-from asyncdb.providers.mredis import mredis
+import redis
+import pylibmc
+
+class mcache(object):
+    """
+    Basic Connector for Memcached
+    """
+    args: dict = {
+        "tcp_nodelay": True,
+        "ketama": True
+    }
+    _memcached = None
+
+    def __init__(self):
+        host = os.getenv('MEMCACHE_HOST', 'localhost')
+        port = os.getenv('MEMCACHE_PORT', 11211)
+        mserver = ["{}:{}".format(host, port)]
+        self._memcached = pylibmc.Client(
+            mserver, binary=True, behaviors=self.args
+        )
+
+    def get(self, key, default = None):
+        try:
+            result = self._memcached.get(bytes(key, "utf-8"), default)
+            if result:
+                return result.decode("utf-8")
+            else:
+                return None
+        except (pylibmc.Error) as err:
+            raise Exception("Get Memcache Error: {}".format(str(err)))
+        except Exception as err:
+            raise Exception("Memcache Unknown Error: {}".format(str(err)))
+
+    def close(self):
+        self._memcached.disconnect_all()
 
 
 #### TODO: Feature Toggles
@@ -80,28 +113,23 @@ class navigatorConfig(metaclass=Singleton):
         # define debug
         self._debug = os.getenv('DEBUG', False)
         # get redis connection
+        host = os.getenv('CACHEHOST', 'localhost')
+        port = os.getenv('CACHEPORT', 6379)
+        db = os.getenv('QUERYSET_DB', 0)
         try:
-            redis = {
-                "host": os.getenv('CACHEHOST', 'localhost'),
-                "port": os.getenv('CACHEPORT', 6379),
-                "db": os.getenv('QUERYSET_DB', 0),
+            params = {
+                "socket_timeout": 60,
+                "encoding": 'utf-8',
+                "decode_responses": True
             }
-            self._redis = mredis(params=redis)
-            self._redis.connection()
-            if self._debug:
-                print("Redis Connected: {}".format(self._redis.is_connected()))
+            CACHE_URL = "redis://{}:{}/{}".format(host, port, db)
+            self._rpool = redis.ConnectionPool.from_url(url=CACHE_URL, **params)
+            self._redis = redis.Redis(connection_pool=self._rpool, **params)
         except Exception as err:
             print(err)
         # get memcache SERVER
         try:
-            mem_params = {
-                "host": os.getenv('MEMCACHE_HOST', 'localhost'),
-                "port": os.getenv('MEMCACHE_PORT', 11211)
-            }
-            self._mem = mcache(params=mem_params)
-            self._mem.connection()
-            if self._debug:
-                print("Memcache Connected: {}".format(self._mem.is_connected()))
+            self._mem = mcache()
         except Exception as err:
             print(err)
             # memcache not working
@@ -349,3 +377,14 @@ class navigatorConfig(metaclass=Singleton):
             set an enviroment variable on redis
         """
         return self._redis.set(key, value)
+
+    def setext(self, key, value, timeout: int = None):
+        """
+        set
+            set a variable in redis with expiration
+        """
+        if not isinstance(timeout, int):
+            time = 3600
+        else:
+            time = timeout
+        return self._redis.setex(key, time, value)
