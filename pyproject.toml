@@ -13,7 +13,7 @@ module = "navconfig"
 author = "Jesus Lara Gimenez"
 author-email = "jesuslarag@gmail.com"
 home-page = "https://github.com/phenobarbital/navconfig"
-classifiers=[d
+classifiers=[
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",

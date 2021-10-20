@@ -33,7 +33,7 @@ setup(
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
         'python-logstash-async==2.2.0',
-        'asyncdb>=1.7.17'
+        'asyncdb>=1.7.18'
     ],
     dependency_links=[
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
