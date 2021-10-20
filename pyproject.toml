@@ -14,7 +14,7 @@ module = "navconfig"
 author = "Jesus Lara Gimenez"
 author-email = "jesuslarag@gmail.com"
 home-page = "https://github.com/phenobarbital/navconfig"
-classifiers=[
+classifiers=[d
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
@@ -28,8 +28,6 @@ classifiers=[
   "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Software Development :: Build Tools",
-  "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
-  "Topic :: Internet :: WWW/HTTP",
   "License :: OSI Approved :: BSD License",
 ]
 description-file = "README.md"
