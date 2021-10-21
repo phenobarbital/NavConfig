@@ -2,7 +2,8 @@
 	python3.9 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop asyncDB'
 
-setup:
+develop:
+	pip install wheel==0.37.0
 	pip install -e .
 	python -m pip install -Ur docs/requirements.txt
 

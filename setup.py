@@ -32,7 +32,12 @@ setup(
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
-        'python-logstash-async==2.2.0'
+        'limits==1.5.1',
+        'ply==3.11',
+        'pylogbeat==2.0.0',
+        'urllib3==1.26.7',
+        'requests==2.26.0',
+        'python-logstash-async==2.3.0'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
