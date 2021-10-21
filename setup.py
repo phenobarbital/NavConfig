@@ -33,6 +33,7 @@ setup(
         'aiodns==3.0.0',
         'python-dotenv==0.15.0',
         'configparser==5.0.2',
+        'PyYAML>=6.0',
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
