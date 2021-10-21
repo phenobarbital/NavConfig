@@ -46,6 +46,7 @@ setup(
         'pylogbeat==2.0.0',
         'urllib3==1.26.7',
         'requests==2.26.0',
+        'redis==3.5.3',
         'python-rapidjson==1.5',
         'python-logstash-async==2.3.0'
     ],
