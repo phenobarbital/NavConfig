@@ -28,7 +28,7 @@ setup(
         "wheel==0.37.0",
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'aiodns==2.0.0',
+        'aiodns==3.0.0',
         'python-dotenv==0.15.0',
         'configparser==5.0.2',
         'PyYAML>=6.0',
