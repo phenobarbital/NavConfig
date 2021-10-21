@@ -1,4 +1,4 @@
-.venv:
+venv:
 	python3.9 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop asyncDB'
 
@@ -28,5 +28,5 @@ test:
 perf:
 	python -m unittest -v navconfig.tests.perf
 
-distclean: clean
+distclean:
 	rm -rf .venv
