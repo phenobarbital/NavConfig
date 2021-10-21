@@ -35,14 +35,18 @@ setup(
         'PyDrive==1.3.1',
         'pylibmc==1.6.1',
         'objectpath==0.6.1',
+        'aiodns==3.0.0',
         'cffi==1.15.0',
+        'iso8601==0.1.16',
         'pycparser==2.20',
+        'pycares==4.1.2',
         'decorator==5.1.0',
         'limits==1.5.1',
         'ply==3.11',
         'pylogbeat==2.0.0',
         'urllib3==1.26.7',
         'requests==2.26.0',
+        'python-rapidjson==1.5',
         'python-logstash-async==2.3.0'
     ],
     project_urls={  # Optional
