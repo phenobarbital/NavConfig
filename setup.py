@@ -27,6 +27,7 @@ setup(
     install_requires=[
         "wheel==0.37.0",
         'asyncio==3.4.3',
+        'uvloop==0.16.0',
         'jdcal==1.4.1',
         'click==8.0.3',
         'python-dotenv==0.15.0',
