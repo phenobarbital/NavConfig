@@ -82,7 +82,6 @@ class navigatorConfig(metaclass=Singleton):
     def __init__(self, site_root=None):
         if(self.__initialized): return
         self.__initialized = True
-        print('HOW MANY TIMES I RUN?')
         # this only load at first time
         if not site_root:
             site_root = Path(__file__).resolve().parent.parent

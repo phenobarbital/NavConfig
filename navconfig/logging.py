@@ -21,8 +21,8 @@ APP_TITLE = config.get('APP_TITLE', section='info', fallback='navigator')
 LOG_DIR = config.get('logdir', section='logging', fallback=str(BASE_DIR.joinpath('logs')))
 LOG_NAME = config.get('logname', section='logging', fallback=APP_TITLE)
 TMP_DIR = config.get('temp_path', section='temp', fallback='/tmp')
-logstash_logging = config.getboolean('logstash_enabled', section='logging', fallback=True)
-logging_echo = config.getboolean('logging_echo', section='logging', fallback=True)
+logstash_logging = config.getboolean('logstash_enabled', section='logging', fallback=False)
+logging_echo = config.getboolean('logging_echo', section='logging', fallback=False)
 
 # Path version of the log directory
 logdir = Path(LOG_DIR).resolve()
