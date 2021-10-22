@@ -101,6 +101,7 @@ class navigatorConfig(metaclass=Singleton):
         self._ini = ConfigParser()
         #self._ini = RawConfigParser()
         cf = Path(config_file).resolve()
+        logging.debug(f'Config INI File: {cf!s}')
         if not cf.exists():
             cf = site_root.joinpath('etc', self._conffile)
         try:
@@ -149,6 +150,7 @@ class navigatorConfig(metaclass=Singleton):
     def load_enviroment(self, env_type: str = 'file'):
         if env_type == 'file':
             env_path = self.site_root.joinpath('env', self.ENV, '.env')
+            logging.debug(f'Environment File: {env_path!s}')
             # warning if env_path is an empty file or doesnt exists
             if env_path.exists():
                 if os.stat(str(env_path)).st_size == 0:
