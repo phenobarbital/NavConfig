@@ -1,0 +1,45 @@
+logging:
+    version: 1
+
+    console:
+      brief:
+        format: '%(message)s'
+      default:
+        format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+        datefmt: '%Y-%m-%d %H:%M:%S'
+      fluent_fmt:
+        '()': fluent.handler.FluentRecordFormatter
+        format:
+          level: '%(levelname)s'
+          hostname: '%(hostname)s'
+          where: '%(module)s.%(funcName)s'
+          type: '%(levelname)s',
+          stack_trace: '%(exc_text)s'
+
+    handlers:
+        console:
+            class : logging.StreamHandler
+            level: DEBUG
+            formatter: default
+            stream: ext://sys.stdout
+        fluent:
+            class: fluent.handler.FluentHandler
+            host: localhost
+            port: 24224
+            tag: test.logging
+            formatter: fluent_fmt
+            level: DEBUG
+        none:
+            class: logging.NullHandler
+
+    loggers:
+        amqp:
+            handlers: [none]
+            propagate: False
+        conf:
+            handlers: [none]
+            propagate: False
+        '': # root logger
+            handlers: [console, fluent]
+            level: DEBUG
+            propagate: False

@@ -82,6 +82,7 @@ class navigatorConfig(metaclass=Singleton):
     def __init__(self, site_root=None):
         if(self.__initialized): return
         self.__initialized = True
+        print('HOW MANY TIMES I RUN?')
         # this only load at first time
         if not site_root:
             site_root = Path(__file__).resolve().parent.parent
@@ -89,10 +90,11 @@ class navigatorConfig(metaclass=Singleton):
         # get the current environment
         environment = os.getenv('ENV', '')
         self.ENV = environment
-        # getting type of enviroment consummer:
+        # getting type of enviroment consumer:
         env_type = os.getenv('NAVCONFIG_ENV', 'file') # file by default
         # get the environment
         try:
+            logging.debug(f':: Environment type: {env_type}, ENV={environment}')
             self.load_enviroment(env_type)
         except FileNotFoundError:
             logging.error('Environment File Missing, using current env + INI file.')
@@ -101,15 +103,15 @@ class navigatorConfig(metaclass=Singleton):
         self._ini = ConfigParser()
         #self._ini = RawConfigParser()
         cf = Path(config_file).resolve()
-        logging.debug(f'Config INI File: {cf!s}')
+        logging.debug(f':: Config INI File: {cf!s}')
         if not cf.exists():
             cf = site_root.joinpath('etc', self._conffile)
         try:
             #with open(cf) as f:
             self._ini.read(cf)
-        except IOError:
-            print(cf, "INI file does not exist!")
-            raise IOError("INI file does not exist!")
+        except (IOError, Exception) as err:
+            print(cf, f"INI file does not exist: {err}")
+            raise IOError(f"INI file does not exist: {err}")
             return None
         # define debug
         self._debug = os.getenv('DEBUG', False)
@@ -197,88 +199,65 @@ class navigatorConfig(metaclass=Singleton):
         else:
             raise Exception('Failed to load ENV file')
 
-    def getboolean(self, value, section=None, fallback=None):
+    def getboolean(self, key, section=None, fallback=None):
         """
         getboolean.
             Interface for getboolean function of ini parser
         """
         val = None
-        # get ENV value
-        if value in os.environ:
-            val = os.getenv(value, fallback)
-            if val:
-                if val.lower() in self._ini.BOOLEAN_STATES: # Check inf val is Boolean
-                    return self._ini.BOOLEAN_STATES[val.lower()]
-                else:
-                    return bool(val)
-
         # if not val and if section, get from INI
-        if not val and section != None:
+        if section is not None:
             try:
-                val = self._ini.getboolean(section, value)
+                val = self._ini.getboolean(section, key)
+                return val
+            except ValueError:
+                val = self._ini.get(section, key)
                 if not val:
                     return fallback
                 else:
-                    return bool(val)
+                    return self._ini.BOOLEAN_STATES[val.lower()]
             except Exception:
                 return fallback
+        # get ENV value
+        if key in os.environ:
+            val = os.getenv(key, fallback)
 
-        # If not val and not section, get from MEMCACHED
-        if not val and section == None:
-             #TODO: change to a non-async MEMCACHED connector
-            val = self._mem.get(value)
+        if self._redis.exists(key):
+            val = self._redis.get(key)
 
-        # last: check if value exists on ini
-        for section in self._ini.sections():
-            try:
-                val = self._ini.get(section, value)
-                if val:
-                    if val.lower() in self._ini.BOOLEAN_STATES: # Check inf val is Boolean
-                        return self._ini.BOOLEAN_STATES[val.lower()]
-            except Exception:
-                continue
-        return fallback
+        if not val:
+            val = self._mem.get(key)
 
-    def getint(self, value, section=None, fallback=None):
+        if val:
+            if val.lower() in self._ini.BOOLEAN_STATES: # Check inf val is Boolean
+                return self._ini.BOOLEAN_STATES[val.lower()]
+            else:
+                return bool(val)
+        else:
+            return fallback
+
+    def getint(self, key, section=None, fallback=None):
         """
         getint.
             Interface for getint function of ini parser
         """
         val = None
-        # get ENV value
-        if value in os.environ:
-            val = os.getenv(value, fallback)
-            if val:
-                return int(val)
-
-        # if not val and if section, get from INI
-        if not val and section is not None:
+        if section is not None:
             try:
-                val = self._ini.getint(section, value)
-                if not val:
-                    return fallback
-                else:
-                    return int(val)
+                val = self._ini.getint(section, key)
+            except Exception:
+                pass
+        if key in os.environ:
+            val = os.getenv(key, fallback)
+        if self._redis.exists(key):
+            val = self._redis.get(key)
+        if not val:
+            return fallback
+        if val.isdigit(): # Check if val is Integer
+            try:
+                return int(val)
             except Exception:
                 return fallback
-
-        # If not val and not section, get from MEMCACHED
-        if not val and section is None:
-            # TODO: change to a non-async MEMCACHED connector
-            val = self._mem.get(value)
-            if val:
-                return int(val)
-
-        # last: check if value exists on ini
-        for section in self._ini.sections():
-            try:
-                val = self._ini.get(section, value)
-                if val:
-                    if val.isdigit(): # Check if val is Integer
-                        return int(val)
-            except Exception:
-                continue
-        return fallback
 
     def getlist(self, key, section=None, fallback: list = None):
         """
@@ -291,6 +270,15 @@ class navigatorConfig(metaclass=Singleton):
                 val = self._ini.get(section, key)
             except Exception:
                 pass
+        if key in os.environ:
+            val = os.getenv(key, fallback)
+        if self._redis.exists(key):
+            val = self._redis.get(key)
+        if val:
+            return val.split(',')
+        else:
+            return []
+
 
     def get(self, key, section=None, fallback=None):
         """
@@ -302,19 +290,18 @@ class navigatorConfig(metaclass=Singleton):
         if section is not None:
             try:
                 val = self._ini.get(section, key)
+                return val
             except Exception:
                 pass
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
-            if val:
-                return val
+            return val
         # if not in os.environ, got from Redis
-        if not val and section is None:
-            if self._redis.exists(key):
-                return self._redis.get(key)
+        if self._redis.exists(key):
+            return self._redis.get(key)
         # If not in redis, get from MEMCACHED
-        if not val and section is None:
+        if not val:
             val = self._mem.get(key)
             if val:
                 return val

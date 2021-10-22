@@ -3,14 +3,8 @@ import sys
 import logging
 from pathlib import Path
 
-from .config import navigatorConfig
-config = navigatorConfig()
-
-DEBUG = bool(config.getboolean('DEBUG'))
+from navconfig import config, BASE_DIR, DEBUG, PRODUCTION, SETTINGS_DIR
 print('DEBUG: ', DEBUG)
-
-BASE_DIR = Path(os.getenv('BASE_DIR', config.site_root)).resolve()
-SETTINGS_DIR = BASE_DIR.joinpath('settings')
 print('SETTINGS PATH: ', SETTINGS_DIR)
 
 if str(BASE_DIR) not in sys.path:
