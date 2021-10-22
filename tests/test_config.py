@@ -10,10 +10,11 @@ import os
 from navconfig import config, BASE_DIR, DEBUG
 from navconfig.conf import adwh_url, DEBUG, dwh_url, CACHE_URL
 from navconfig.logging import logging_config
+import logging
+from logging.config import dictConfig
 
-
-print(config)
 print('base dir is: ', BASE_DIR)
 print('debug is: ', DEBUG)
 print('cache is: ', CACHE_URL)
-print(logging_config)
+
+logging.debug('LOADED!')

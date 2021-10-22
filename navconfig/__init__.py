@@ -1,7 +1,13 @@
+"""
+NavConfig.
+
+Main object for Configuration of several Navigator-related Tools.
+"""
 import sys
 import os
 from pathlib import Path
 from .config import navigatorConfig
+
 
 def is_virtualenv():
     return (hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
@@ -32,6 +38,9 @@ SERVICES_DIR = BASE_DIR.joinpath('services')
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 EXTENSION_DIR = BASE_DIR.joinpath('extensions')
 
+"""
+Loading main Configuration Object.
+"""
 config = navigatorConfig(SITE_ROOT)
 
 ENV = config.ENV
