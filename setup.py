@@ -40,8 +40,7 @@ setup(
         'requests>=2.25.0',
         'requests[socks]>=2.25.1',
         'redis==3.5.3',
-        'python-rapidjson==1.5',
-        'python-logstash-async==2.3.0'
+        'python-rapidjson==1.5'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
