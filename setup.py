@@ -39,7 +39,6 @@ setup(
         "wheel==0.37.0",
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'aiodns==3.0.0',
         'python-dotenv==0.15.0',
         'configparser==5.0.2',
         'PyYAML>=6.0',
@@ -48,8 +47,6 @@ setup(
         'objectpath==0.6.1',
         'iso8601==0.1.13',
         'pycparser==2.20',
-        'requests>=2.25.0',
-        'requests[socks]>=2.25.1',
         'redis==3.5.3',
         'python-rapidjson==1.5'
     ],
