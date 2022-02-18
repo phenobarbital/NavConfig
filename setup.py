@@ -20,7 +20,7 @@ with open(get_path('navconfig/version.py')) as meta:
     exec(meta.read())
 
 setup(
-    name='navconfig',
+    name=__title__,
     version=__version__,
     python_requires=">=3.8.0",
     url='https://github.com/phenobarbital/NavConfig',
@@ -36,7 +36,7 @@ setup(
     author_email='jlara@trocglobal.com',
     packages=find_packages(),
     install_requires=[
-        "wheel==0.37.0",
+        'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'python-dotenv==0.15.0',
@@ -48,7 +48,7 @@ setup(
         'iso8601==0.1.13',
         'pycparser==2.20',
         'redis==3.5.3',
-        'python-rapidjson==1.5'
+        'python-rapidjson==1.5',
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
