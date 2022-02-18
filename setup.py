@@ -5,7 +5,7 @@
 See:
 https://github.com/phenobarbital/NavConfig
 """
-
+from os import path
 from setuptools import setup, find_packages
 
 
@@ -51,8 +51,7 @@ setup(
         'requests>=2.25.0',
         'requests[socks]>=2.25.1',
         'redis==3.5.3',
-        'python-rapidjson==1.5',
-        'asyncdb>=2.0.0'
+        'python-rapidjson==1.5'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
