@@ -8,13 +8,24 @@ https://github.com/phenobarbital/NavConfig
 
 from setuptools import setup, find_packages
 
+
+def get_path(filename):
+    return path.join(path.dirname(path.abspath(__file__)), filename)
+
+
+with open(get_path('README.md')) as readme:
+    README = readme.read()
+
+with open(get_path('navconfig/version.py')) as meta:
+    exec(meta.read())
+
 setup(
     name='navconfig',
-    version=open("VERSION").read().strip(),
+    version=__version__,
     python_requires=">=3.8.0",
     url='https://github.com/phenobarbital/NavConfig',
     description='Configuration tool for Navigator Services',
-    long_description='Configuration tool for Navigator Services',
+    long_description=README,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -40,7 +51,8 @@ setup(
         'requests>=2.25.0',
         'requests[socks]>=2.25.1',
         'redis==3.5.3',
-        'python-rapidjson==1.5'
+        'python-rapidjson==1.5',
+        'asyncdb>=2.0.0'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
