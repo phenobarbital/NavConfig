@@ -210,7 +210,6 @@ class navigatorConfig(metaclass=Singleton):
             )
         # define debug
         self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
-        print('DEBUG: ', self._debug)
         if self._debug:
             loglevel = logging.DEBUG
         else:

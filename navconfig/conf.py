@@ -9,9 +9,6 @@ from navconfig import (
     SETTINGS_DIR
 )
 
-print('DEBUG: ', DEBUG)
-print('SETTINGS PATH: ', SETTINGS_DIR)
-
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
