@@ -18,7 +18,8 @@ from redis.exceptions import (
 )
 import pylibmc
 from typing import (
-    Dict
+    Dict,
+    Any
 )
 
 
@@ -141,6 +142,21 @@ class mcache(object):
         except Exception as err:
             raise Exception("Memcache Unknown Error: {}".format(str(err)))
 
+    def set(self, key, value, timeout=None):
+        try:
+            if timeout:
+                return self._memcached.set(
+                    bytes(key, "utf-8"), bytes(value, "utf-8"), time=timeout
+                )
+            else:
+                return self._memcached.set(
+                    bytes(key, "utf-8"), bytes(value, "utf-8")
+                )
+        except (pylibmc.Error) as err:
+            raise Exception("Set Memcache Error: {}".format(str(err)))
+        except Exception as err:
+            raise Exception("Memcache Unknown Error: {}".format(str(err)))
+
     def close(self):
         self._memcached.disconnect_all()
 
@@ -184,7 +200,7 @@ class navigatorConfig(metaclass=Singleton):
     def debug(self):
         return self._debug
 
-    def __init__(self, site_root=None):
+    def __init__(self, site_root: str = None):
         if self.__initialized is True:
             return
         self.__initialized = True
@@ -241,6 +257,9 @@ class navigatorConfig(metaclass=Singleton):
             self._mem = None
 
     def save_environment(self, env_type: str = 'drive'):
+        """
+        Save remote Environment into a local File.
+        """
         env_path = self.site_root.joinpath('env', self.ENV, '.env')
         # pluggable types
         if env_type == 'drive':
@@ -249,9 +268,12 @@ class navigatorConfig(metaclass=Singleton):
                 d = driveLoader()
                 d.save_enviroment(env_path)
             except Exception as err:
-                print('Error Saving Environment from Google Drive', err)
+                print('Error Saving Environment', err)
 
     def load_enviroment(self, env_type: str = 'file'):
+        """
+        Load an environment from a File or any pluggable Origin.
+        """
         if env_type == 'file':
             env_path = self.site_root.joinpath('env', self.ENV, '.env')
             logging.debug(f'Environment File: {env_path!s}')
@@ -271,7 +293,7 @@ class navigatorConfig(metaclass=Singleton):
                     f'Environment file not found: {env_path}'
                 )
         else:
-            # pluggable types
+            # TODO: add pluggable types
             if env_type == 'drive':
                 from navconfig.loaders import driveLoader
                 try:
@@ -313,7 +335,7 @@ class navigatorConfig(metaclass=Singleton):
         else:
             raise Exception('Failed to load a new ENV file')
 
-    def getboolean(self, key, section=None, fallback=None):
+    def getboolean(self, key: str, section: str = None, fallback: Any = None):
         """
         getboolean.
             Interface for getboolean function of ini parser
@@ -350,7 +372,7 @@ class navigatorConfig(metaclass=Singleton):
         else:
             return fallback
 
-    def getint(self, key, section=None, fallback=None):
+    def getint(self, key: str, section: str = None, fallback: Any = None):
         """
         getint.
             Interface for getint function of ini parser
@@ -373,7 +395,7 @@ class navigatorConfig(metaclass=Singleton):
             except Exception:
                 return fallback
 
-    def getlist(self, key, section=None, fallback: list = None):
+    def getlist(self, key: str, section: str = None, fallback: Any = None):
         """
         getlist.
             Get an string and convert to list
@@ -393,7 +415,7 @@ class navigatorConfig(metaclass=Singleton):
         else:
             return []
 
-    def get(self, key, section=None, fallback=None):
+    def get(self, key: str, section: str = None, fallback: Any = None) -> Any:
         """
         get.
             Interface for get variable from differents sources
@@ -424,7 +446,17 @@ class navigatorConfig(metaclass=Singleton):
     Config Magic Methods (dict like)
     """
 
-    def __getitem__(self, key):
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key in os.environ:
+            # override an environment variable
+            os.environ[key] = value
+        elif self._redis.exists(key):
+            self._redis.set(key, value)
+        else:
+            # saving in memcached:
+            self._mem.set(key, value)
+
+    def __getitem__(self, key: str) -> Any:
         """
         Sequence-like operators
         """
@@ -440,7 +472,7 @@ class navigatorConfig(metaclass=Singleton):
             else:
                 return None
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         if key in os.environ:
             return True
         if self._redis.exists(key):
@@ -452,7 +484,7 @@ class navigatorConfig(metaclass=Singleton):
             return False
 
     ## attribute name
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
         if key in os.environ:
             val = os.getenv(key)
         elif self._redis.exists(key):
@@ -473,14 +505,14 @@ class navigatorConfig(metaclass=Singleton):
             )
         return None
 
-    def set(self, key, value):
+    def set(self, key: str, value: Any) -> None:
         """
         set.
          Set an enviroment variable on REDIS
         """
         return self._redis.set(key, value)
 
-    def setext(self, key, value, timeout: int = None):
+    def setext(self, key: str, value: Any, timeout: int = None) -> int:
         """
         set
             set a variable in redis with expiration
