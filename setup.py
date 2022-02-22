@@ -49,6 +49,8 @@ setup(
         'pycparser==2.20',
         'redis==3.5.3',
         'python-rapidjson==1.5',
+        'python-logstash-async==2.3.0',
+        'aiologstash==2.0.0'
     ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
