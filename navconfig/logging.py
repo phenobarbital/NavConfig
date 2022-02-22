@@ -39,7 +39,7 @@ if not logdir.exists():
 HANDLERS = config.get(
     'handlers',
     section='logging',
-    fallback=['console', 'StreamHandler']
+    fallback=['StreamHandler', 'RotatingFileHandler', 'ErrorFileHandler']
 )
 if isinstance(HANDLERS, str):
     HANDLERS = HANDLERS.split(',')
@@ -85,7 +85,7 @@ logging_config = dict(
          },
         },
     root={
-        'handlers': ['StreamHandler', 'RotatingFileHandler', 'ErrorFileHandler'],
+        'handlers': HANDLERS,
         'level': loglevel,
     },
 )
@@ -108,24 +108,26 @@ if logstash_logging:
     logging_config['formatters']['logstash'] = {
       '()': 'logstash_async.formatter.LogstashFormatter',
       'message_type': 'python-logstash',
-      'fqdn': True,  # Fully qualified domain name. Default value: false.
+      'fqdn': False,  # Fully qualified domain name. Default value: false.
       'extra_prefix': 'dev',
       'extra': {
-          'application': APP_NAME,
-          'project_path': str(BASE_DIR),
+          'application': '{}'.format(APP_NAME),
+          'project_path': '{}'.format(BASE_DIR),
           'environment': 'production'
       }
     }
     logging_config['handlers']['LogstashHandler'] = {
             'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'formatter': 'logstash',
+            'transport': 'logstash_async.transport.TcpTransport',
             'host': LOGSTASH_HOST,
             'port': LOGSTASH_PORT,
-            'transport': 'logstash_async.transport.TcpTransport',
-            'formatter': 'logstash',
             'level': loglevel,
             'database_path': '{}/logstash.db'.format(LOG_DIR),
     }
-    logging_config['root']['handlers'].append('LogstashHandler')
+    logging_config['root']['handlers'] = [
+        'LogstashHandler', 'StreamHandler'
+    ]
 
 """
 Load Logging Configuration:

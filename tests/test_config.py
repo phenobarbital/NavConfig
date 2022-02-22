@@ -5,7 +5,8 @@ import pytest
 import pytest_asyncio
 from pathlib import Path
 from pprint import pprint
-from asyncdb import AsyncDB
+from navconfig.logging import logging_config
+from logging.config import dictConfig
 
 pytestmark = pytest.mark.asyncio
 
@@ -24,6 +25,9 @@ async def test_conf(event_loop):
     from navconfig.conf import LOCAL_DEVELOPMENT
     from settings.settings import LOCAL_DEVELOPMENT as LP
     assert LP == LOCAL_DEVELOPMENT
+    dictConfig(logging_config)
+    log = logging.getLogger()
+    log.debug('HELLO WORLD')
 
 
 def pytest_sessionfinish(session, exitstatus):
