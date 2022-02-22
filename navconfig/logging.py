@@ -112,7 +112,7 @@ if logstash_logging:
       'extra_prefix': 'dev',
       'extra': {
           'application': APP_NAME,
-          'project_path': BASE_DIR,
+          'project_path': str(BASE_DIR),
           'environment': 'production'
       }
     }
