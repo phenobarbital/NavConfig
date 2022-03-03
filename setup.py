@@ -13,8 +13,10 @@ def get_path(filename):
     return path.join(path.dirname(path.abspath(__file__)), filename)
 
 
-with open(get_path('README.md')) as readme:
-    README = readme.read()
+def readme():
+    with open(get_path('README.md')) as readme:
+        return readme.read()
+
 
 with open(get_path('navconfig/version.py')) as meta:
     exec(meta.read())
@@ -24,18 +26,25 @@ setup(
     version=__version__,
     python_requires=">=3.8.0",
     url='https://github.com/phenobarbital/NavConfig',
-    description='Configuration tool for Navigator Services',
-    long_description=__description__,
-    long_description_content_type='text/x-rst',
+    description=__description__,
+    long_description=readme(),
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
+        'Environment :: Web Environment',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Framework :: AsyncIO'
     ],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(),
+    setup_requires=[
+        'wheel==0.37.0'
+    ],
     install_requires=[
         'wheel==0.37.0',
         'asyncio==3.4.3',
