@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     author='Jesus Lara',
-    author_email='jlara@trocglobal.com',
+    author_email='jesuslara@phenobarbital.info',
     packages=find_packages(),
     install_requires=[
         'wheel==0.37.0',

@@ -1,7 +1,7 @@
 # Navigator NavConfig #
 
-Navigator NavConfig is a tool for configuration of services under
-Navigator Framework, but is possible to use in other applications as well.
+NavConfig is a configuration tool for getting variables from environment and other sources.
+Is used by Navigator Framework, but is possible to use in other applications as well.
 
 Navigator NavConfig can load Configuration directives from different sources:
 
@@ -52,7 +52,6 @@ APP_NAME = config.get('APP_NAME')
 ## Dependencies ##
 
  * ConfigParser
- * AsyncDB
  * Python-Dotenv
 
 
