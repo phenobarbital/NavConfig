@@ -6,15 +6,14 @@ Navigator Framework, but is possible to use in other applications as well.
 Navigator NavConfig can load Configuration directives from different sources:
 
 - Environment files (.env)
-- From Environment itself (os.env)
-- Memcache Variables
+- Memcached Variables
 - INI files (using configParser)
 - Redis Server
 
 The main goal of NavConfig is centralize configuration access in a single and
 immutable unique point of truth.
 
-NavConfig is a singleton class, and can be shared across several modules.
+NavConfig can be shared across several modules.
 
 ## Installation
 ```bash
@@ -40,8 +39,7 @@ CONFIG_FILE=etc/myconfig.ini
 APP_NAME=My App
 ```
 
-Then, in your code, call navconfig "config" object, and start getting your environment
-variables inside your application.
+Then, in your code, call navconfig "config" object, and start getting your environment variables inside your application.
 
 ```python
 from navconfig import config
