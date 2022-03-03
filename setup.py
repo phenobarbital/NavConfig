@@ -25,7 +25,8 @@ setup(
     python_requires=">=3.8.0",
     url='https://github.com/phenobarbital/NavConfig',
     description='Configuration tool for Navigator Services',
-    long_description=README,
+    long_description=__description__,
+    long_description_content_type='text/x-rst',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
