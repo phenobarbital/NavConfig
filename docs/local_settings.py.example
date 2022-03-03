@@ -1,0 +1,9 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+from navconfig import config, BASE_DIR, DEBUG
+'''
+NAVCONFIG Local Settings (sample)
+'''
+
+# SAMPLE CONFIGURATION
+MY_CONFIG='/etc/navconfig/next.ini'

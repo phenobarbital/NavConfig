@@ -1,10 +1,53 @@
 # Navigator NavConfig #
 
-T-ROC Navigator NavConfig is a tool for configuration of services under Navigator Framework
+Navigator NavConfig is a tool for configuration of services under
+Navigator Framework, but is possible to use in other applications as well.
+
+Navigator NavConfig can load Configuration directives from different sources:
+
+- Environment files (.env)
+- Memcached Variables
+- INI files (using configParser)
+- Redis Server
+
+The main goal of NavConfig is centralize configuration access in a single and
+immutable unique point of truth.
+
+NavConfig can be shared across several modules.
+
+## Installation
+```bash
+pip install navconfig
+```
 
 ## Quickstart ##
 
-(TODO for installation using pip)
+First of all, let's create a simple configuration environment.
+
+Creates a directory for an .ini file and the environment file.
+
+```bash
+mkdir {env,etc}
+```
+
+put a .env file inside of "env" folder, the first line is the directive to know
+where the "ini" file lives (even we can put the .ini file outside of current dir).
+
+
+```text
+CONFIG_FILE=etc/myconfig.ini
+APP_NAME=My App
+```
+
+Then, in your code, call navconfig "config" object, and start getting your environment variables inside your application.
+
+```python
+from navconfig import config
+
+APP_NAME = config.get('APP_NAME')
+# the result is "My App".
+
+```
 
 ## Dependencies ##
 
@@ -12,17 +55,6 @@ T-ROC Navigator NavConfig is a tool for configuration of services under Navigato
  * AsyncDB
  * Python-Dotenv
 
-### What is AsyncDB? ###
-
-The main goal of Navigator is to provide data sources to Navigator-Next (FrontEnd Web App).
-
-### Getting Started ###
-
-* Installation
-* Configuration
-* Database configuration
-* How to run tests
-* Deployment instructions
 
 ### Requirements ###
 

@@ -17,12 +17,16 @@ if DEBUG:
 else:
     loglevel = logging.INFO
 
+APP_NAME = config.get('APP_NAME', fallback='navigator')
 APP_TITLE = config.get('APP_TITLE', section='info', fallback='navigator')
-LOG_DIR = config.get('logdir', section='logging', fallback=str(BASE_DIR.joinpath('logs')))
+LOG_DIR = config.get('logdir', section='logging',
+                     fallback=str(BASE_DIR.joinpath('logs')))
 LOG_NAME = config.get('logname', section='logging', fallback=APP_TITLE)
 TMP_DIR = config.get('temp_path', section='temp', fallback='/tmp')
-logstash_logging = config.getboolean('logstash_enabled', section='logging', fallback=False)
-logging_echo = config.getboolean('logging_echo', section='logging', fallback=False)
+logstash_logging = config.getboolean(
+    'logstash_enabled', section='logging', fallback=False)
+logging_echo = config.getboolean(
+    'logging_echo', section='logging', fallback=False)
 
 # Path version of the log directory
 logdir = Path(LOG_DIR).resolve()
@@ -35,7 +39,7 @@ if not logdir.exists():
 HANDLERS = config.get(
     'handlers',
     section='logging',
-    fallback=['console', 'StreamHandler']
+    fallback=['StreamHandler', 'RotatingFileHandler', 'ErrorFileHandler']
 )
 if isinstance(HANDLERS, str):
     HANDLERS = HANDLERS.split(',')
@@ -81,7 +85,7 @@ logging_config = dict(
          },
         },
     root={
-        'handlers': ['StreamHandler', 'RotatingFileHandler', 'ErrorFileHandler'],
+        'handlers': HANDLERS,
         'level': loglevel,
     },
 )
@@ -99,7 +103,7 @@ if logstash_logging:
     # basic configuration of Logstash
     import logstash_async
     LOGSTASH_HOST = config.get('LOGSTASH_HOST', fallback='localhost')
-    LOGSTASH_PORT = config.get('LOGSTASH_PORT', fallback=5044)
+    LOGSTASH_PORT = config.get('LOGSTASH_PORT', fallback=6000)
     LOG_TAG = config.get('FLUENT_TAG', fallback='app.log')
     logging_config['formatters']['logstash'] = {
       '()': 'logstash_async.formatter.LogstashFormatter',
@@ -107,21 +111,23 @@ if logstash_logging:
       'fqdn': False,  # Fully qualified domain name. Default value: false.
       'extra_prefix': 'dev',
       'extra': {
-          'application': 'Navigator',
-          'project_path': 'Navigator',
+          'application': '{}'.format(APP_NAME),
+          'project_path': '{}'.format(BASE_DIR),
           'environment': 'production'
       }
     }
     logging_config['handlers']['LogstashHandler'] = {
             'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'formatter': 'logstash',
+            'transport': 'logstash_async.transport.TcpTransport',
             'host': LOGSTASH_HOST,
             'port': LOGSTASH_PORT,
-            'transport': 'logstash_async.transport.TcpTransport',
-            'formatter': 'logstash',
             'level': loglevel,
             'database_path': '{}/logstash.db'.format(LOG_DIR),
     }
-    logging_config['root']['handlers'].append('LogstashHandler')
+    logging_config['root']['handlers'] = [
+        'LogstashHandler', 'StreamHandler'
+    ]
 
 """
 Load Logging Configuration:
