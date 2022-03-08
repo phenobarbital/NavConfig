@@ -11,7 +11,6 @@ from .version import (
 )
 from .config import navigatorConfig
 
-
 def is_virtualenv():
     return (
         hasattr(sys, 'real_prefix') or (
@@ -59,11 +58,10 @@ PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
 sys.path.append(str(BASE_DIR))
 sys.path.append(str(SETTINGS_DIR))
 
-
-"""
-Config-Settings.
-"""
-try:
-    from .conf import *
-except (ImportError, ModuleNotFoundError) as err:
-    print(err)
+# """
+# Config-Settings.
+# """
+# try:
+#     from .conf import *
+# except (ImportError, ModuleNotFoundError) as err:
+#     print(err)
