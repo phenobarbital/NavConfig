@@ -41,10 +41,7 @@ if not BASE_DIR:
 else:
     BASE_DIR = Path(BASE_DIR).resolve()
 
-# for running DataIntegrator
-SERVICES_DIR = BASE_DIR.joinpath('services')
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
-EXTENSION_DIR = BASE_DIR.joinpath('extensions')
 
 """
 Loading main Configuration Object.
@@ -60,9 +57,7 @@ PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
 
 # Add Path Navigator to Sys path
 sys.path.append(str(BASE_DIR))
-sys.path.append(str(SERVICES_DIR))
 sys.path.append(str(SETTINGS_DIR))
-sys.path.append(str(EXTENSION_DIR))
 
 
 """

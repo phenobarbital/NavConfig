@@ -1,28 +1,20 @@
 import os
 import sys
+import logging
 from pathlib import Path
 from navconfig import (
-    config,
-    BASE_DIR,
-    DEBUG,
-    PRODUCTION,
     SETTINGS_DIR
 )
-
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
-
-if str(SETTINGS_DIR) not in sys.path:
-    sys.path.append(str(SETTINGS_DIR))
 
 """
 Global-Settings.
 """
 try:
+    sys.path.append(str(SETTINGS_DIR))
     from settings.settings import *
 except (ImportError, ModuleNotFoundError) as err:
     print(err)
-    # running inside django project:
+    logging.error(f'Cannot load settings Module {err}')
     print(
         'Settings.py module is missing.'
         'Hint: Its recommended to use a settings/settings.py module to customize '
