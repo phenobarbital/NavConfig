@@ -3,18 +3,18 @@ import sys
 import logging
 from pathlib import Path
 from navconfig import (
-    SETTINGS_DIR
+    BASE_DIR
 )
+os.chdir(str(BASE_DIR))
 
 """
 Global-Settings.
 """
 try:
-    sys.path.append(str(SETTINGS_DIR))
     from settings.settings import *
 except (ImportError, ModuleNotFoundError) as err:
-    print(err)
-    logging.error(f'Cannot load settings Module {err}')
+    from settings import settings
+    logging.error(f'Cannot loaded a settings Module {err}, module: {settings}')
     print(
         'Settings.py module is missing.'
         'Hint: Its recommended to use a settings/settings.py module to customize '
@@ -26,5 +26,5 @@ User Local Settings
 """
 try:
     from settings.local_settings import *
-except (ImportError, ModuleNotFoundError):
+except (ImportError, ModuleNotFoundError) as err:
     pass
