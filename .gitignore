@@ -13,6 +13,7 @@ migrations/
 migrations/*
 apps/troc/migrations/
 apps/troc/migrations/__init__.py
+settings/*
 settings/
 # Distribution / packaging
 .Python
