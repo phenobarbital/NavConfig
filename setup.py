@@ -29,6 +29,7 @@ setup(
     description=__description__,
     long_description=readme(),
     long_description_content_type='text/markdown',
+    license=__license__,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',

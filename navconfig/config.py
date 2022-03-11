@@ -200,55 +200,18 @@ class navigatorConfig(metaclass=Singleton):
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
-        # Environment Configuration:
-        if env is not None:
-            self.ENV = env
-        else:
-            environment = os.getenv('ENV', '')
-            self.ENV = environment
-        # getting type of enviroment consumer:
-        env_type = os.getenv('NAVCONFIG_ENV', 'file')  # file by default
-        # get the environment
-        try:
-            logging.debug(
-                f':: Environment type: {env_type}, ENV={environment}'
-            )
-            self.load_enviroment(env_type)
-        except FileNotFoundError:
-            logging.error(
-                'NavConfig Error: Environment (.env) File Missing.'
-            )
-        # define debug
-        self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
-        if self._debug:
-            loglevel = logging.DEBUG
-        else:
-            loglevel = logging.INFO
-        logging.basicConfig(level=loglevel)
-        # and get the config file declared in the environment file
-        config_file = os.getenv('CONFIG_FILE', self._conffile)
-        self._ini = ConfigParser()
-        cf = Path(config_file).resolve()
-        logging.debug(f':: Config INI File: {cf!s}')
-        if not cf.exists():
-            cf = site_root.joinpath('etc', self._conffile)
-        try:
-            self._ini.read(cf)
-        except (IOError, Exception) as err:
-            raise IOError(f"NavConfig: INI file doesn't exist: {err}")
-            return None
         # get redis connection
         try:
             self._redis = mredis()
         except Exception as err:
-            logging.exception(err)
+            raise
         # get memcache connection
         try:
             self._mem = mcache()
         except Exception as err:
-            logging.exception(err)
-            # memcache not working
-            self._mem = None
+            raise
+        # then: configure the instance:
+        self.configure(env)
 
     def __del__(self):
         try:
@@ -260,6 +223,37 @@ class navigatorConfig(metaclass=Singleton):
     @property
     def debug(self):
         return self._debug
+    
+    def configure(self, env: str = None, env_type: str = 'file', override: bool = False):
+        # Environment Configuration:
+        if env is not None:
+            self.ENV = env
+        else:
+            environment = os.getenv('ENV', '')
+            self.ENV = environment
+        # getting type of enviroment consumer:
+        env_type = os.getenv('NAVCONFIG_ENV', env_type)  # file by default
+        try:
+            self.load_enviroment(env_type, override=override)
+        except FileNotFoundError:
+            logging.error(
+                'NavConfig Error: Environment (.env) File Missing.'
+            )
+        # define debug
+        self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
+        # and get the config file declared in the environment file
+        config_file = os.getenv('CONFIG_FILE', self._conffile)
+        self._ini = ConfigParser()
+        cf = Path(config_file).resolve()
+        if not cf.exists():
+            # try ini file from etc/ directory.
+            cf = self._site_path.joinpath('etc', self._conffile)
+        try:
+            self._ini.read(cf)
+        except (IOError, Exception) as err:
+            logging.exception(
+                f"NavConfig: INI file doesn't exist: {err}"
+            )
 
     def save_environment(self, env_type: str = 'drive'):
         """
@@ -275,7 +269,7 @@ class navigatorConfig(metaclass=Singleton):
             except Exception as err:
                 print('Error Saving Environment', err)
 
-    def load_enviroment(self, env_type: str = 'file', file: Union[str, Path] = None):
+    def load_enviroment(self, env_type: str = 'file', file: Union[str, Path] = None, override: bool = False):
         """
         Load an environment from a File or any pluggable Origin.
         """
@@ -291,7 +285,7 @@ class navigatorConfig(metaclass=Singleton):
                 # load dotenv
                 load_dotenv(
                     dotenv_path=env_path,
-                    override=False
+                    override=override
                 )
             else:
                 raise FileNotFoundError(

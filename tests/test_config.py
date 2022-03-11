@@ -28,7 +28,12 @@ async def test_conf(event_loop):
     dictConfig(logging_config)
     log = logging.getLogger()
     log.debug('HELLO WORLD')
-
+    
+async def test_environment(event_loop):
+    from navconfig import config
+    config.configure(env='dev', override=True) # re-configure the environment
+    cnf = config.get('CONFIG_FILE')
+    assert cnf == '/etc/troc/navigator.ini'
 
 def pytest_sessionfinish(session, exitstatus):
     asyncio.get_event_loop().close()
