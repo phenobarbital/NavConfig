@@ -5,9 +5,9 @@ import importlib
 import sys
 import types
 import logging
-from configparser import RawConfigParser, ConfigParser
+from configparser import ConfigParser
 from pathlib import Path
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 import redis
 from redis.exceptions import (
     ConnectionError,
@@ -19,7 +19,9 @@ from redis.exceptions import (
 import pylibmc
 from typing import (
     Dict,
-    Any
+    Any,
+    Union,
+    List
 )
 
 
@@ -189,18 +191,7 @@ class navigatorConfig(metaclass=Singleton):
     _conffile: str = 'etc/config.ini'
     __initialized = False
 
-    def __del__(self):
-        try:
-            self._mem.close()
-            self._redis.close()
-        finally:
-            pass
-
-    @property
-    def debug(self):
-        return self._debug
-
-    def __init__(self, site_root: str = None):
+    def __init__(self, site_root: str = None, env: str = None):
         if self.__initialized is True:
             return
         self.__initialized = True
@@ -210,8 +201,11 @@ class navigatorConfig(metaclass=Singleton):
         else:
             self._site_path = Path(site_root).resolve()
         # Environment Configuration:
-        environment = os.getenv('ENV', '')
-        self.ENV = environment
+        if env is not None:
+            self.ENV = env
+        else:
+            environment = os.getenv('ENV', '')
+            self.ENV = environment
         # getting type of enviroment consumer:
         env_type = os.getenv('NAVCONFIG_ENV', 'file')  # file by default
         # get the environment
@@ -256,6 +250,17 @@ class navigatorConfig(metaclass=Singleton):
             # memcache not working
             self._mem = None
 
+    def __del__(self):
+        try:
+            self._mem.close()
+            self._redis.close()
+        finally:
+            pass
+
+    @property
+    def debug(self):
+        return self._debug
+
     def save_environment(self, env_type: str = 'drive'):
         """
         Save remote Environment into a local File.
@@ -270,7 +275,7 @@ class navigatorConfig(metaclass=Singleton):
             except Exception as err:
                 print('Error Saving Environment', err)
 
-    def load_enviroment(self, env_type: str = 'file'):
+    def load_enviroment(self, env_type: str = 'file', file: Union[str, Path] = None):
         """
         Load an environment from a File or any pluggable Origin.
         """
@@ -302,6 +307,22 @@ class navigatorConfig(metaclass=Singleton):
                 except Exception as err:
                     logging.exception(
                         f'Error Reading from Google Drive {err}', exc_info=True
+                    )
+            elif env_type == 'yaml':
+                from navconfig.loaders import YamlLoader
+                try:
+                    d = YamlLoader().load_environment(file)
+                except Exception as err:
+                    logging.exception(
+                        f'Error Reading from YAML File {file}: {err}', exc_info=True
+                    )
+            elif env_type == 'toml':
+                from navconfig.loaders import TomlLoader
+                try:
+                    d = TomlLoader().load_environment(file)
+                except Exception as err:
+                    logging.exception(
+                        f'Error Reading from TOML File {file}: {err}', exc_info=True
                     )
 
     @property
@@ -508,7 +529,8 @@ class navigatorConfig(metaclass=Singleton):
     def set(self, key: str, value: Any) -> None:
         """
         set.
-         Set an enviroment variable on REDIS
+         Set an enviroment variable on REDIS or Memcached, based on Strategy
+         TODO: add cloudpickle to serialize and unserialize data.
         """
         return self._redis.set(key, value)
 

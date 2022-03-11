@@ -14,6 +14,7 @@ class BaseLoader(ABC):
         pass
 
     def load_from_string(self, content: str):
-        filelike = StringIO(content)
-        filelike.seek(0)
-        dotenv_values(stream=filelike)
+        if content:
+            filelike = StringIO(content)
+            filelike.seek(0)
+            dotenv_values(stream=filelike)

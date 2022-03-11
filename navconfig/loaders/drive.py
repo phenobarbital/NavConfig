@@ -34,8 +34,7 @@ class driveLoader(BaseLoader):
         try:
             env = self.drive.CreateFile({'id': self.file_id})
             content = env.GetContentString()
-            if content:
-                self.load_from_string(content)
+            self.load_from_string(content)
         except Exception as err:
             raise Exception('Error loading Environment: {}'.format(err))
 

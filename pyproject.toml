@@ -13,12 +13,14 @@ module = "navconfig"
 author = "Jesus Lara Gimenez"
 author-email = "jesuslarag@gmail.com"
 home-page = "https://github.com/phenobarbital/navconfig"
+license = "MIT"
+keywords=["aiohttp", "settings", "configuration", "conf", "configuration-management"]
 classifiers=[
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python",
   "Typing :: Typed",
   "Development Status :: 4 - Beta",
@@ -31,6 +33,7 @@ classifiers=[
 ]
 description-file = "README.md"
 requires-python = ">=3.8.5"
+readme = "README.md"
 
 [tool.pytest.ini_options]
 addopts = [

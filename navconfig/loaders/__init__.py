@@ -1,2 +1,6 @@
 from .drive import driveLoader
-__all__ = ('driveLoader')
+from .yaml import YamlLoader
+from .toml import TomlLoader
+
+
+__all__ = ('driveLoader', 'YamlLoader', 'TomlLoader')

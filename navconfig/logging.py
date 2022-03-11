@@ -46,6 +46,7 @@ if isinstance(HANDLERS, str):
 
 logging_config = dict(
     version=1,
+    disable_existing_loggers=False,
     formatters={
         "console": {
             'format': '%(message)s'
@@ -83,11 +84,17 @@ logging_config = dict(
                 'class': 'logging.FileHandler',
                 'mode': 'a',
          },
-        },
-    root={
-        'handlers': HANDLERS,
-        'level': loglevel,
     },
+    loggers={
+        '': {
+            'handlers': ['ErrorFileHandler'],
+            'level': 'ERROR'
+        },
+        APP_NAME: {
+            'handlers': HANDLERS,
+            'level': loglevel,
+        },
+    }
 )
 
 if logging_echo == 'True':
@@ -125,7 +132,7 @@ if logstash_logging:
             'level': loglevel,
             'database_path': '{}/logstash.db'.format(LOG_DIR),
     }
-    logging_config['root']['handlers'] = [
+    logging_config[APP_NAME]['handlers'] = [
         'LogstashHandler', 'StreamHandler'
     ]
 

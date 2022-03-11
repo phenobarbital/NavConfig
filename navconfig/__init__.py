@@ -9,7 +9,7 @@ from pathlib import Path
 from .version import (
     __title__, __description__, __version__, __author__, __author_email__
 )
-from .config import navigatorConfig
+from .config import navigatorConfig # noqa
 
 def is_virtualenv():
     return (
@@ -57,11 +57,3 @@ PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
 # Add Path Navigator to Sys path
 sys.path.append(str(BASE_DIR))
 sys.path.append(str(SETTINGS_DIR))
-
-# """
-# Config-Settings.
-# """
-# try:
-#     from .conf import *
-# except (ImportError, ModuleNotFoundError) as err:
-#     print(err)
