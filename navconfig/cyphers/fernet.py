@@ -43,7 +43,9 @@ class FileCypher(object):
         async with aiofiles.open(fkey) as f:
             key = await f.read()
         if not key:
-            raise Exception(f'Missing the Unlock Key: {fkey!s}')
+            raise Exception(
+                f'Missing the Unlock Key: {fkey!s}'
+            )
         #use the generated key
         f = Fernet(key)
         return f
