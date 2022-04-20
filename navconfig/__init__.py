@@ -42,10 +42,13 @@ else:
 
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
 
+# configuration of the environment type:
+ENV_TYPE = os.getenv('ENV_TYPE', 'file')
+
 """
 Loading main Configuration Object.
 """
-config = navigatorConfig(SITE_ROOT)
+config = navigatorConfig(SITE_ROOT, env_type = ENV_TYPE)
 ENV = config.ENV
 
 # DEBUG VERSION
