@@ -1,5 +1,6 @@
 import os
 import ast
+import asyncio
 from distutils.util import strtobool
 import importlib
 import sys
@@ -23,6 +24,7 @@ from typing import (
     Union,
     List
 )
+from navconfig.cyphers import FileCypher
 
 
 class mredis(object):
@@ -191,7 +193,7 @@ class navigatorConfig(metaclass=Singleton):
     _conffile: str = 'etc/config.ini'
     __initialized = False
 
-    def __init__(self, site_root: str = None, env: str = None):
+    def __init__(self, site_root: str = None, env: str = None, *args, **kwargs):
         if self.__initialized is True:
             return
         self.__initialized = True
@@ -211,7 +213,7 @@ class navigatorConfig(metaclass=Singleton):
         except Exception as err:
             raise
         # then: configure the instance:
-        self.configure(env)
+        self.configure(env, **kwargs)
 
     def __del__(self):
         try:
@@ -232,7 +234,6 @@ class navigatorConfig(metaclass=Singleton):
             environment = os.getenv('ENV', '')
             self.ENV = environment
         # getting type of enviroment consumer:
-        env_type = os.getenv('NAVCONFIG_ENV', env_type)  # file by default
         try:
             self.load_enviroment(env_type, override=override)
         except FileNotFoundError:
@@ -273,7 +274,30 @@ class navigatorConfig(metaclass=Singleton):
         """
         Load an environment from a File or any pluggable Origin.
         """
-        if env_type == 'file':
+        if env_type == 'crypt':
+            loop = asyncio.get_event_loop()
+            # TODO: load dynamically
+            env_path = self.site_root.joinpath('env', self.ENV)
+            logging.debug(f'Environment File: {env_path!s}')
+            fc = FileCypher(directory = env_path)
+            if not env_path.exists():
+                raise FileExistsError(
+                    f'No Directory Path: {env_path}'
+                )
+            try:
+                decrypted = asyncio.run(
+                    fc.decrypt(name = 'env.crypt')
+                )
+                load_dotenv(
+                    stream=decrypted,
+                    override=override
+                )
+            except FileNotFoundError:
+                raise
+            except Exception as err:
+                print(err)
+                raise
+        elif env_type == 'file':
             env_path = self.site_root.joinpath('env', self.ENV, '.env')
             logging.debug(f'Environment File: {env_path!s}')
             # warning if env_path is an empty file or doesn't exists
