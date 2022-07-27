@@ -66,7 +66,7 @@ logging_config = dict(
             'format': '%(message)s'
         },
         'default': {
-            'format': '[%(levelname)s] %(asctime)s %(name)s: %(message)s'
+            'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s'
         },
         'error': {
             'format': '%(asctime)s-%(levelname)s-%(name)s-%(process)d::%(module)s|%(lineno)s:: %(message)s'
