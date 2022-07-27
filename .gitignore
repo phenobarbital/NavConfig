@@ -140,3 +140,4 @@ target/
 file_env
 client_secrets.json
 credentials.txt
+examples/encrypt_env.py

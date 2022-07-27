@@ -33,7 +33,7 @@ async def test_env():
         stream=file
     )
     print(os.getenv('ADFS_SERVER'))
-    
+ 
 if __name__ == '__main__':
     asyncio.run(cypher())
     asyncio.run(test_cypher())
