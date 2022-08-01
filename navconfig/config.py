@@ -1,15 +1,12 @@
 import os
-import ast
 import asyncio
 from distutils.util import strtobool
-import importlib
-import sys
-import types
 import logging
 from configparser import ConfigParser
 from pathlib import Path
 from dotenv import load_dotenv
 import redis
+import aiomcache
 from redis.exceptions import (
     ConnectionError,
     RedisError,
@@ -17,12 +14,11 @@ from redis.exceptions import (
     ResponseError,
     ReadOnlyError
 )
-import pylibmc
 from typing import (
     Dict,
     Any,
     Union,
-    List
+    Callable
 )
 from navconfig.cyphers import FileCypher
 
@@ -32,22 +28,20 @@ class mredis(object):
     Very Basic Connector for Redis.
     """
     params: Dict = {
-        "socket_timeout": 60,
         "encoding": 'utf-8',
-        "decode_responses": True
+        "decode_responses": True,
+        "max_connections": 10
     }
 
     def __init__(self):
         host = os.getenv('REDISHOST', 'localhost')
         port = os.getenv('REDISPORT', 6379)
         db = os.getenv('REDIS_DB', 0)
+        self.redis_url = "redis://{}:{}/{}".format(host, port, db)
+        self._redis: Callable = None
         try:
-            REDIS_URL = "redis://{}:{}/{}".format(host, port, db)
-            self._pool = redis.ConnectionPool.from_url(
-                url=REDIS_URL, **self.params
-            )
-            self._redis = redis.Redis(
-                connection_pool=self._pool, **self.params
+            self._redis = redis.from_url(
+                url=self.redis_url, **self.params
             )
         except (TimeoutError) as err:
             raise Exception(
@@ -69,17 +63,19 @@ class mredis(object):
         except Exception as err:
             raise Exception(f"Redis Error: {err}")
 
-    def get(self, key):
+    def exists(self, key, *keys):
         try:
-            return self._redis.get(key)
+            return bool(
+                self._redis.exists(key, *keys)
+            )
         except (RedisError, ResponseError) as err:
             raise Exception(f"Redis Error: {err}")
         except Exception as err:
             raise Exception(f"Unknown Redis Error: {err}")
 
-    def exists(self, key, *keys):
+    def get(self, key):
         try:
-            return bool(self._redis.exists(key, *keys))
+            return self._redis.get(key)
         except (RedisError, ResponseError) as err:
             raise Exception(f"Redis Error: {err}")
         except Exception as err:
@@ -110,59 +106,75 @@ class mredis(object):
     def close(self):
         try:
             self._redis.close()
-            self._pool.disconnect(inuse_connections=True)
         except Exception as err:
             logging.exception(err)
-            raise
 
 
 class mcache(object):
     """
-    Basic Connector for Memcached
+    Basic Connector for Memcached.
+    Future-proof.
     """
-    args: Dict = {
-        "tcp_nodelay": True,
-        "ketama": True
-    }
-    _memcached = None
-
-    def __init__(self):
+    def __init__(self) -> None:
         host = os.getenv('MEMCACHE_HOST', 'localhost')
         port = os.getenv('MEMCACHE_PORT', 11211)
-        mserver = ["{}:{}".format(host, port)]
-        self._memcached = pylibmc.Client(
-            mserver, binary=True, behaviors=self.args
-        )
-
-    def get(self, key, default=None):
         try:
-            result = self._memcached.get(bytes(key, "utf-8"), default)
+            self._memcached = aiomcache.Client(
+                host=host, port=port
+            )
+        except Exception as err:
+            logging.exception(err, stack_info=True)
+
+    async def get(self, key, default=None):
+        try:
+            result = await self._memcached.get(bytes(key, "utf-8"), default)
             if result:
                 return result.decode("utf-8")
             else:
                 return None
-        except (pylibmc.Error) as err:
-            raise Exception("Get Memcache Error: {}".format(str(err)))
         except Exception as err:
-            raise Exception("Memcache Unknown Error: {}".format(str(err)))
+            raise Exception(
+                f"Memcache Get Error: {err!s}"
+            )
 
-    def set(self, key, value, timeout=None):
+    async def set(self, key, value, timeout: int = None):
         try:
             if timeout:
-                return self._memcached.set(
+                return await self._memcached.set(
                     bytes(key, "utf-8"), bytes(value, "utf-8"), time=timeout
                 )
             else:
-                return self._memcached.set(
+                return await self._memcached.set(
                     bytes(key, "utf-8"), bytes(value, "utf-8")
                 )
-        except (pylibmc.Error) as err:
-            raise Exception("Set Memcache Error: {}".format(str(err)))
         except Exception as err:
-            raise Exception("Memcache Unknown Error: {}".format(str(err)))
+            raise Exception(
+                f"Memcache Set Error: {err!s}"
+            )
 
-    def close(self):
-        self._memcached.disconnect_all()
+    async def multi_get(self, *keys):
+        try:
+            return await self._memcached.multi_get(
+                *[bytes(v, 'utf-8') for v in keys]
+            )
+        except Exception as err:
+            raise Exception(
+                f"Memcache Multi Error: {err!s}"
+            )
+
+    async def delete(self, key):
+        try:
+            await self._memcached.delete(bytes(key, "utf-8"))
+        except Exception as err:
+            raise Exception(
+                f"Memcache Delete Error: {err!s}"
+            )
+
+    async def close(self):
+        try:
+            await self._memcached.close()
+        except Exception as err:
+            logging.exception(err, stack_info=False)
 
 
 #### TODO: Feature Toggles
@@ -188,7 +200,6 @@ class navigatorConfig(metaclass=Singleton):
     navigatorConfig.
         Class for Application configuration.
     """
-    _mem: mcache = None
     _redis: mredis = None
     _conffile: str = 'etc/config.ini'
     __initialized = False
@@ -197,6 +208,9 @@ class navigatorConfig(metaclass=Singleton):
         if self.__initialized is True:
             return
         self.__initialized = True
+        # asyncio loop
+        self._loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self._loop)
         # this only load at first time
         if not site_root:
             self._site_path = Path(__file__).resolve().parent.parent
@@ -207,25 +221,25 @@ class navigatorConfig(metaclass=Singleton):
             self._redis = mredis()
         except Exception as err:
             raise
-        # get memcache connection
-        try:
-            self._mem = mcache()
-        except Exception as err:
-            raise
         # then: configure the instance:
         self.configure(env, **kwargs)
 
     def __del__(self):
         try:
-            self._mem.close()
-            self._redis.close()
+            self.close()
         finally:
             pass
+
+    def close(self):
+        try:
+            self._redis.close()
+        except Exception as err:
+            logging.error(err)
 
     @property
     def debug(self):
         return self._debug
-    
+
     def configure(self, env: str = None, env_type: str = 'file', override: bool = False):
         # Environment Configuration:
         if env is not None:
@@ -397,12 +411,6 @@ class navigatorConfig(metaclass=Singleton):
         if key in os.environ:
             val = os.getenv(key, fallback)
 
-        if self._redis.exists(key):
-            val = self._redis.get(key)
-
-        if not val:
-            val = self._mem.get(key)
-
         if val:
             if val.lower() in self._ini.BOOLEAN_STATES:  # Check inf val is Boolean
                 return self._ini.BOOLEAN_STATES[val.lower()]
@@ -424,8 +432,6 @@ class navigatorConfig(metaclass=Singleton):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
-        if self._redis.exists(key):
-            val = self._redis.get(key)
         if not val:
             return fallback
         if val.isdigit():  # Check if val is Integer
@@ -447,8 +453,6 @@ class navigatorConfig(metaclass=Singleton):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
-        if self._redis.exists(key):
-            val = self._redis.get(key)
         if val:
             return val.split(',')
         else:
@@ -472,13 +476,8 @@ class navigatorConfig(metaclass=Singleton):
             val = os.getenv(key, fallback)
             return val
         # if not in os.environ, got from Redis
-        if self._redis.exists(key):
+        if self._redis.exists(key) is True:
             return self._redis.get(key)
-        # If not in redis, get from MEMCACHED
-        if not val:
-            val = self._mem.get(key)
-            if val:
-                return val
         return fallback
 
     """
@@ -489,47 +488,34 @@ class navigatorConfig(metaclass=Singleton):
         if key in os.environ:
             # override an environment variable
             os.environ[key] = value
-        elif self._redis.exists(key):
-            self._redis.set(key, value)
         else:
-            # saving in memcached:
-            self._mem.set(key, value)
+            if self._redis.exists(key) is True:
+                self._redis.set(key, value)
+            else:
+                return False
 
     def __getitem__(self, key: str) -> Any:
         """
         Sequence-like operators
         """
-        if key in os.environ:
-            return os.getenv(key)
-        elif self._redis.exists(key):
-            return self._redis.get(key)
-            # check if exists on memcached
-        else:
-            val = self._mem.get(key)
-            if val:
-                return val
-            else:
-                return None
+        return self.get(key)
 
     def __contains__(self, key: str) -> bool:
         if key in os.environ:
             return True
-        if self._redis.exists(key):
-            return True
-        val = self._mem.get(key)
-        if val:
+        elif self._redis.exists(key) is True:
             return True
         else:
             return False
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
+        val = None
         if key in os.environ:
             val = os.getenv(key)
-        elif self._redis.exists(key):
-            val = self._redis.get(key)
         else:
-            val = self._mem.get(key)
+            if self._redis.exists(key) is True:
+                val = self._redis.get(key)
         if val:
             try:
                 if val.lower() in self._ini.BOOLEAN_STATES:
@@ -547,8 +533,8 @@ class navigatorConfig(metaclass=Singleton):
     def set(self, key: str, value: Any) -> None:
         """
         set.
-         Set an enviroment variable on REDIS or Memcached, based on Strategy
-         TODO: add cloudpickle to serialize and unserialize data.
+         Set an enviroment variable on REDIS, based on Strategy
+         TODO: add cloudpickle to serialize and unserialize data first.
         """
         return self._redis.set(key, value)
 
