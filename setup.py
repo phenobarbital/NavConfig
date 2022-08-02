@@ -56,7 +56,7 @@ setup(
         'pylibmc==1.6.1',
         'aiomcache==0.7.0',
         'objectpath==0.6.1',
-        'iso8601==0.1.13',
+        'iso8601==1.0.2',
         'pycparser==2.21',
         'redis==4.3.4',
         'aioredis==2.0.1',
