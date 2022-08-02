@@ -60,7 +60,7 @@ setup(
         'pycparser==2.20',
         'redis==4.3.4',
         'aioredis==2.0.1',
-        'python-rapidjson==1.5',
+        'python-rapidjson==1.8',
         'python-logstash-async==2.3.0',
         'aiologstash==2.0.0',
         'pycryptodomex==3.14.1',
