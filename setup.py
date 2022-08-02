@@ -63,7 +63,7 @@ setup(
         'python-rapidjson==1.8',
         'python-logstash-async==2.3.0',
         'aiologstash==2.0.0',
-        'pycryptodomex==3.14.1',
+        'pycryptodomex==3.15.0',
         "cryptography==37.0.4",
         'aiofiles==0.8.0'
     ],
