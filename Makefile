@@ -3,7 +3,6 @@ venv:
 	echo 'run `source .venv/bin/activate` to start develop asyncDB'
 
 develop:
-	pip install wheel==0.37.0
 	pip install -e .
 	python -m pip install -Ur docs/requirements-dev.txt
 
@@ -21,10 +20,10 @@ lint:
 	python -m black --check navconfig
 
 setup_test:
-	pip install pytest>=6.0.0
-	pip install pytest-asyncio==0.18.0
-	pip install pytest-xdist==2.1.0
-	pip install pytest-assume==2.4.2
+	pip install pytest
+	pip install pytest-asyncio
+	pip install pytest-xdist
+	pip install pytest-assume
 
 test:
 	python -m coverage run -m navconfig.tests

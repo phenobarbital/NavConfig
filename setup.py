@@ -44,10 +44,9 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(),
     setup_requires=[
-        'wheel==0.37.0'
+        'wheel==0.37.1'
     ],
     install_requires=[
-        'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'python-dotenv==0.15.0',
@@ -59,13 +58,13 @@ setup(
         'objectpath==0.6.1',
         'iso8601==0.1.13',
         'pycparser==2.20',
-        'redis==3.5.3',
+        'redis==4.3.4',
         'aioredis==2.0.1',
         'python-rapidjson==1.5',
         'python-logstash-async==2.3.0',
         'aiologstash==2.0.0',
         'pycryptodomex==3.14.1',
-        'cryptography==36.0.2',
+        "cryptography==37.0.4",
         'aiofiles==0.8.0'
     ],
     project_urls={  # Optional
