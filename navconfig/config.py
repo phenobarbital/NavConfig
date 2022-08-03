@@ -35,9 +35,9 @@ class mredis(object):
 
     def __init__(self):
         host = os.getenv('REDISHOST', 'localhost')
-        port = os.getenv('REDISPORT', 6379)
-        db = os.getenv('REDIS_DB', 0)
-        self.redis_url = "redis://{}:{}/{}".format(host, port, db)
+        port = int(os.getenv('REDISPORT', '6379'))
+        db = int(os.getenv('REDIS_DB', '1'))
+        self.redis_url = f"redis://{host}:{port}/{db}"
         self._redis: Callable = None
         try:
             self._redis = redis.from_url(
@@ -46,11 +46,11 @@ class mredis(object):
         except (TimeoutError) as err:
             raise Exception(
                 f"Redis Config: Redis Timeout: {err}"
-            )
+            ) from err
         except (RedisError, ConnectionError) as err:
             raise Exception(
                 f"Redis Config: Unable to connect to Redis: {err}"
-            )
+            ) from err
         except Exception as err:
             logging.exception(err)
             raise
@@ -59,9 +59,13 @@ class mredis(object):
         try:
             return self._redis.set(key, value)
         except (ReadOnlyError) as err:
-            raise Exception(f"Redis is Read Only: {err}")
+            raise Exception(
+                f"Redis is Read Only: {err}"
+            ) from err
         except Exception as err:
-            raise Exception(f"Redis Error: {err}")
+            raise Exception(
+                f"Redis Error: {err}"
+            ) from err
 
     def exists(self, key, *keys):
         try:
@@ -69,17 +73,25 @@ class mredis(object):
                 self._redis.exists(key, *keys)
             )
         except (RedisError, ResponseError) as err:
-            raise Exception(f"Redis Error: {err}")
+            raise Exception(
+                f"Redis Error: {err}"
+            ) from err
         except Exception as err:
-            raise Exception(f"Unknown Redis Error: {err}")
+            raise Exception(
+                f"Unknown Redis Error: {err}"
+            ) from err
 
     def get(self, key):
         try:
             return self._redis.get(key)
         except (RedisError, ResponseError) as err:
-            raise Exception(f"Redis Error: {err}")
+            raise Exception(
+                f"Redis Error: {err}"
+            ) from err
         except Exception as err:
-            raise Exception(f"Unknown Redis Error: {err}")
+            raise Exception(
+                f"Unknown Redis Error: {err}"
+            ) from err
 
     def setex(self, key, value, timeout):
         """
@@ -97,11 +109,17 @@ class mredis(object):
         try:
             self._redis.setex(key, time, value)
         except (ReadOnlyError) as err:
-            raise Exception(f"Redis is Read Only: {err}")
+            raise Exception(
+                f"Redis is Read Only: {err}"
+            ) from err
         except (RedisError, ResponseError) as err:
-            raise Exception(f"Redis Error: {err}")
+            raise Exception(
+                f"Redis Error: {err}"
+            ) from err
         except Exception as err:
-            raise Exception(f"Unknown Redis Error: {err}")
+            raise Exception(
+                f"Unknown Redis Error: {err}"
+            ) from err
 
     def close(self):
         try:
@@ -117,7 +135,7 @@ class mcache(object):
     """
     def __init__(self) -> None:
         host = os.getenv('MEMCACHE_HOST', 'localhost')
-        port = os.getenv('MEMCACHE_PORT', 11211)
+        port = int(os.getenv('MEMCACHE_PORT', '11211'))
         try:
             self._memcached = aiomcache.Client(
                 host=host, port=port
@@ -135,7 +153,7 @@ class mcache(object):
         except Exception as err:
             raise Exception(
                 f"Memcache Get Error: {err!s}"
-            )
+            ) from err
 
     async def set(self, key, value, timeout: int = None):
         try:
@@ -150,7 +168,7 @@ class mcache(object):
         except Exception as err:
             raise Exception(
                 f"Memcache Set Error: {err!s}"
-            )
+            ) from err
 
     async def multi_get(self, *keys):
         try:
@@ -160,7 +178,7 @@ class mcache(object):
         except Exception as err:
             raise Exception(
                 f"Memcache Multi Error: {err!s}"
-            )
+            ) from err
 
     async def delete(self, key):
         try:
@@ -168,7 +186,7 @@ class mcache(object):
         except Exception as err:
             raise Exception(
                 f"Memcache Delete Error: {err!s}"
-            )
+            ) from err
 
     async def close(self):
         try:
@@ -220,7 +238,7 @@ class navigatorConfig(metaclass=Singleton):
         try:
             self._redis = mredis()
         except Exception as err:
-            raise
+            raise Exception(err) from err
         # then: configure the instance:
         self.configure(env, **kwargs)
 
@@ -240,7 +258,12 @@ class navigatorConfig(metaclass=Singleton):
     def debug(self):
         return self._debug
 
-    def configure(self, env: str = None, env_type: str = 'file', override: bool = False):
+    def configure(
+            self,
+            env: str = None,
+            env_type: str = 'file',
+            override: bool = False
+        ):
         # Environment Configuration:
         if env is not None:
             self.ENV = env
@@ -313,7 +336,9 @@ class navigatorConfig(metaclass=Singleton):
                 raise
         elif env_type == 'file':
             env_path = self.site_root.joinpath('env', self.ENV, '.env')
-            logging.debug(f'Environment File: {env_path!s}')
+            logging.debug(
+                f'Environment File: {env_path!s}'
+            )
             # warning if env_path is an empty file or doesn't exists
             if env_path.exists():
                 if os.stat(str(env_path)).st_size == 0:
@@ -384,7 +409,7 @@ class navigatorConfig(metaclass=Singleton):
                     override=False
                 )
             except Exception as err:
-                raise
+                raise Exception(err) from err
         else:
             raise Exception('Failed to load a new ENV file')
 
@@ -480,9 +505,7 @@ class navigatorConfig(metaclass=Singleton):
             return self._redis.get(key)
         return fallback
 
-    """
-    Config Magic Methods (dict like)
-    """
+# Config Magic Methods (dict like)
 
     def __setitem__(self, key: str, value: Any) -> None:
         if key in os.environ:
