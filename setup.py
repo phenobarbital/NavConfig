@@ -47,6 +47,7 @@ setup(
         'wheel==0.37.1'
     ],
     install_requires=[
+        'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'python-dotenv==0.20.0',
