@@ -54,7 +54,7 @@ setup(
         'configparser==5.2.0',
         'PyYAML>=6.0',
         'PyDrive==1.3.1',
-        'pylibmc==1.6.1',
+        'pylibmc==1.6.2',
         'aiomcache==0.7.0',
         'objectpath==0.6.1',
         'iso8601==1.0.2',
