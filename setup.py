@@ -65,7 +65,7 @@ setup(
         'python-logstash-async==2.5.0',
         'aiologstash==2.0.0',
         'pycryptodomex==3.15.0',
-        "cryptography==37.0.4",
+        "cryptography==38.0.0",
         'aiofiles==0.8.0'
     ],
     project_urls={  # Optional
