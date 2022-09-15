@@ -49,7 +49,7 @@ setup(
     install_requires=[
         'wheel==0.37.1',
         'asyncio==3.4.3',
-        'uvloop==0.16.0',
+        'uvloop==0.17.0',
         'python-dotenv==0.20.0',
         'configparser==5.2.0',
         'PyYAML>=6.0',
