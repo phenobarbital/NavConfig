@@ -1,12 +1,16 @@
 import os
 import logging
-from navconfig.loaders.base import BaseLoader
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from .abstract import BaseLoader
+
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.CRITICAL)
 
-
 class driveLoader(BaseLoader):
+    """fileLoader.
+
+    Use to read configuration settings from .env Files.
+    """
     drive = None
     file_id = None
 

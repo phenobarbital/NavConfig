@@ -1,16 +1,20 @@
 import os
 import asyncio
 from typing import (
-    Any,
-    Union
+    Any
 )
 from collections.abc import Callable
 import logging
-from configparser import ConfigParser
+from configparser import (
+    ConfigParser,
+    ParsingError,
+    NoOptionError,
+    NoSectionError
+)
 from pathlib import Path
 from dotenv import load_dotenv
-from navconfig.cyphers import FileCypher
 from navconfig.utils.functions import Singleton, strtobool
+from navconfig.loaders import import_loader
 ## memcache
 try:
     from .readers.memcache import mcache
@@ -97,6 +101,10 @@ class navigatorConfig(metaclass=Singleton):
                 logging.exception(
                     f"NavConfig: INI file doesn't exist: {err}"
                 )
+            except ParsingError as ex:
+                logging.exception(
+                    f"Navconfig: unable to parse INI file: {ex}"
+                )
         else:
             logging.warning(
                 f"Navconfig: INI file doesn't exists on path: {cf!s}"
@@ -123,93 +131,40 @@ class navigatorConfig(metaclass=Singleton):
 
     def save_environment(self, env_type: str = 'drive'):
         """
-        Save remote Environment into a local File.
+        Saving a remote Environment into a local File.
         """
         env_path = self.site_root.joinpath('env', self.ENV, '.env')
         # pluggable types
         print('ENV ', env_type)
-        if env_type == 'drive':
-            try:
-                from navconfig.loaders import driveLoader # pylint: disable=C0415
-                d = driveLoader()
-                d.save_enviroment(env_path)
-            except Exception as err:
-                print('Error Saving Environment', err)
+        if self._env_loader.downloadable is True:
+            self._env_loader.save_enviroment(env_path)
 
-    def load_enviroment(self, env_type: str = 'file', file: Union[str, Path] = None, override: bool = False):
+    def load_enviroment(self, env_type: str = 'file', override: bool = False):
+        """load_environment.
+            Load an environment from a File or any pluggable Origin.
         """
-        Load an environment from a File or any pluggable Origin.
-        """
-        if env_type == 'crypt':
-            # TODO: load dynamically
+        try:
             env_path = self.site_root.joinpath('env', self.ENV)
-            logging.debug(f'Environment File: {env_path!s}')
-            fc = FileCypher(directory = env_path)
-            if not env_path.exists():
-                raise FileExistsError(
-                    f'No Directory Path: {env_path}'
-                )
-            try:
-                decrypted = asyncio.run(
-                    fc.decrypt(name = 'env.crypt')
-                )
-                load_dotenv(
-                    stream=decrypted,
-                    override=override
-                )
-            except FileNotFoundError:
-                raise
-            except Exception as err:
-                print(err)
-                raise
-        elif env_type == 'file':
-            env_path = self.site_root.joinpath('env', self.ENV, '.env')
-            logging.debug(
-                f'Environment File: {env_path!s}'
+            logging.debug(f'Environment Path: {env_path!s}')
+            obj = import_loader(loader=env_type)
+            self._env_loader = obj(
+                env_path=env_path,
+                env_file='',
+                override=override
             )
-            # warning if env_path is an empty file or doesn't exists
-            if env_path.exists():
-                if os.stat(str(env_path)).st_size == 0:
-                    raise FileExistsError(
-                        f'Empty Environment File: {env_path}'
-                    )
-                # load dotenv
-                load_dotenv(
-                    dotenv_path=env_path,
-                    override=override
-                )
-            else:
-                raise FileNotFoundError(
-                    f'Environment file not found: {env_path}'
-                )
-        else:
-            # TODO: add pluggable types
-            # TODO: load dynamically
-            if env_type == 'drive':
-                from navconfig.loaders import driveLoader
-                try:
-                    d = driveLoader()
-                    d.load_enviroment()
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from Google Drive {err}', exc_info=True
-                    )
-            elif env_type == 'yaml':
-                from navconfig.loaders import YamlLoader
-                try:
-                    d = YamlLoader().load_environment(file)
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from YAML File {file}: {err}', exc_info=True
-                    )
-            elif env_type == 'toml':
-                from navconfig.loaders import TomlLoader
-                try:
-                    d = TomlLoader().load_environment(file)
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from TOML File {file}: {err}', exc_info=True
-                    )
+            self._env_loader.load_environment()
+        except FileNotFoundError as ex:
+            logging.warning(ex)
+            raise
+        except RuntimeError as ex:
+            raise RuntimeError(
+                ex
+            ) from ex
+        except Exception as ex:
+            logging.exception(ex, stack_info=True)
+            raise RuntimeError(
+                f"Navconfig: Exception on Env loader: {ex}"
+            ) from ex
 
     @property
     def site_root(self):
@@ -259,7 +214,7 @@ class navigatorConfig(metaclass=Singleton):
                     return fallback
                 else:
                     return self._ini.BOOLEAN_STATES[val.lower()]
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 return fallback
         # get ENV value
         if key in os.environ:
@@ -282,7 +237,7 @@ class navigatorConfig(metaclass=Singleton):
         if section is not None:
             try:
                 val = self._ini.getint(section, key)
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
@@ -291,7 +246,7 @@ class navigatorConfig(metaclass=Singleton):
         if val.isdigit():  # Check if val is Integer
             try:
                 return int(val)
-            except Exception:
+            except (TypeError, ValueError):
                 return fallback
 
     def getlist(self, key: str, section: str = None, fallback: Any = None):
@@ -303,7 +258,7 @@ class navigatorConfig(metaclass=Singleton):
         if section is not None:
             try:
                 val = self._ini.get(section, key)
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
@@ -323,15 +278,16 @@ class navigatorConfig(metaclass=Singleton):
             try:
                 val = self._ini.get(section, key)
                 return val
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
             return val
         # if not in os.environ, got from Redis
-        if self._redis.exists(key) is True:
-            return self._redis.get(key)
+        if REDIS_LOADER:
+            if self._redis.exists(key) is True:
+                return self._redis.get(key)
         return fallback
 
 # Config Magic Methods (dict like)
@@ -341,10 +297,9 @@ class navigatorConfig(metaclass=Singleton):
             # override an environment variable
             os.environ[key] = value
         else:
-            if self._redis.exists(key) is True:
-                self._redis.set(key, value)
-            else:
-                return False
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    self._redis.set(key, value)
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -355,10 +310,14 @@ class navigatorConfig(metaclass=Singleton):
     def __contains__(self, key: str) -> bool:
         if key in os.environ:
             return True
-        elif self._redis.exists(key) is True:
-            return True
         else:
-            return False
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    return True
+                else:
+                    return False
+            else:
+                return False
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
@@ -366,8 +325,9 @@ class navigatorConfig(metaclass=Singleton):
         if key in os.environ:
             val = os.getenv(key)
         else:
-            if self._redis.exists(key) is True:
-                val = self._redis.get(key)
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    val = self._redis.get(key)
         if val:
             try:
                 if val.lower() in self._ini.BOOLEAN_STATES:
@@ -375,7 +335,7 @@ class navigatorConfig(metaclass=Singleton):
                 elif val.isdigit():
                     return int(val)
             finally:
-                return val
+                return val # pylint: disable=W0150
         else:
             raise TypeError(
                 f"NavigatorConfig Error: has not attribute {key}"
@@ -388,15 +348,19 @@ class navigatorConfig(metaclass=Singleton):
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        return self._redis.set(key, value)
+        if REDIS_LOADER:
+            return self._redis.set(key, value)
+        return False
 
     def setext(self, key: str, value: Any, timeout: int = None) -> int:
         """
         set
             set a variable in redis with expiration
         """
-        if not isinstance(timeout, int):
-            time = 3600
-        else:
-            time = timeout
-        return self._redis.setex(key, value, time)
+        if REDIS_LOADER:
+            if not isinstance(timeout, int):
+                time = 3600
+            else:
+                time = timeout
+            return self._redis.setex(key, value, time)
+        return False

@@ -1,53 +1,34 @@
-from pathlib import PurePath
-from io import StringIO
 from cryptography.fernet import Fernet
-import aiofiles
+from .abstract import AbstractCypher
 
-
-class FileCypher(object):
-    def __init__(self, directory: PurePath):
-        self.path = directory
+class FileCypher(AbstractCypher):
 
     async def create_key(self):
         #generate the key
         key = Fernet.generate_key()
         file = self.path.joinpath('unlock.key')
         #string the key into a file
-        async with aiofiles.open(file, 'wb') as unlock:
-            await unlock.write(key)
+        await self.save_file(file, key)
         return file
 
-    async def open_file(self, path: PurePath):
-        content = None
-        if not path.exists():
-            raise FileNotFoundError(
-                f'File {path} does not exist'
-            )
-        try:
-            async with aiofiles.open(path) as f:
-                content = await f.read()
-        except IOError as ex:
-            raise Exception(
-                f'NavConfig: Error loading Environment File {path}'
-            ) from ex
-        return content
-
-    async def save_file(self, path: PurePath, content):
-        async with aiofiles.open(path, 'wb') as file:
-            await file.write(content)
-
     async def get_key(self):
-        fkey = self.path.joinpath('unlock.key')
-        key = None
-        async with aiofiles.open(fkey) as f:
-            key = await f.read()
-        if not key:
-            raise Exception(
-                f'Missing the Unlock Key: {fkey!s}'
-            )
-        #use the generated key
-        f = Fernet(key)
-        return f
+        try:
+            key = await self.read_file('unlock.key')
+            if not key:
+                raise Exception(
+                    'Missing the Unlock Key'
+                )
+            #use the generated key
+            f = Fernet(key)
+            return f
+        except FileNotFoundError as ex:
+            raise FileNotFoundError(
+                ex
+            ) from ex
+        except RuntimeError as ex:
+            raise RuntimeError(
+                f'NavConfig: Error reading the unlock Key: {ex}'
+            ) from ex
 
     async def encrypt(self, name: str = '.env'):
         #use the generated key
@@ -70,8 +51,4 @@ class FileCypher(object):
         content = await self.open_file(file)
         #decrypt the file
         decrypted = f.decrypt(content.encode())
-        s = StringIO()
-        s.write(decrypted.decode())
-        s.seek(0)
-        # returned a StringIO
-        return s
+        return await self.strbuffer(decrypted.decode())
