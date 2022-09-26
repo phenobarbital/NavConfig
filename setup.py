@@ -6,7 +6,8 @@ See:
 https://github.com/phenobarbital/NavConfig
 """
 from os import path
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup, Extension
+from Cython.Build import cythonize
 
 
 def get_path(filename):
@@ -21,6 +22,17 @@ def readme():
 with open(get_path('navconfig/version.py')) as meta:
     exec(meta.read())
 
+COMPILE_ARGS = ["-O2"]
+
+extensions = [
+    Extension(
+        name='navconfig.utils.functions',
+        sources=['navconfig/utils/functions.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c++"
+    )
+]
+
 setup(
     name=__title__,
     version=__version__,
@@ -31,7 +43,7 @@ setup(
     long_description_content_type='text/markdown',
     license=__license__,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'Environment :: Web Environment',
@@ -44,30 +56,43 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(),
     setup_requires=[
-        'wheel==0.37.1'
+        'wheel==0.37.1',
+        'cython==0.29.32'
     ],
     install_requires=[
         'wheel==0.37.1',
         'asyncio==3.4.3',
-        'uvloop==0.16.0',
+        'uvloop==0.17.0',
         'python-dotenv==0.20.0',
         'configparser==5.2.0',
+        'python-dateutil==2.8.2',
         'PyYAML>=6.0',
-        'PyDrive==1.3.1',
-        'pylibmc==1.6.1',
-        'aiomcache==0.7.0',
         'objectpath==0.6.1',
         'iso8601==1.0.2',
         'pycparser==2.21',
         'redis==4.3.4',
-        'aioredis==2.0.1',
-        'python-rapidjson==1.8',
-        'python-logstash-async==2.5.0',
-        'aiologstash==2.0.0',
+        'orjson==3.8.0',
         'pycryptodomex==3.15.0',
         "cryptography==37.0.4",
         'aiofiles==0.8.0'
     ],
+    extras_require = {
+        "memcache": [
+            "pylibmc==1.6.1",
+            "aiomcache==0.7.0",
+        ],
+        "gdrive": [
+            'PyDrive==1.3.1',
+        ],
+        "logstash": [
+            'python-logstash-async==2.5.0',
+            'aiologstash==2.0.0',
+        ],
+        "redis": [
+            'aioredis==2.0.1',
+        ]
+    },
+    ext_modules=cythonize(extensions),
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/NavConfig',
         'Funding': 'https://paypal.me/phenobarbital',

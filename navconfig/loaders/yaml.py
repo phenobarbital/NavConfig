@@ -1,14 +1,15 @@
-import codecs
-import yaml
-from pathlib import Path
-from .base import BaseLoader
+
 from typing import (
     Union
 )
+from pathlib import Path
+import codecs
+import yaml
+from .base import BaseLoader
 
 class YamlLoader(BaseLoader):
     """YamlLoader.
-    
+
     Used to read configuration settings from YAML files.
 
     Args:

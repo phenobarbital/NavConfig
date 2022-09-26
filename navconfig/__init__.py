@@ -9,31 +9,12 @@ from pathlib import Path
 from .version import (
     __title__, __description__, __version__, __author__, __author_email__
 )
+from .utils import project_root
 from .config import navigatorConfig # noqa
-
-def is_virtualenv():
-    return (
-        hasattr(sys, 'real_prefix') or (
-            hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
-    )
 
 
 # PROJECT PATH IS DEFINED?
-SITE_ROOT = os.getenv('SITE_ROOT', None)
-
-if not SITE_ROOT:
-    # get Project PATH
-    if is_virtualenv():
-        SITE_ROOT = Path(sys.prefix).resolve().parent
-    else:
-        SITE_ROOT = Path(os.path.abspath(
-            os.path.dirname(__file__))).resolve().parent.parent
-    if not SITE_ROOT:
-        SITE_ROOT = Path(sys.prefix).resolve().parent
-else:
-    SITE_ROOT = Path(SITE_ROOT).resolve()
-
-
+SITE_ROOT = project_root(__file__)
 BASE_DIR = os.getenv('BASE_DIR', None)
 if not BASE_DIR:
     BASE_DIR = SITE_ROOT
@@ -41,14 +22,15 @@ else:
     BASE_DIR = Path(BASE_DIR).resolve()
 
 SETTINGS_DIR = BASE_DIR.joinpath('settings')
-
 # configuration of the environment type:
+# environment type can be a file (.env) an encrypted file (crypt)
 ENV_TYPE = os.getenv('ENV_TYPE', 'file')
 
 """
 Loading main Configuration Object.
 """
 config = navigatorConfig(SITE_ROOT, env_type = ENV_TYPE)
+# ENV version (dev, prod, staging)
 ENV = config.ENV
 
 # DEBUG VERSION

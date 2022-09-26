@@ -1,10 +1,9 @@
-import hashlib
-import aiofiles
-from cryptography.fernet import Fernet
-from pathlib import PurePath, PosixPath
+from pathlib import PurePath
 from io import StringIO
+from cryptography.fernet import Fernet
+import aiofiles
 
-    
+
 class FileCypher(object):
     def __init__(self, directory: PurePath):
         self.path = directory
@@ -17,7 +16,7 @@ class FileCypher(object):
         async with aiofiles.open(file, 'wb') as unlock:
             await unlock.write(key)
         return file
-    
+
     async def open_file(self, path: PurePath):
         content = None
         if not path.exists():
@@ -27,16 +26,16 @@ class FileCypher(object):
         try:
             async with aiofiles.open(path) as f:
                 content = await f.read()
-        except IOError:
+        except IOError as ex:
             raise Exception(
                 f'NavConfig: Error loading Environment File {path}'
-            )
+            ) from ex
         return content
-    
+
     async def save_file(self, path: PurePath, content):
         async with aiofiles.open(path, 'wb') as file:
             await file.write(content)
-    
+
     async def get_key(self):
         fkey = self.path.joinpath('unlock.key')
         key = None
@@ -49,7 +48,7 @@ class FileCypher(object):
         #use the generated key
         f = Fernet(key)
         return f
-    
+
     async def encrypt(self, name: str = '.env'):
         #use the generated key
         f = await self.get_key()
@@ -62,7 +61,7 @@ class FileCypher(object):
         file = self.path.joinpath('env.crypt')
         await self.save_file(file, encrypted)
         return file
-    
+
     async def decrypt(self, name: str = 'env.crypt'):
         #use the generated key
         f = await self.get_key()
