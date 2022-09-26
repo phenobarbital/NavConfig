@@ -11,15 +11,12 @@ Supports:
  TODO: add a Telegram Critical Handler.
 
 """
-import os
 from pathlib import Path
-from navconfig import config, BASE_DIR, DEBUG
 import logging
 from logging.config import dictConfig
+from navconfig import config, BASE_DIR, DEBUG
 
-"""
-Logging
-"""
+### Logging
 if DEBUG:
     loglevel = logging.DEBUG
 else:
@@ -139,7 +136,13 @@ if logging_echo is True:
 
 if logstash_logging:
     # basic configuration of Logstash
-    import logstash_async
+    try:
+        import logstash_async # pylint: disable=W0611
+    except ImportError as ex:
+        raise RuntimeError(
+            "NavConfig: Logstash Logging is enabled but Logstash async dependency is not installed.\
+            Hint: run 'pip install logstash-async'."
+        ) from ex
     LOGSTASH_HOST = config.get('LOGSTASH_HOST', fallback='localhost')
     LOGSTASH_PORT = config.get('LOGSTASH_PORT', fallback=6000)
     LOG_TAG = config.get('FLUENT_TAG', fallback='app.log')
@@ -161,13 +164,11 @@ if logstash_logging:
             'host': LOGSTASH_HOST,
             'port': LOGSTASH_PORT,
             'level': loglevel,
-            'database_path': '{}/logstash.db'.format(LOG_DIR),
+            'database_path': f'{LOG_DIR}/logstash.db',
     }
     logging_config[APP_NAME]['handlers'] = [
         'LogstashHandler', 'StreamHandler'
     ]
 
-"""
-Load Logging Configuration:
-"""
+### Load Logging Configuration:
 dictConfig(logging_config)

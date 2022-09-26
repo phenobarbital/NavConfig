@@ -17,6 +17,8 @@ settings/*
 settings/
 # Distribution / packaging
 .Python
+build/*
+dist/*
 env/
 .venv/
 .venv/*

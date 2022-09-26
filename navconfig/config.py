@@ -1,216 +1,32 @@
 import os
 import asyncio
-from distutils.util import strtobool
+from typing import (
+    Any
+)
+from collections.abc import Callable
 import logging
-from configparser import ConfigParser
+from configparser import (
+    ConfigParser,
+    ParsingError,
+    NoOptionError,
+    NoSectionError
+)
 from pathlib import Path
 from dotenv import load_dotenv
-import redis
-import aiomcache
-from redis.exceptions import (
-    ConnectionError,
-    RedisError,
-    TimeoutError,
-    ResponseError,
-    ReadOnlyError
-)
-from typing import (
-    Dict,
-    Any,
-    Union,
-    Callable
-)
-from navconfig.cyphers import FileCypher
-
-
-class mredis(object):
-    """
-    Very Basic Connector for Redis.
-    """
-    params: Dict = {
-        "encoding": 'utf-8',
-        "decode_responses": True,
-        "max_connections": 10
-    }
-
-    def __init__(self):
-        host = os.getenv('REDISHOST', 'localhost')
-        port = int(os.getenv('REDISPORT', '6379'))
-        db = int(os.getenv('REDIS_DB', '1'))
-        self.redis_url = f"redis://{host}:{port}/{db}"
-        self._redis: Callable = None
-        try:
-            self._redis = redis.from_url(
-                url=self.redis_url, **self.params
-            )
-        except (TimeoutError) as err:
-            raise Exception(
-                f"Redis Config: Redis Timeout: {err}"
-            ) from err
-        except (RedisError, ConnectionError) as err:
-            raise Exception(
-                f"Redis Config: Unable to connect to Redis: {err}"
-            ) from err
-        except Exception as err:
-            logging.exception(err)
-            raise
-
-    def set(self, key, value):
-        try:
-            return self._redis.set(key, value)
-        except (ReadOnlyError) as err:
-            raise Exception(
-                f"Redis is Read Only: {err}"
-            ) from err
-        except Exception as err:
-            raise Exception(
-                f"Redis Error: {err}"
-            ) from err
-
-    def exists(self, key, *keys):
-        try:
-            return bool(
-                self._redis.exists(key, *keys)
-            )
-        except (RedisError, ResponseError) as err:
-            raise Exception(
-                f"Redis Error: {err}"
-            ) from err
-        except Exception as err:
-            raise Exception(
-                f"Unknown Redis Error: {err}"
-            ) from err
-
-    def get(self, key):
-        try:
-            return self._redis.get(key)
-        except (RedisError, ResponseError) as err:
-            raise Exception(
-                f"Redis Error: {err}"
-            ) from err
-        except Exception as err:
-            raise Exception(
-                f"Unknown Redis Error: {err}"
-            ) from err
-
-    def setex(self, key, value, timeout):
-        """
-        setex
-           Set the value and expiration of a Key
-           params:
-            key: key Name
-            value: value of the key
-            timeout: expiration time in seconds
-        """
-        if not isinstance(timeout, int):
-            time = 900
-        else:
-            time = timeout
-        try:
-            self._redis.setex(key, time, value)
-        except (ReadOnlyError) as err:
-            raise Exception(
-                f"Redis is Read Only: {err}"
-            ) from err
-        except (RedisError, ResponseError) as err:
-            raise Exception(
-                f"Redis Error: {err}"
-            ) from err
-        except Exception as err:
-            raise Exception(
-                f"Unknown Redis Error: {err}"
-            ) from err
-
-    def close(self):
-        try:
-            self._redis.close()
-        except Exception as err:
-            logging.exception(err)
-
-
-class mcache(object):
-    """
-    Basic Connector for Memcached.
-    Future-proof.
-    """
-    def __init__(self) -> None:
-        host = os.getenv('MEMCACHE_HOST', 'localhost')
-        port = int(os.getenv('MEMCACHE_PORT', '11211'))
-        try:
-            self._memcached = aiomcache.Client(
-                host=host, port=port
-            )
-        except Exception as err:
-            logging.exception(err, stack_info=True)
-
-    async def get(self, key, default=None):
-        try:
-            result = await self._memcached.get(bytes(key, "utf-8"), default)
-            if result:
-                return result.decode("utf-8")
-            else:
-                return None
-        except Exception as err:
-            raise Exception(
-                f"Memcache Get Error: {err!s}"
-            ) from err
-
-    async def set(self, key, value, timeout: int = None):
-        try:
-            if timeout:
-                return await self._memcached.set(
-                    bytes(key, "utf-8"), bytes(value, "utf-8"), time=timeout
-                )
-            else:
-                return await self._memcached.set(
-                    bytes(key, "utf-8"), bytes(value, "utf-8")
-                )
-        except Exception as err:
-            raise Exception(
-                f"Memcache Set Error: {err!s}"
-            ) from err
-
-    async def multi_get(self, *keys):
-        try:
-            return await self._memcached.multi_get(
-                *[bytes(v, 'utf-8') for v in keys]
-            )
-        except Exception as err:
-            raise Exception(
-                f"Memcache Multi Error: {err!s}"
-            ) from err
-
-    async def delete(self, key):
-        try:
-            await self._memcached.delete(bytes(key, "utf-8"))
-        except Exception as err:
-            raise Exception(
-                f"Memcache Delete Error: {err!s}"
-            ) from err
-
-    async def close(self):
-        try:
-            await self._memcached.close()
-        except Exception as err:
-            logging.exception(err, stack_info=False)
-
-
-#### TODO: Feature Toggles
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton, cls).__new__(cls, *args, **kwargs)
-            setattr(cls, '__initialized', True)
-        return cls._instances[cls]
+from navconfig.utils.functions import Singleton, strtobool
+from navconfig.loaders import import_loader
+## memcache
+try:
+    from .readers.memcache import mcache
+    MEMCACHE_LOADER=mcache
+except ModuleNotFoundError:
+    MEMCACHE_LOADER=None
+## redis:
+try:
+    from .readers.redis import mredis
+    REDIS_LOADER=mredis
+except ModuleNotFoundError:
+    REDIS_LOADER=None
 
 
 class navigatorConfig(metaclass=Singleton):
@@ -218,11 +34,11 @@ class navigatorConfig(metaclass=Singleton):
     navigatorConfig.
         Class for Application configuration.
     """
-    _redis: mredis = None
+    _redis: Callable = None
     _conffile: str = 'etc/config.ini'
     __initialized = False
 
-    def __init__(self, site_root: str = None, env: str = None, *args, **kwargs):
+    def __init__(self, site_root: str = None, env: str = None, **kwargs):
         if self.__initialized is True:
             return
         self.__initialized = True
@@ -234,29 +50,20 @@ class navigatorConfig(metaclass=Singleton):
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
-        # get redis connection
-        try:
-            self._redis = mredis()
-        except Exception as err:
-            raise Exception(err) from err
+        print('SITE PATH ', self._site_path)
+        # get redis connection (only if enabled)
+        if REDIS_LOADER:
+            try:
+                self._redis = REDIS_LOADER()
+            except Exception as err:
+                raise Exception(err) from err
+        if MEMCACHE_LOADER:
+            try:
+                self._mcache = MEMCACHE_LOADER()
+            except Exception as err:
+                raise Exception(err) from err
         # then: configure the instance:
         self.configure(env, **kwargs)
-
-    def __del__(self):
-        try:
-            self.close()
-        finally:
-            pass
-
-    def close(self):
-        try:
-            self._redis.close()
-        except Exception as err:
-            logging.error(err)
-
-    @property
-    def debug(self):
-        return self._debug
 
     def configure(
             self,
@@ -283,104 +90,81 @@ class navigatorConfig(metaclass=Singleton):
         config_file = os.getenv('CONFIG_FILE', self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
+
         if not cf.exists():
             # try ini file from etc/ directory.
-            cf = self._site_path.joinpath('etc', self._conffile)
-        try:
-            self._ini.read(cf)
-        except (IOError, Exception) as err:
-            logging.exception(
-                f"NavConfig: INI file doesn't exist: {err}"
+            cf = self._site_path.joinpath(self._conffile)
+        if cf.exists():
+            try:
+                self._ini.read(cf)
+            except IOError as err:
+                logging.exception(
+                    f"NavConfig: INI file doesn't exist: {err}"
+                )
+            except ParsingError as ex:
+                logging.exception(
+                    f"Navconfig: unable to parse INI file: {ex}"
+                )
+        else:
+            logging.warning(
+                f"Navconfig: INI file doesn't exists on path: {cf!s}"
             )
+
+    def __del__(self):
+        try:
+            self.close()
+        finally:
+            pass
+
+    def close(self):
+        try:
+            if REDIS_LOADER:
+                self._redis.close()
+            if MEMCACHE_LOADER:
+                self._mcache.close()
+        except Exception as err: # pylint: disable=W0703
+            logging.error(err)
+
+    @property
+    def debug(self):
+        return self._debug
 
     def save_environment(self, env_type: str = 'drive'):
         """
-        Save remote Environment into a local File.
+        Saving a remote Environment into a local File.
         """
         env_path = self.site_root.joinpath('env', self.ENV, '.env')
         # pluggable types
-        if env_type == 'drive':
-            from navconfig.loaders import driveLoader
-            try:
-                d = driveLoader()
-                d.save_enviroment(env_path)
-            except Exception as err:
-                print('Error Saving Environment', err)
+        print('ENV ', env_type)
+        if self._env_loader.downloadable is True:
+            self._env_loader.save_enviroment(env_path)
 
-    def load_enviroment(self, env_type: str = 'file', file: Union[str, Path] = None, override: bool = False):
+    def load_enviroment(self, env_type: str = 'file', override: bool = False):
+        """load_environment.
+            Load an environment from a File or any pluggable Origin.
         """
-        Load an environment from a File or any pluggable Origin.
-        """
-        if env_type == 'crypt':
-            loop = asyncio.get_event_loop()
-            # TODO: load dynamically
+        try:
             env_path = self.site_root.joinpath('env', self.ENV)
-            logging.debug(f'Environment File: {env_path!s}')
-            fc = FileCypher(directory = env_path)
-            if not env_path.exists():
-                raise FileExistsError(
-                    f'No Directory Path: {env_path}'
-                )
-            try:
-                decrypted = asyncio.run(
-                    fc.decrypt(name = 'env.crypt')
-                )
-                load_dotenv(
-                    stream=decrypted,
-                    override=override
-                )
-            except FileNotFoundError:
-                raise
-            except Exception as err:
-                print(err)
-                raise
-        elif env_type == 'file':
-            env_path = self.site_root.joinpath('env', self.ENV, '.env')
-            logging.debug(
-                f'Environment File: {env_path!s}'
+            logging.debug(f'Environment Path: {env_path!s}')
+            obj = import_loader(loader=env_type)
+            self._env_loader = obj(
+                env_path=env_path,
+                env_file='',
+                override=override
             )
-            # warning if env_path is an empty file or doesn't exists
-            if env_path.exists():
-                if os.stat(str(env_path)).st_size == 0:
-                    raise FileExistsError(
-                        f'Empty Environment File: {env_path}'
-                    )
-                # load dotenv
-                load_dotenv(
-                    dotenv_path=env_path,
-                    override=override
-                )
-            else:
-                raise FileNotFoundError(
-                    f'Environment file not found: {env_path}'
-                )
-        else:
-            # TODO: add pluggable types
-            if env_type == 'drive':
-                from navconfig.loaders import driveLoader
-                try:
-                    d = driveLoader()
-                    d.load_enviroment()
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from Google Drive {err}', exc_info=True
-                    )
-            elif env_type == 'yaml':
-                from navconfig.loaders import YamlLoader
-                try:
-                    d = YamlLoader().load_environment(file)
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from YAML File {file}: {err}', exc_info=True
-                    )
-            elif env_type == 'toml':
-                from navconfig.loaders import TomlLoader
-                try:
-                    d = TomlLoader().load_environment(file)
-                except Exception as err:
-                    logging.exception(
-                        f'Error Reading from TOML File {file}: {err}', exc_info=True
-                    )
+            self._env_loader.load_environment()
+        except FileNotFoundError as ex:
+            logging.warning(ex)
+            raise
+        except RuntimeError as ex:
+            raise RuntimeError(
+                ex
+            ) from ex
+        except Exception as ex:
+            logging.exception(ex, stack_info=True)
+            raise RuntimeError(
+                f"Navconfig: Exception on Env loader: {ex}"
+            ) from ex
 
     @property
     def site_root(self):
@@ -430,7 +214,7 @@ class navigatorConfig(metaclass=Singleton):
                     return fallback
                 else:
                     return self._ini.BOOLEAN_STATES[val.lower()]
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 return fallback
         # get ENV value
         if key in os.environ:
@@ -453,7 +237,7 @@ class navigatorConfig(metaclass=Singleton):
         if section is not None:
             try:
                 val = self._ini.getint(section, key)
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
@@ -462,7 +246,7 @@ class navigatorConfig(metaclass=Singleton):
         if val.isdigit():  # Check if val is Integer
             try:
                 return int(val)
-            except Exception:
+            except (TypeError, ValueError):
                 return fallback
 
     def getlist(self, key: str, section: str = None, fallback: Any = None):
@@ -474,7 +258,7 @@ class navigatorConfig(metaclass=Singleton):
         if section is not None:
             try:
                 val = self._ini.get(section, key)
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         if key in os.environ:
             val = os.getenv(key, fallback)
@@ -494,15 +278,16 @@ class navigatorConfig(metaclass=Singleton):
             try:
                 val = self._ini.get(section, key)
                 return val
-            except Exception:
+            except (NoOptionError, NoSectionError):
                 pass
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
             return val
         # if not in os.environ, got from Redis
-        if self._redis.exists(key) is True:
-            return self._redis.get(key)
+        if REDIS_LOADER:
+            if self._redis.exists(key) is True:
+                return self._redis.get(key)
         return fallback
 
 # Config Magic Methods (dict like)
@@ -512,10 +297,9 @@ class navigatorConfig(metaclass=Singleton):
             # override an environment variable
             os.environ[key] = value
         else:
-            if self._redis.exists(key) is True:
-                self._redis.set(key, value)
-            else:
-                return False
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    self._redis.set(key, value)
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -526,10 +310,14 @@ class navigatorConfig(metaclass=Singleton):
     def __contains__(self, key: str) -> bool:
         if key in os.environ:
             return True
-        elif self._redis.exists(key) is True:
-            return True
         else:
-            return False
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    return True
+                else:
+                    return False
+            else:
+                return False
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
@@ -537,8 +325,9 @@ class navigatorConfig(metaclass=Singleton):
         if key in os.environ:
             val = os.getenv(key)
         else:
-            if self._redis.exists(key) is True:
-                val = self._redis.get(key)
+            if REDIS_LOADER:
+                if self._redis.exists(key) is True:
+                    val = self._redis.get(key)
         if val:
             try:
                 if val.lower() in self._ini.BOOLEAN_STATES:
@@ -546,7 +335,7 @@ class navigatorConfig(metaclass=Singleton):
                 elif val.isdigit():
                     return int(val)
             finally:
-                return val
+                return val # pylint: disable=W0150
         else:
             raise TypeError(
                 f"NavigatorConfig Error: has not attribute {key}"
@@ -559,15 +348,19 @@ class navigatorConfig(metaclass=Singleton):
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        return self._redis.set(key, value)
+        if REDIS_LOADER:
+            return self._redis.set(key, value)
+        return False
 
     def setext(self, key: str, value: Any, timeout: int = None) -> int:
         """
         set
             set a variable in redis with expiration
         """
-        if not isinstance(timeout, int):
-            time = 3600
-        else:
-            time = timeout
-        return self._redis.setex(key, value, time)
+        if REDIS_LOADER:
+            if not isinstance(timeout, int):
+                time = 3600
+            else:
+                time = timeout
+            return self._redis.setex(key, value, time)
+        return False

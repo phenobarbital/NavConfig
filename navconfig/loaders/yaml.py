@@ -1,24 +1,23 @@
-import codecs
-import yaml
-from pathlib import Path
-from .base import BaseLoader
-from typing import (
-    Union
-)
+import asyncio
+from pathlib import PurePath
+from navconfig.loaders.parsers.yaml import YAMLParser
+from .abstract import BaseLoader
 
-class YamlLoader(BaseLoader):
+class yamlLoader(BaseLoader):
     """YamlLoader.
-    
+
     Used to read configuration settings from YAML files.
-
-    Args:
-        BaseLoader (_type_): _description_
     """
+    def __init__(self, env_path: PurePath, override: bool = False, **kwargs) -> None:
+        super().__init__(env_path, override, **kwargs)
+        self.env_file = self.env_path.joinpath('env.yaml')
+        self._parser = YAMLParser()
 
-    def load_enviroment(self, file: Union[str, Path]):
-        with codecs.open(file, 'r') as f:
-            content = yaml.safe_load(f)
+    def load_environment(self):
+        content = asyncio.run(
+            self._parser.parse(self.env_file)
+        )
         self.load_from_string(content)
 
-    def save_enviroment(self):
+    def save_environment(self):
         pass
