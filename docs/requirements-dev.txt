@@ -5,7 +5,7 @@ coverage[toml]==6.4.2
 flit==3.7.1
 ipython==8.5.0
 lint==1.2.1
-mypy==0.971
+mypy==0.981
 pylint==2.14.5
 sphinx==5.1.1
 pytest>=6.0.0
