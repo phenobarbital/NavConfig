@@ -1,0 +1,23 @@
+version: 2
+
+build: 
+  apt_packages: 
+    - libmemcached-dev 
+    - zlib1g-dev
+
+sphinx:
+  configuration: docs/conf.py
+
+formats: all
+
+python:
+  version: 3.8
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - all
+    - requirements: docs/requirements.txt
+
+submodules:
+  include: all
