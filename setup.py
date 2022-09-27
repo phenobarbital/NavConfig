@@ -84,7 +84,7 @@ setup(
         'orjson==3.8.0',
         'pycryptodomex==3.15.0',
         "cryptography==38.0.1",
-        'aiofiles==0.8.0'
+        'aiofiles==22.1.0'
     ],
     extras_require = {
         "memcache": [
