@@ -88,7 +88,7 @@ setup(
     ],
     extras_require = {
         "memcache": [
-            "pylibmc==1.6.1",
+            "pylibmc==1.6.3",
             "aiomcache==0.7.0",
         ],
         "gdrive": [
