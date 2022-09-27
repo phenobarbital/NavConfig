@@ -75,7 +75,7 @@ setup(
         'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'python-dotenv==0.20.0',
+        'python-dotenv==0.21.0',
         'configparser==5.3.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
