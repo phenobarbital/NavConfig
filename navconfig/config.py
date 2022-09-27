@@ -50,7 +50,6 @@ class navigatorConfig(metaclass=Singleton):
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
-        print('SITE PATH ', self._site_path)
         # get redis connection (only if enabled)
         if REDIS_LOADER:
             try:
