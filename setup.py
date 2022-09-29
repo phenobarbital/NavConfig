@@ -79,7 +79,7 @@ setup(
         'configparser==5.3.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
-        'iso8601==1.0.2',
+        'iso8601==1.1.0',
         'pycparser==2.21',
         'orjson==3.8.0',
         'pycryptodomex==3.15.0',
