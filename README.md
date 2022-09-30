@@ -15,6 +15,12 @@ immutable unique point of truth.
 
 NavConfig can be shared across several modules.
 
+## Motivation ##
+
+Any Application require too many configuration options, some configuration options need to be secrets, credentials, etc, and also, can be dependable of the environment an application runs (development, testing, production, etc.).
+
+Instead of creating python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig support also getting data instead of INI files from YAML or TOML files (for complex types).
+
 ## Installation
 ```bash
 pip install navconfig
@@ -24,17 +30,32 @@ pip install navconfig
 
 First of all, let's create a simple configuration environment.
 
-Creates a directory for an .ini file and the environment file.
+Creates a directory for an .INI file and the environment (.env) file.
 
 ```bash
 mkdir {env,etc}
 ```
 
-put a .env file inside of "env" folder, the first line is the directive to know
-where the "ini" file lives (even we can put the .ini file outside of current dir).
+put a .env file inside of the "env" folder, the first line is the directive to know where the "INI" file lives (even if we can put the . INI file outside of the current dir).
 
+the directory tree is very clear:
 
 ```text
+|- myapp/
+|  |- __init__.py
+|  |- env/
+|  |  |- .env
+|  |  |- dev/
+|  |  |- .env
+|  |  |- prod/
+|  |  |- .env
+|  |- etc/
+|  |  |- myconfig.ini
+|  | ...
+```
+
+```text
+# file: .env
 CONFIG_FILE=etc/myconfig.ini
 APP_NAME=My App
 ```
@@ -61,16 +82,20 @@ APP_NAME = config.APP_NAME
 
 ## Working with Environments ##
 
-NavConfig can load all environment variables (and the .ini files associated with .env file) from different directories,
+NavConfig can load all environment variables (and the .INI files associated within the .env file) from different directories,
 every directory works as a new Environment and you can split your configuration for different environments, like this:
 
 ```
 env/
 .
 ├── dev
+|  |- .env
 ├── prod
+|  |- .env
 ├── staging
+|  |- .env
 └── experimental
+|  |- .env
 ```
 
 Then, you can load your application using the "ENV" environment variable:
@@ -109,11 +134,45 @@ By default, the current logging configuration make echo to the standard output:
 ```bash
 [INFO] 2022-03-11 19:31:39,408 navigator: Hello World
 ```
+## Custom Settings ##
+
+with Navconfig, users can create a python module called "settings.py" on package "settings" to create new configuration options and fine-tune their configuration.
+
+```text
+|- myapp/
+|  |- settings/
+|  |- __init__.py
+|  |- settings.py
+```
+
+on "settings.py", we can create new variables using python code:
+
+```python
+from navconfig import config, DEBUG
+
+print('::: LOADING SETTINGS ::: ')
+
+# we are in local aiohttp development?
+LOCAL_DEVELOPMENT = (DEBUG is True and sys.argv[0] == 'run.py')
+SEND_NOTIFICATIONS = config.get('SEND_NOTIFICATIONS', fallback=True)
+```
+
+And those variables are reachable using "navconfig.conf" module:
+
+```python
+from navconfig.conf import LOCAL_DEVELOPMENT
+
+if LOCAL_DEVELOPMENT is True:
+    print('We are in a Local instance.')
+
+```
 
 ## Dependencies ##
 
  * ConfigParser
  * Python-Dotenv
+ * pytomlpp
+ * PyYAML
  * redis
  * pylibmc
 
