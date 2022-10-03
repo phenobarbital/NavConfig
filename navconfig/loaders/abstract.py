@@ -6,15 +6,28 @@ from dotenv import dotenv_values, load_dotenv
 
 class BaseLoader(ABC):
 
-    def __init__(self, env_path: PurePath = None, override: bool = False, **kwargs) -> None:
+    def __init__(
+            self,
+            env_path: PurePath = None,
+            override: bool = False,
+            create: bool = True,
+            **kwargs
+        ) -> None:
         self.override: bool = override
         self.env_path = env_path
         self.env_file = '.env'
         self._kwargs = kwargs
         self.downloadable: bool = False
         if not env_path.exists():
+            if create:
+                try:
+                    env_path.mkdir(parents=True, exist_ok=True)
+                except IOError as ex:
+                    raise RuntimeError(
+                        f'{type(self).__name__}: IO error creating directory {env_path}: {ex}'
+                    ) from ex
             raise FileExistsError(
-                f'cryptLoader: No Directory Path: {env_path}'
+                f'{type(self).__name__}: No Directory Path: {env_path}'
             )
 
     @abstractmethod

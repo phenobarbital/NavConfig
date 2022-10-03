@@ -10,8 +10,8 @@ class cryptLoader(BaseLoader):
 
     Use to read configuration settings from Encrypted Files.
     """
-    def __init__(self, env_path: PurePath, override: bool = False, **kwargs) -> None:
-        super().__init__(env_path, override, **kwargs)
+    def __init__(self, env_path: PurePath, override: bool = False, create: bool = True, **kwargs) -> None:
+        super().__init__(env_path, override, create=create, **kwargs)
         self.env_file = 'env.crypt'
         self._cypher = FileCypher(directory = env_path)
 
