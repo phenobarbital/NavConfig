@@ -162,7 +162,7 @@ class navigatorConfig(metaclass=Singleton):
                 create=self._create
             )
             self._env_loader.load_environment()
-        except FileNotFoundError as ex:
+        except (FileExistsError, FileNotFoundError) as ex:
             logging.warning(ex)
             raise
         except RuntimeError as ex:
