@@ -38,10 +38,11 @@ class navigatorConfig(metaclass=Singleton):
     _conffile: str = 'etc/config.ini'
     __initialized = False
 
-    def __init__(self, site_root: str = None, env: str = None, **kwargs):
+    def __init__(self, site_root: str = None, env: str = None, create: bool = True, **kwargs):
         if self.__initialized is True:
             return
         self.__initialized = True
+        self._create: bool = create
         # asyncio loop
         self._loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self._loop)
@@ -108,6 +109,11 @@ class navigatorConfig(metaclass=Singleton):
             logging.warning(
                 f"Navconfig: INI file doesn't exists on path: {cf!s}"
             )
+            if self._create is True:
+                try:
+                    cf.mkdir(parents=True, exist_ok=True)
+                except IOError:
+                    pass
 
     def __del__(self):
         try:
@@ -119,10 +125,13 @@ class navigatorConfig(metaclass=Singleton):
         try:
             if REDIS_LOADER:
                 self._redis.close()
-            if MEMCACHE_LOADER:
-                self._mcache.close()
         except Exception as err: # pylint: disable=W0703
             logging.error(err)
+        try:
+            if MEMCACHE_LOADER:
+                self._mcache.close()
+        except Exception: # pylint: disable=W0703
+            pass
 
     @property
     def debug(self):
@@ -149,7 +158,8 @@ class navigatorConfig(metaclass=Singleton):
             self._env_loader = obj(
                 env_path=env_path,
                 env_file='',
-                override=override
+                override=override,
+                create=self._create
             )
             self._env_loader.load_environment()
         except FileNotFoundError as ex:
