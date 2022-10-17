@@ -3,15 +3,14 @@ NavConfig.
 
 Main object for Configuration of several Navigator-related Tools.
 """
-import sys
 import os
+import sys
 from pathlib import Path
-from .version import (
-    __title__, __description__, __version__, __author__, __author_email__
-)
-from .utils import project_root
-from .config import navigatorConfig # noqa
 
+from .config import navigatorConfig  # noqa
+from .utils import project_root
+from .version import (__author__, __author_email__, __description__, __title__,
+                      __version__)
 
 # PROJECT PATH IS DEFINED?
 SITE_ROOT = project_root(__file__)
