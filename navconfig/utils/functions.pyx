@@ -11,13 +11,15 @@ from zoneinfo import ZoneInfo
 from dateutil.parser import parse, ParserError
 
 
-cpdef object strtobool(str val):
+cpdef object strtobool(object val):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
     'val' is anything else.
     """
+    if isinstance(val, bool):
+        return val
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return True
@@ -133,20 +135,3 @@ class SafeDict(dict):
     def __missing__(self, str key):
         """Missing method for SafeDict."""
         return "{" + key + "}"
-
-
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton, cls).__new__(cls, *args, **kwargs)
-            setattr(cls, '__initialized', True)
-        return cls._instances[cls]

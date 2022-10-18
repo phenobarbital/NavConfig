@@ -1,8 +1,9 @@
 import os
 import logging
 import aiomcache
+from .abstract import AbstractReader
 
-class mcache(object):
+class mcache(AbstractReader):
     """
     Basic Connector for Memcached.
     Future-proof.
@@ -28,6 +29,16 @@ class mcache(object):
             raise Exception(
                 f"Memcache Get Error: {err!s}"
             ) from err
+
+    async def exists(self, key: str) -> bool:
+        try:
+            result = await self._memcached.get(bytes(key, "utf-8"))
+            if result:
+                return True
+            else:
+                return False
+        except Exception: #pylint: disable=W0703
+            return False
 
     async def set(self, key, value, timeout: int = None):
         try:

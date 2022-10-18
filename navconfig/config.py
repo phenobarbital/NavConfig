@@ -1,7 +1,7 @@
 import os
 import asyncio
 from typing import (
-    Any
+    Any,
 )
 from collections.abc import Callable
 import logging
@@ -13,8 +13,10 @@ from configparser import (
 )
 from pathlib import Path
 from dotenv import load_dotenv
-from navconfig.utils.functions import Singleton, strtobool
+from navconfig.utils.functions import strtobool
+from navconfig.utils.types import Singleton
 from navconfig.loaders import import_loader
+
 ## memcache
 try:
     from .readers.memcache import mcache
@@ -28,21 +30,26 @@ try:
 except ModuleNotFoundError:
     REDIS_LOADER=None
 
+# class Reader(TypedDict):
+#     name: str
+#     reader: Union[Callable, Awaitable]
 
-class navigatorConfig(metaclass=Singleton):
+class cellarConfig(metaclass=Singleton):
     """
-    navigatorConfig.
-        Class for Application configuration.
+    cellarConfig.
+        Universal container for Configuration Management.
     """
-    _redis: Callable = None
     _conffile: str = 'etc/config.ini'
-    __initialized = False
+    __initialized__ = False
+    _readers: dict = {}
+    _mapping_: dict = {}
 
     def __init__(self, site_root: str = None, env: str = None, create: bool = True, **kwargs):
-        if self.__initialized is True:
+        if self.__initialized__ is True:
             return
-        self.__initialized = True
+        self.__initialized__ = True
         self._create: bool = create
+        self._ini: Callable = None
         # asyncio loop
         self._loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self._loop)
@@ -51,15 +58,15 @@ class navigatorConfig(metaclass=Singleton):
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
-        # get redis connection (only if enabled)
+        # Get External Readers:
         if REDIS_LOADER:
             try:
-                self._redis = REDIS_LOADER()
+                self._readers['redis'] = REDIS_LOADER()
             except Exception as err:
                 raise Exception(err) from err
         if MEMCACHE_LOADER:
             try:
-                self._mcache = MEMCACHE_LOADER()
+                self._readers['memcache'] = MEMCACHE_LOADER()
             except Exception as err:
                 raise Exception(err) from err
         # then: configure the instance:
@@ -85,9 +92,10 @@ class navigatorConfig(metaclass=Singleton):
                 'NavConfig Error: Environment (.env) File Missing.'
             )
         # define debug
-        self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
+        # self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
+        self._debug = bool(self.getboolean('DEBUG', fallback=False))
         # and get the config file declared in the environment file
-        config_file = os.getenv('CONFIG_FILE', self._conffile)
+        config_file = self.get('CONFIG_FILE', self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
 
@@ -122,16 +130,13 @@ class navigatorConfig(metaclass=Singleton):
             pass
 
     def close(self):
-        try:
-            if REDIS_LOADER:
-                self._redis.close()
-        except Exception as err: # pylint: disable=W0703
-            logging.error(err)
-        try:
-            if MEMCACHE_LOADER:
-                self._mcache.close()
-        except Exception: # pylint: disable=W0703
-            pass
+        for _, reader in self._readers.items():
+            try:
+                self._loop.run_until_complete(
+                    reader.close()
+                )
+            except Exception as err: # pylint: disable=W0703
+                logging.error(err)
 
     @property
     def debug(self):
@@ -161,7 +166,7 @@ class navigatorConfig(metaclass=Singleton):
                 override=override,
                 create=self._create
             )
-            self._env_loader.load_environment()
+            self._mapping_ = self._env_loader.load_environment()
         except (FileExistsError, FileNotFoundError) as ex:
             logging.warning(ex)
             raise
@@ -206,6 +211,18 @@ class navigatorConfig(metaclass=Singleton):
         else:
             raise Exception('Failed to load a new ENV file')
 
+    async def _get_from_external(self, reader: object, key: str) -> None:
+        if await reader.exists(key) is True:
+            return await reader.get(key)
+        else:
+            return None
+
+    def _get_external(self, key: str) -> Any:
+        for _, reader in self._readers.items():
+            return self._loop.run_until_complete(
+                self._get_from_external(reader, key)
+            )
+
     def getboolean(self, key: str, section: str = None, fallback: Any = None):
         """
         getboolean.
@@ -214,21 +231,29 @@ class navigatorConfig(metaclass=Singleton):
         val = None
         # if not val and if section, get from INI
         if section is not None:
-            try:
-                val = self._ini.getboolean(section, key)
-                return val
-            except ValueError:
-                val = self._ini.get(section, key)
-                if not val:
+            if section in self._mapping_:
+                val = self._mapping_[section]
+                return strtobool(val)
+            else:
+                try:
+                    val = self._ini.getboolean(section, key)
+                    return val
+                except ValueError:
+                    val = self._ini.get(section, key)
+                    if not val:
+                        return fallback
+                    else:
+                        return self._ini.BOOLEAN_STATES[val.lower()]
+                except (NoOptionError, NoSectionError):
                     return fallback
-                else:
-                    return self._ini.BOOLEAN_STATES[val.lower()]
-            except (NoOptionError, NoSectionError):
-                return fallback
         # get ENV value
-        if key in os.environ:
+        if key in self._mapping_:
+            val = self._mapping_[key]
+            return strtobool(val)
+        elif key in os.environ:
             val = os.getenv(key, fallback)
-
+        else:
+            val = self._get_external(key)
         if val:
             if val.lower() in self._ini.BOOLEAN_STATES:  # Check inf val is Boolean
                 return self._ini.BOOLEAN_STATES[val.lower()]
@@ -244,12 +269,17 @@ class navigatorConfig(metaclass=Singleton):
         """
         val = None
         if section is not None:
-            try:
-                val = self._ini.getint(section, key)
-            except (NoOptionError, NoSectionError):
-                pass
+            if section in self._mapping_:
+                val = self._mapping_[section]
+            else:
+                try:
+                    val = self._ini.getint(section, key)
+                except (NoOptionError, NoSectionError):
+                    pass
         if key in os.environ:
             val = os.getenv(key, fallback)
+        else:
+            val = self._get_external(key)
         if not val:
             return fallback
         if val.isdigit():  # Check if val is Integer
@@ -265,16 +295,25 @@ class navigatorConfig(metaclass=Singleton):
         """
         val = None
         if section is not None:
-            try:
-                val = self._ini.get(section, key)
-            except (NoOptionError, NoSectionError):
-                pass
+            if section in self._mapping_:
+                val = self._mapping_[section]
+            else:
+                try:
+                    val = self._ini.get(section, key)
+                except (NoOptionError, NoSectionError):
+                    pass
         if key in os.environ:
             val = os.getenv(key, fallback)
         if val:
             return val.split(',')
         else:
             return []
+
+    def getdict(self, key: str) -> dict:
+        if key in self._mapping_:
+            return self._mapping_[key]
+        elif key in os.environ:
+            return dict(os.getenv(key))
 
     def get(self, key: str, section: str = None, fallback: Any = None) -> Any:
         """
@@ -284,19 +323,24 @@ class navigatorConfig(metaclass=Singleton):
         val = None
         # if not val and if section, get from INI
         if section is not None:
-            try:
-                val = self._ini.get(section, key)
+            if section in self._mapping_:
+                val = self._mapping_[section]
                 return val
-            except (NoOptionError, NoSectionError):
-                pass
+            elif self._ini:
+                try:
+                    val = self._ini.get(section, key)
+                    return val
+                except (NoOptionError, NoSectionError):
+                    pass
+        if key in self._mapping_:
+            return self._mapping_[key]
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
             return val
-        # if not in os.environ, got from Redis
-        if REDIS_LOADER:
-            if self._redis.exists(key) is True:
-                return self._redis.get(key)
+        # get data from external readers:
+        if val:= self._get_external(key):
+            return val
         return fallback
 
 # Config Magic Methods (dict like)
@@ -305,10 +349,10 @@ class navigatorConfig(metaclass=Singleton):
         if key in os.environ:
             # override an environment variable
             os.environ[key] = value
+        elif key in self._mapping_:
+            return self._mapping_[key]
         else:
-            if REDIS_LOADER:
-                if self._redis.exists(key) is True:
-                    self._redis.set(key, value)
+            pass # Adding to Mutable Mapping
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -319,24 +363,29 @@ class navigatorConfig(metaclass=Singleton):
     def __contains__(self, key: str) -> bool:
         if key in os.environ:
             return True
+        elif key in self._mapping_:
+            return True
         else:
-            if REDIS_LOADER:
-                if self._redis.exists(key) is True:
+            for _, reader in self._readers.items():
+                val = asyncio.get_event_loop().run_until_complete(
+                    reader.exists(key)
+                )
+                if val is True:
                     return True
                 else:
                     return False
-            else:
-                return False
+            return False
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
         val = None
         if key in os.environ:
             val = os.getenv(key)
+        elif key in self._mapping_:
+            val = self._mapping_[key]
         else:
-            if REDIS_LOADER:
-                if self._redis.exists(key) is True:
-                    val = self._redis.get(key)
+            # get data from external readers:
+            val = self._get_external(key)
         if val:
             try:
                 if val.lower() in self._ini.BOOLEAN_STATES:
@@ -349,7 +398,6 @@ class navigatorConfig(metaclass=Singleton):
             raise TypeError(
                 f"NavigatorConfig Error: has not attribute {key}"
             )
-        return None
 
     def set(self, key: str, value: Any) -> None:
         """
@@ -358,7 +406,9 @@ class navigatorConfig(metaclass=Singleton):
          TODO: add cloudpickle to serialize and unserialize data first.
         """
         if REDIS_LOADER:
-            return self._redis.set(key, value)
+            return asyncio.get_event_loop().run_until_complete(
+                self._readers['redis'].set(key, value)
+            )
         return False
 
     def setext(self, key: str, value: Any, timeout: int = None) -> int:
@@ -371,5 +421,7 @@ class navigatorConfig(metaclass=Singleton):
                 time = 3600
             else:
                 time = timeout
-            return self._redis.setex(key, value, time)
+            return asyncio.get_event_loop().run_until_complete(
+                self._readers['redis'].set(key, value, time)
+            )
         return False
