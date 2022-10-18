@@ -167,6 +167,8 @@ class cellarConfig(metaclass=Singleton):
                 create=self._create
             )
             self._mapping_ = self._env_loader.load_environment()
+            if self._mapping_ is None:
+                self._mapping_ = {} # empty dict
         except (FileExistsError, FileNotFoundError) as ex:
             logging.warning(ex)
             raise
@@ -234,7 +236,7 @@ class cellarConfig(metaclass=Singleton):
             if section in self._mapping_:
                 val = self._mapping_[section]
                 return strtobool(val)
-            else:
+            elif self._ini:
                 try:
                     val = self._ini.getboolean(section, key)
                     return val
@@ -249,16 +251,12 @@ class cellarConfig(metaclass=Singleton):
         # get ENV value
         if key in self._mapping_:
             val = self._mapping_[key]
-            return strtobool(val)
         elif key in os.environ:
             val = os.getenv(key, fallback)
         else:
             val = self._get_external(key)
         if val:
-            if val.lower() in self._ini.BOOLEAN_STATES:  # Check inf val is Boolean
-                return self._ini.BOOLEAN_STATES[val.lower()]
-            else:
-                return bool(val)
+            return strtobool(val)
         else:
             return fallback
 
