@@ -17,7 +17,7 @@ from logging.config import dictConfig
 from navconfig import config, BASE_DIR, DEBUG
 
 ### Logging
-if DEBUG:
+if DEBUG is True:
     loglevel = logging.DEBUG
 else:
     loglevel = logging.INFO

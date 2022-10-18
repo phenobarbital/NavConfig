@@ -17,7 +17,7 @@ class tomlLoader(BaseLoader):
         content = asyncio.run(
             self._parser.parse(self.env_file)
         )
-        self.load_from_string(content)
+        return self.load_from_string(content)
 
     def save_environment(self):
         pass

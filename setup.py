@@ -58,6 +58,12 @@ extensions = [
         language="c++"
     ),
     Extension(
+        name='navconfig.utils.types',
+        sources=['navconfig/utils/types.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c++"
+    ),
+    Extension(
         name='navconfig.loaders.parsers.toml',
         sources=['navconfig/loaders/parsers/toml.pyx'],
         extra_compile_args=COMPILE_ARGS,
@@ -141,6 +147,15 @@ setup(
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
+        ],
+        "all": [
+            'pytomlpp==1.0.11',
+            'redis==4.3.4',
+            'aioredis==2.0.1',
+            'python-logstash-async==2.5.0',
+            'aiologstash==2.0.0',
+            'PyYAML>=6.0',
+            "aiomcache==0.7.0",
         ]
     },
     ext_modules=cythonize(extensions),

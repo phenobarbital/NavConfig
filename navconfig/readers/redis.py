@@ -7,8 +7,9 @@ from redis.exceptions import (
     ResponseError,
     ReadOnlyError
 )
+from .abstract import AbstractReader
 
-class mredis(object):
+class mredis(AbstractReader):
     """
     Very Basic Connector for Redis.
     """
@@ -40,7 +41,7 @@ class mredis(object):
             logging.exception(err)
             raise
 
-    def set(self, key, value):
+    async def set(self, key, value):
         try:
             return self._redis.set(key, value)
         except (ReadOnlyError) as err:
@@ -52,7 +53,10 @@ class mredis(object):
                 f"Redis Error: {err}"
             ) from err
 
-    def exists(self, key, *keys):
+    async def delete(self, key: str) -> None:
+        pass
+
+    async def exists(self, key, *keys):
         try:
             return bool(
                 self._redis.exists(key, *keys)
@@ -70,7 +74,7 @@ class mredis(object):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    def get(self, key):
+    async def get(self, key):
         try:
             return self._redis.get(key)
         except ResponseError as err:
@@ -86,7 +90,7 @@ class mredis(object):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    def setex(self, key, value, timeout):
+    async def setex(self, key, value, timeout):
         """
         setex
            Set the value and expiration of a Key
@@ -118,7 +122,7 @@ class mredis(object):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    def close(self):
+    async def close(self):
         try:
             self._redis.close()
         except Exception as err: # pylint: disable=W0703

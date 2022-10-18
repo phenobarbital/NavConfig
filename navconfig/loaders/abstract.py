@@ -1,3 +1,4 @@
+from typing import Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
 from io import StringIO
@@ -51,8 +52,10 @@ class BaseLoader(ABC):
             override=self.override
         )
 
-    def load_from_string(self, content: str):
-        if content:
+    def load_from_string(self, content: Union[str, dict]):
+        if isinstance(content, str):
             filelike = StringIO(content)
             filelike.seek(0)
             dotenv_values(stream=filelike)
+        else:
+            return content
