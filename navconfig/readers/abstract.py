@@ -8,21 +8,21 @@ class AbstractReader(ABC):
     Description: Abstract class for External Readers.
     """
     @abstractmethod
-    async def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any = None) -> Any:
         pass
 
     @abstractmethod
-    async def exists(self, key: str) -> bool:
+    def exists(self, key: str) -> bool:
         pass
 
     @abstractmethod
-    async def close(self) -> None:
+    def close(self) -> None:
         pass
 
     @abstractmethod
-    async def set(self, key: str, value: Any, timeout: int = None) -> None:
+    def set(self, key: str, value: Any, timeout: int = None) -> None:
         pass
 
     @abstractmethod
-    async def delete(self, key: str) -> bool:
+    def delete(self, key: str) -> bool:
         pass

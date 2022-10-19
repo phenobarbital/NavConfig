@@ -1,6 +1,6 @@
 import os
 import logging
-import aiomcache
+import pylibmc
 from .abstract import AbstractReader
 
 class mcache(AbstractReader):
@@ -8,19 +8,24 @@ class mcache(AbstractReader):
     Basic Connector for Memcached.
     Future-proof.
     """
+    _args = {"tcp_nodelay": True, "ketama": True}
+
     def __init__(self) -> None:
         host = os.getenv('MEMCACHE_HOST', 'localhost')
         port = int(os.getenv('MEMCACHE_PORT', '11211'))
         try:
-            self._memcached = aiomcache.Client(
-                host=host, port=port
+            self._server = [f"{host}:{port}"]
+            self._memcached = pylibmc.Client(
+                self._server,
+                binary=True,
+                behaviors=self._args
             )
         except Exception as err: # pylint: disable=W0703
             logging.exception(err, stack_info=True)
 
-    async def get(self, key, default=None):
+    def get(self, key, default=None):
         try:
-            result = await self._memcached.get(bytes(key, "utf-8"), default)
+            result = self._memcached.get(bytes(key, "utf-8"), default)
             if result:
                 return result.decode("utf-8")
             else:
@@ -30,9 +35,9 @@ class mcache(AbstractReader):
                 f"Memcache Get Error: {err!s}"
             ) from err
 
-    async def exists(self, key: str) -> bool:
+    def exists(self, key: str) -> bool:
         try:
-            result = await self._memcached.get(bytes(key, "utf-8"))
+            result = self._memcached.get(bytes(key, "utf-8"))
             if result:
                 return True
             else:
@@ -40,14 +45,14 @@ class mcache(AbstractReader):
         except Exception: #pylint: disable=W0703
             return False
 
-    async def set(self, key, value, timeout: int = None):
+    def set(self, key, value, timeout: int = None):
         try:
             if timeout:
-                return await self._memcached.set(
+                return self._memcached.set(
                     bytes(key, "utf-8"), bytes(value, "utf-8"), time=timeout
                 )
             else:
-                return await self._memcached.set(
+                return self._memcached.set(
                     bytes(key, "utf-8"), bytes(value, "utf-8")
                 )
         except Exception as err:
@@ -55,9 +60,9 @@ class mcache(AbstractReader):
                 f"Memcache Set Error: {err!s}"
             ) from err
 
-    async def multi_get(self, *keys):
+    def multi_get(self, *keys):
         try:
-            return await self._memcached.multi_get(
+            return  self._memcached.multi_get(
                 *[bytes(v, 'utf-8') for v in keys]
             )
         except Exception as err:
@@ -65,16 +70,16 @@ class mcache(AbstractReader):
                 f"Memcache Multi Error: {err!s}"
             ) from err
 
-    async def delete(self, key):
+    def delete(self, key):
         try:
-            await self._memcached.delete(bytes(key, "utf-8"))
+            self._memcached.delete(bytes(key, "utf-8"))
         except Exception as err:
             raise Exception(
                 f"Memcache Delete Error: {err!s}"
             ) from err
 
-    async def close(self):
+    def close(self):
         try:
-            await self._memcached.close()
+            self._memcached.disconnect_all()
         except Exception as err: # pylint: disable=W0703
             logging.exception(err, stack_info=False)
