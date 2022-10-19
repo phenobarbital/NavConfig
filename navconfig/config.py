@@ -369,6 +369,18 @@ class cellarConfig(metaclass=Singleton):
                     return False
             return False
 
+    def exists(self, key: str) -> bool:
+        if key in os.environ:
+            return True
+        elif key in self._mapping_:
+            return True
+        else:
+            # get data from external readers:
+            val = self._get_external(key)
+            if val is not None:
+                return True
+            return False
+
     ## attribute name
     def __getattr__(self, key: str) -> Any:
         val = None
