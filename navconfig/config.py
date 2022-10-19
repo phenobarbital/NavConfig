@@ -362,13 +362,23 @@ class cellarConfig(metaclass=Singleton):
             return True
         else:
             for _, reader in self._readers.items():
-                val = asyncio.get_event_loop().run_until_complete(
-                    reader.exists(key)
-                )
+                val = reader.exists(key)
                 if val is True:
                     return True
                 else:
                     return False
+            return False
+
+    def exists(self, key: str) -> bool:
+        if key in os.environ:
+            return True
+        elif key in self._mapping_:
+            return True
+        else:
+            # get data from external readers:
+            val = self._get_external(key)
+            if val is not None:
+                return True
             return False
 
     ## attribute name
@@ -401,12 +411,10 @@ class cellarConfig(metaclass=Singleton):
          TODO: add cloudpickle to serialize and unserialize data first.
         """
         if REDIS_LOADER:
-            return asyncio.get_event_loop().run_until_complete(
-                self._readers['redis'].set(key, value)
-            )
+            return self._readers['redis'].set(key, value)
         return False
 
-    def setext(self, key: str, value: Any, timeout: int = None) -> int:
+    def setext(self, key: str, value: Any, timeout: int = None) -> bool:
         """
         set
             set a variable in redis with expiration
@@ -416,7 +424,6 @@ class cellarConfig(metaclass=Singleton):
                 time = 3600
             else:
                 time = timeout
-            return asyncio.get_event_loop().run_until_complete(
-                self._readers['redis'].set(key, value, time)
-            )
-        return False
+            return self._readers['redis'].set(key, value, time)
+        else:
+            return False
