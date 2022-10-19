@@ -95,7 +95,7 @@ class cellarConfig(metaclass=Singleton):
         # self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
         self._debug = bool(self.getboolean('DEBUG', fallback=False))
         # and get the config file declared in the environment file
-        config_file = self.get('CONFIG_FILE', self._conffile)
+        config_file = self.get('CONFIG_FILE', fallback=self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
 
@@ -132,9 +132,7 @@ class cellarConfig(metaclass=Singleton):
     def close(self):
         for _, reader in self._readers.items():
             try:
-                self._loop.run_until_complete(
-                    reader.close()
-                )
+                reader.close()
             except Exception as err: # pylint: disable=W0703
                 logging.error(err)
 
@@ -213,17 +211,16 @@ class cellarConfig(metaclass=Singleton):
         else:
             raise Exception('Failed to load a new ENV file')
 
-    async def _get_from_external(self, reader: object, key: str) -> None:
-        if await reader.exists(key) is True:
-            return await reader.get(key)
-        else:
-            return None
-
     def _get_external(self, key: str) -> Any:
+        """Get value fron an External Reader.
+        """
         for _, reader in self._readers.items():
-            return self._loop.run_until_complete(
-                self._get_from_external(reader, key)
-            )
+            try:
+                if reader.exists(key) is True:
+                    return reader.get(key)
+            except RuntimeError:
+                continue
+        return None
 
     def getboolean(self, key: str, section: str = None, fallback: Any = None):
         """

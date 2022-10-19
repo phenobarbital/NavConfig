@@ -41,7 +41,7 @@ class mredis(AbstractReader):
             logging.exception(err)
             raise
 
-    async def set(self, key, value):
+    def set(self, key, value):
         try:
             return self._redis.set(key, value)
         except (ReadOnlyError) as err:
@@ -53,10 +53,10 @@ class mredis(AbstractReader):
                 f"Redis Error: {err}"
             ) from err
 
-    async def delete(self, key: str) -> None:
+    def delete(self, key: str) -> None:
         pass
 
-    async def exists(self, key, *keys):
+    def exists(self, key, *keys):
         try:
             return bool(
                 self._redis.exists(key, *keys)
@@ -74,7 +74,7 @@ class mredis(AbstractReader):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    async def get(self, key):
+    def get(self, key):
         try:
             return self._redis.get(key)
         except ResponseError as err:
@@ -90,7 +90,7 @@ class mredis(AbstractReader):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    async def setex(self, key, value, timeout):
+    def setex(self, key, value, timeout):
         """
         setex
            Set the value and expiration of a Key
@@ -122,7 +122,7 @@ class mredis(AbstractReader):
                 f"Unknown Redis Error: {err}"
             ) from err
 
-    async def close(self):
+    def close(self):
         try:
             self._redis.close()
         except Exception as err: # pylint: disable=W0703
