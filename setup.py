@@ -29,11 +29,11 @@ with open(version, 'r', encoding='utf-8') as meta:
             name = node.targets[0]
             if isinstance(name, ast.Name) and \
                     name.id in (
-                            '__version__',
-                            '__title__',
-                            '__description__',
-                            '__author__',
-                            '__license__', '__author_email__'):
+                        '__version__',
+                        '__title__',
+                        '__description__',
+                        '__author__',
+                        '__license__', '__author_email__'):
                         v = node.value
                         if name.id == '__version__':
                             __version__ = v.s
@@ -100,11 +100,10 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(),
     setup_requires=[
-        'wheel==0.37.1',
+        'wheel==0.38.4',
         'cython==0.29.32'
     ],
     install_requires=[
-        'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
         'python-dotenv==0.21.0',
@@ -113,7 +112,7 @@ setup(
         'objectpath==0.6.1',
         'iso8601==1.1.0',
         'pycparser==2.21',
-        'orjson==3.8.0',
+        "orjson==3.8.2",
         'pycryptodomex==3.15.0',
         "cryptography==38.0.4",
         'aiofiles==0.8.0'
