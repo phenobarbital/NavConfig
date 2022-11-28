@@ -2,7 +2,7 @@
 requires = [
     'setuptools>=47',
     'cython==0.29.32',
-    'wheel==0.37.1',
+    'wheel==0.38.4',
     'toml>=0.10.2',
     'flit'
 ]
