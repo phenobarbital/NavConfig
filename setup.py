@@ -120,7 +120,7 @@ setup(
     extras_require = {
         "memcache": [
             "pylibmc==1.6.3",
-            "aiomcache==0.7.0",
+            "aiomcache==0.8.0",
         ],
         "gdrive": [
             'PyDrive==1.3.1',
@@ -154,7 +154,7 @@ setup(
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
-            "aiomcache==0.7.0",
+            "aiomcache==0.8.0",
         ]
     },
     ext_modules=cythonize(extensions),
