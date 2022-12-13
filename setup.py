@@ -112,10 +112,11 @@ setup(
         'objectpath==0.6.1',
         'iso8601==1.1.0',
         'pycparser==2.21',
-        "orjson==3.8.2",
+        "orjson==3.8.3",
         'pycryptodomex==3.15.0',
         "cryptography==38.0.4",
-        'aiofiles==0.8.0'
+        'aiofiles==0.8.0',
+        'aiofile==3.8.1',
     ],
     extras_require = {
         "memcache": [
