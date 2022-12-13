@@ -4,7 +4,7 @@ venv:
 
 develop:
 	pip install wheel==0.38.4
-	pip install -e .
+	pip install -e .[default]
 	python -m pip install -Ur docs/requirements-dev.txt
 
 dev:
