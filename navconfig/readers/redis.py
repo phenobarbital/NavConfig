@@ -20,8 +20,8 @@ class mredis(AbstractReader):
     }
 
     def __init__(self):
-        host = os.getenv('REDISHOST', 'localhost')
-        port = int(os.getenv('REDISPORT', '6379'))
+        host = os.getenv('REDIS_HOST', 'localhost')
+        port = int(os.getenv('REDIS_PORT', '6379'))
         db = int(os.getenv('REDIS_DB', '1'))
         self.redis_url = f"redis://{host}:{port}/{db}"
         self._redis: Callable = None
