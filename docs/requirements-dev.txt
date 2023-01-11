@@ -1,7 +1,7 @@
 aiounittest==1.4.2
 black==22.10.0
 codecov==2.1.12
-coverage[toml]==6.5.0
+coverage[toml]==7.0.5
 flit==3.8.0
 hypothesis==6.58.1
 ipython==8.7.0
