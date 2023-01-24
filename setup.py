@@ -131,7 +131,7 @@ setup(
             'aiologstash==2.0.0',
         ],
         "redis": [
-            'redis==4.3.4',
+            'redis==4.4.2',
             'aioredis==2.0.1',
         ],
         "toml": [
@@ -142,7 +142,7 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.11',
-            'redis==4.3.4',
+            'redis==4.4.2',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
@@ -150,7 +150,7 @@ setup(
         ],
         "all": [
             'pytomlpp==1.0.11',
-            'redis==4.3.4',
+            'redis==4.4.2',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
