@@ -35,6 +35,8 @@ logstash_logging = config.getboolean(
     'logstash_enabled', section='logging', fallback=False)
 logging_echo = config.getboolean(
     'logging_echo', section='logging', fallback=False)
+logging_disable_other = config.getboolean(
+    'logging_disable_other', section='logging', fallback=False)
 
 logging_admin = config.get('logging_admin', section='logging', fallback="dev@domain.com")
 logging_email = config.get('logging_email', section='logging', fallback='no-reply@domain.com')
@@ -57,7 +59,7 @@ if isinstance(HANDLERS, str):
 
 logging_config = dict(
     version=1,
-    disable_existing_loggers=False,
+    disable_existing_loggers=logging_disable_other,
     formatters={
         "console": {
             'format': '%(message)s'
