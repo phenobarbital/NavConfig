@@ -113,11 +113,7 @@ setup(
         'iso8601==1.1.0',
         'pycparser==2.21',
         "orjson==3.8.5",
-<<<<<<< HEAD
-        "pycryptodomex==3.17",
-=======
         'pycryptodomex==3.17',
->>>>>>> c7948ce4b6a04bdc255aa62d740d3690d482ec73
         "cryptography==37.0.4",
         'aiofiles==0.8.0',
         'aiofile==3.8.1',
