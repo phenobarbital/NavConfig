@@ -87,6 +87,12 @@ logging_config = dict(
         },
     },
     handlers={
+        'console': {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+            "stream": "ext://sys.stdout",
+            'level': loglevel
+        },
         'StreamHandler': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'default',
@@ -111,9 +117,14 @@ logging_config = dict(
         },
         "__main__": {  # if __name__ == "__main__"
             "handlers": ["StreamHandler"],
-            "level": loglevel,
+            "level": 'INFO',
             "propagate": False
         },
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False
+        }
     },
     root={
         'handlers': ['ErrorFileHandler'],
@@ -146,12 +157,6 @@ if logging_enable_mailer is True:
     logging_config['root']['handlers'].append('CriticalMailHandler')
 
 if logging_echo is True:
-    logging_config['handlers']['console'] = {
-        "class": "logging.StreamHandler",
-        "formatter": "default",
-        "stream": "ext://sys.stdout",
-        'level': logging.DEBUG
-    }
     logging_config['root']['handlers'].append('console')
 
 if logstash_logging:
