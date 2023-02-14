@@ -36,8 +36,20 @@ logstash_logging = config.getboolean(
 logging_echo = config.getboolean(
     'logging_echo', section='logging', fallback=False)
 logging_disable_other = config.getboolean(
-    'logging_disable_other', section='logging', fallback=False)
+    'logging_disable_other', section='logging', fallback=False
+)
 
+## disable mail alerts:
+logging_enable_mailer = config.getboolean(
+    'logging_enable_mailer', section='logging', fallback=False
+)
+
+## can disable the rotating file handler
+logging_enable_filehandler = config.getboolean(
+    'logging_enable_filehandler', section='logging', fallback=False
+)
+
+logging_host = config.get('logging_host', section='logging', fallback="localhost")
 logging_admin = config.get('logging_admin', section='logging', fallback="dev@domain.com")
 logging_email = config.get('logging_email', section='logging', fallback='no-reply@domain.com')
 
@@ -81,33 +93,15 @@ logging_config = dict(
                 "stream": "ext://sys.stdout",
                 'level': loglevel
         },
-        'RotatingFileHandler': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': '{0}/{1}.log'.format(LOG_DIR, LOG_NAME),
-                'maxBytes': (1048576*5),
-                'backupCount': 2,
-                'encoding': 'utf-8',
-                'formatter': 'file',
-                'level': loglevel
-        },
         'ErrorFileHandler': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': logging.ERROR,
-                'filename': '{0}/{1}.error.log'.format(LOG_DIR, LOG_NAME),
+                'filename': f'{LOG_DIR}/{LOG_NAME}.error.log',
                 'formatter': 'error',
                 'maxBytes': (1048576*5),
                 'backupCount': 2,
                 'mode': 'a',
-         },
-        'CriticalMailHandler': {
-            'level': logging.CRITICAL,
-            'formatter': 'error',
-            'class': 'logging.handlers.SMTPHandler',
-            'mailhost' : 'localhost',
-            'fromaddr': logging_email,
-            'toaddrs': [logging_admin],
-            'subject': 'Critical Error on {}'.format(APP_NAME)
-        }
+         }
     },
     loggers={
         APP_NAME: {
@@ -122,10 +116,34 @@ logging_config = dict(
         },
     },
     root={
-        'handlers': ['RotatingFileHandler', 'ErrorFileHandler', 'CriticalMailHandler'],
+        'handlers': ['ErrorFileHandler'],
         'level': loglevel,
     },
 )
+
+if logging_enable_filehandler is False:
+    logging_config['handlers']['RotatingFileHandler'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': f'{LOG_DIR}/{LOG_NAME}.log',
+        'maxBytes': (1048576*5),
+        'backupCount': 2,
+        'encoding': 'utf-8',
+        'formatter': 'file',
+        'level': loglevel
+    }
+    logging_config['root']['handlers'].append('RotatingFileHandler')
+
+if logging_enable_mailer is True:
+    logging_config['handlers']['CriticalMailHandler'] = {
+        'level': logging.CRITICAL,
+        'formatter': 'error',
+        'class': 'logging.handlers.SMTPHandler',
+        'mailhost' : logging_host,
+        'fromaddr': logging_email,
+        'toaddrs': [logging_admin],
+        'subject': f'Critical Error on {APP_NAME}'
+    }
+    logging_config['root']['handlers'].append('CriticalMailHandler')
 
 if logging_echo is True:
     logging_config['handlers']['console'] = {
@@ -137,13 +155,14 @@ if logging_echo is True:
     logging_config['root']['handlers'].append('console')
 
 if logstash_logging:
+    environment = config.ENV if config.ENV is not None else 'production'
     # basic configuration of Logstash
     try:
         import logstash_async # pylint: disable=W0611
     except ImportError as ex:
         raise RuntimeError(
             "NavConfig: Logstash Logging is enabled but Logstash async dependency is not installed.\
-            Hint: run 'pip install logstash-async'."
+            Hint: run 'pip install logstash_async'."
         ) from ex
     LOGSTASH_HOST = config.get('LOGSTASH_HOST', fallback='localhost')
     LOGSTASH_PORT = config.get('LOGSTASH_PORT', fallback=6000)
@@ -154,9 +173,9 @@ if logstash_logging:
       'fqdn': False,  # Fully qualified domain name. Default value: false.
       'extra_prefix': 'dev',
       'extra': {
-          'application': '{}'.format(APP_NAME),
-          'project_path': '{}'.format(BASE_DIR),
-          'environment': 'production'
+          'application': f'{APP_NAME}',
+          'project_path': f'{BASE_DIR}',
+          'environment': environment
       }
     }
     logging_config['handlers']['LogstashHandler'] = {
@@ -168,9 +187,10 @@ if logstash_logging:
             'level': loglevel,
             'database_path': f'{LOG_DIR}/logstash.db',
     }
-    logging_config[APP_NAME]['handlers'] = [
-        'LogstashHandler', 'StreamHandler'
-    ]
+    if APP_NAME in logging_config:
+        logging_config[APP_NAME]['handlers'] = [
+            'LogstashHandler', 'StreamHandler'
+        ]
 
 ### Load Logging Configuration:
 dictConfig(logging_config)
