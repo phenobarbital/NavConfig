@@ -112,7 +112,7 @@ setup(
         'objectpath==0.6.1',
         'iso8601==1.1.0',
         'pycparser==2.21',
-        "orjson==3.8.5",
+        "orjson==3.8.7",
         'pycryptodomex==3.17',
         "cryptography==37.0.4",
         'aiofiles==0.8.0',
