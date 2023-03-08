@@ -7,7 +7,7 @@ hypothesis==6.68.0
 ipython==8.10.0
 lint==1.2.1
 mypy==1.0.0
-pylint==2.16.1
+pylint==2.16.4
 pytest>=6.0.0
 pytest-asyncio==0.20.3
 pytest-cov==4.0.0
