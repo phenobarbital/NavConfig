@@ -155,7 +155,7 @@ setup(
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
-            "aiomcache==0.8.0",
+            "aiomcache==0.8.1",
         ]
     },
     ext_modules=cythonize(extensions),
