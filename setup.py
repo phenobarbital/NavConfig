@@ -80,7 +80,7 @@ extensions = [
 setup(
     name=__title__,
     version=__version__,
-    python_requires=">=3.8.0",
+    python_requires=">=3.9.16",
     url='https://github.com/phenobarbital/NavConfig',
     description=__description__,
     long_description=readme(),
@@ -91,9 +91,9 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'Environment :: Web Environment',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Framework :: AsyncIO'
     ],
     author='Jesus Lara',
@@ -101,7 +101,7 @@ setup(
     packages=find_packages(exclude=["docs", "tests", "settings"]),
     setup_requires=[
         'wheel==0.38.4',
-        'cython==0.29.32'
+        'cython==0.29.33'
     ],
     install_requires=[
         'asyncio==3.4.3',
@@ -112,16 +112,16 @@ setup(
         'objectpath==0.6.1',
         'iso8601==1.1.0',
         'pycparser==2.21',
-        "orjson==3.8.5",
+        "orjson==3.8.7",
         'pycryptodomex==3.17',
         "cryptography==37.0.4",
-        'aiofiles==0.8.0',
+        'aiofiles==23.1.0',
         'aiofile==3.8.1',
     ],
     extras_require = {
         "memcache": [
             "pylibmc==1.6.3",
-            "aiomcache==0.8.0",
+            "aiomcache==0.8.1",
         ],
         "gdrive": [
             'PyDrive==1.3.1',
@@ -131,7 +131,7 @@ setup(
             'aiologstash==2.0.0',
         ],
         "redis": [
-            'redis==4.4.2',
+            'redis==4.5.1',
             'aioredis==2.0.1',
         ],
         "toml": [
@@ -142,7 +142,7 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.11',
-            'redis==4.4.2',
+            'redis==4.5.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',

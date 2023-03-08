@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    'setuptools>=47',
-    'cython==0.29.32',
+    'setuptools==67.5.1',
+    'Cython==0.29.33',
     'wheel==0.38.4',
     'toml>=0.10.2',
     'flit'
@@ -21,9 +21,9 @@ classifiers=[
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python",
   "Typing :: Typed",
   "Environment :: Web Environment",
@@ -34,7 +34,7 @@ classifiers=[
   "License :: OSI Approved :: BSD License",
 ]
 description-file = "README.md"
-requires-python = ">=3.8.5"
+requires-python = ">=3.9.16"
 readme = "README.md"
 
 [tool.pytest.ini_options]
