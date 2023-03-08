@@ -150,7 +150,7 @@ setup(
         ],
         "all": [
             'pytomlpp==1.0.11',
-            'redis==4.4.2',
+            'redis==4.5.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
