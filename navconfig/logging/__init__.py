@@ -30,8 +30,7 @@ Logging Information.
 """
 logstash_logging = config.getboolean(
     'logstash_enabled', section='logging', fallback=False)
-logging_echo = config.getboolean(
-    'logging_echo', section='logging', fallback=False)
+
 logging_disable_other = config.getboolean(
     'logging_disable_other', section='logging', fallback=False
 )
@@ -40,7 +39,8 @@ logging_disable_other = config.getboolean(
 logging_enable_mailer = config.getboolean(
     'logging_enable_mailer', section='logging', fallback=False
 )
-
+logging_echo = config.getboolean(
+    'logging_echo', section='logging', fallback=False)
 ## can disable the rotating file handler
 logging_enable_filehandler = config.getboolean(
     'logging_enable_filehandler', section='logging', fallback=False
@@ -202,4 +202,15 @@ dictConfig(logging_config)
 logger = Logger(name=__name__, config=logging_config)
 
 # alias for debug printing
-dprint = logger.debug
+class dprint:
+
+    instance: object = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.instance:
+            cls.instance = Logger(name='DEBUG', config=logging_config)
+            cls.instance.addConsole()
+        cls.instance.debug(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        self.instance.debug(*args, **kwargs)
