@@ -118,7 +118,7 @@ setup(
     install_requires=[
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'python-dotenv==0.21.1',
+        'python-dotenv==1.0.0',
         'configparser==5.3.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
