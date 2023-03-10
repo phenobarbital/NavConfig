@@ -12,15 +12,12 @@ Supports:
 
 """
 from pathlib import Path
-import logging
 from logging.config import dictConfig
-from navconfig import config, BASE_DIR, DEBUG
+from navconfig import config, BASE_DIR
+from .logger import logging, Logger, LOGLEVEL, ColoredFormatter
 
 ### Logging
-if DEBUG is True:
-    loglevel = logging.DEBUG
-else:
-    loglevel = logging.INFO
+loglevel = LOGLEVEL
 
 APP_NAME = config.get('APP_NAME', fallback='navigator')
 APP_TITLE = config.get('APP_TITLE', section='info', fallback='navigator')
@@ -64,7 +61,7 @@ if not logdir.exists():
 HANDLERS = config.get(
     'handlers',
     section='logging',
-    fallback=['StreamHandler', 'RotatingFileHandler', 'ErrorFileHandler']
+    fallback=['StreamHandler', 'ErrorFileHandler']
 )
 if isinstance(HANDLERS, str):
     HANDLERS = HANDLERS.split(',')
@@ -74,7 +71,8 @@ logging_config = dict(
     disable_existing_loggers=logging_disable_other,
     formatters={
         "console": {
-            'format': '%(message)s'
+            '()': ColoredFormatter,
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
         'default': {
             'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s'
@@ -89,7 +87,7 @@ logging_config = dict(
     handlers={
         'console': {
             "class": "logging.StreamHandler",
-            "formatter": "default",
+            "formatter": "console",
             "stream": "ext://sys.stdout",
             'level': loglevel
         },
@@ -132,7 +130,7 @@ logging_config = dict(
     },
 )
 
-if logging_enable_filehandler is False:
+if logging_enable_filehandler is True:
     logging_config['handlers']['RotatingFileHandler'] = {
         'class': 'logging.handlers.RotatingFileHandler',
         'filename': f'{LOG_DIR}/{LOG_NAME}.log',
@@ -199,3 +197,9 @@ if logstash_logging:
 
 ### Load Logging Configuration:
 dictConfig(logging_config)
+
+### configure basic logger for navconfig
+logger = Logger(name=__name__, config=logging_config)
+
+# alias for debug printing
+dprint = logger.debug

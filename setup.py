@@ -74,6 +74,18 @@ extensions = [
         sources=['navconfig/loaders/parsers/yaml.pyx'],
         extra_compile_args=COMPILE_ARGS,
         language="c++"
+    ),
+    Extension(
+        name='navconfig.logging.logger',
+        sources=['navconfig/logging/logger.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c++"
+    ),
+    Extension(
+        name='navconfig.utils.json',
+        sources=['navconfig/utils/json.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c++"
     )
 ]
 
