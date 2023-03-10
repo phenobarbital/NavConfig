@@ -1,6 +1,7 @@
 # cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=True, initializedcheck=False
 # Copyright (C) 2018-present Jesus Lara
 #
+import sys
 import asyncio
 from typing import Optional, Union
 import logging
@@ -19,7 +20,7 @@ else:
 
 
 cdef class Logger(object):
-    __slots__ = ['name', '_debug', '_logger']
+    __slots__ = ['name', '_debug', '_logger', 'logger']
     cdef bool_t _debug
     cdef str name
     cdef object _logger
@@ -37,15 +38,33 @@ cdef class Logger(object):
         self._logger = logging.getLogger(self.name)
         self._logger.setLevel(LOGLEVEL)
 
+    def addConsole(self) -> None:
+        # create a stream handler with sys.stdout as the stream
+        ch = logging.StreamHandler(stream=sys.stdout)
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(ColoredFormatter())
+        self._logger.addHandler(ch)
+        ## also, changing the logLevel of root logger
+        self._logger.setLevel(logging.DEBUG)
+
+    @property
+    def logger(self):
+        return self._logger
+
     def disable(self, name: str, loglevel = logging.CRITICAL):
         ## disable logger
         aio = logging.getLogger(name)
         aio.setLevel(loglevel)
 
+    def setLevel(self, level) -> None:
+        self._logger.setLevel(level)
+
+    def addHandler(self, handler) -> None:
+        self._logger.addHandler(handler)
+
     def setName(self, name: str):
         ## change the logger:
         logging.Logger.manager.loggerDict[self.name].name = name
-        # self._logger = logging.getLogger(name)
         self.name = name
 
     def info(self, message, *args, serialize = False, **kwargs):
