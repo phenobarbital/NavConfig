@@ -4,13 +4,14 @@
 import sys
 import asyncio
 from typing import Optional, Union
-import logging
 from logging.config import dictConfig
 from libcpp cimport bool as bool_t
+import traceback
+from logging import setLoggerClass
 from navconfig import config, DEBUG
 from navconfig.utils.json import json_decoder, json_encoder
-from navconfig.logging.formatter import ColoredFormatter
-import traceback
+from navconfig.logging.formatter import logging, VerboseLogger, ColoredFormatter
+
 
 ### Logging
 if DEBUG is True:
@@ -35,6 +36,7 @@ cdef class Logger(object):
         self._debug = kwargs.get('debug', DEBUG)
         if config:
             dictConfig(config)
+        setLoggerClass(VerboseLogger)
         self._logger = logging.getLogger(self.name)
         self._logger.setLevel(LOGLEVEL)
 
@@ -85,6 +87,15 @@ cdef class Logger(object):
             msg = json_encoder(msg)
         self._logger.debug(msg, *args, **kwargs)
 
+    def verbose(self, message, *args, serialize = False, **kwargs):
+        if callable(message):
+            msg = message(*args, **kwargs)
+        else:
+            msg = message
+        if serialize is True:
+            msg = json_encoder(msg)
+        self._logger.verbose(msg, *args, **kwargs)
+
     def warning(self, message, *args, **kwargs):
         self._logger.warning(message, *args, **kwargs)
 
@@ -105,7 +116,7 @@ cdef class Logger(object):
         if serialize is True:
             msg = json_encoder(msg)
         if stacktrace is True:
-            stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+            stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
             msg = f"-\r\n{stack}\r\n{error}"
         self._logger.critical(msg, *args, **kwargs)

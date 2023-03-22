@@ -987,11 +987,11 @@ static const char *__pyx_f[] = {
 /*--- Type declarations ---*/
 struct __pyx_obj_9navconfig_7logging_6logger_Logger;
 
-/* "navconfig/logging/logger.pyx":21
+/* "navconfig/logging/logger.pyx":23
  * 
  * 
  * cdef class Logger(object):             # <<<<<<<<<<<<<<
- *     __slots__ = ['name', '_debug', '_logger']
+ *     __slots__ = ['name', '_debug', '_logger', 'logger']
  *     cdef bool_t _debug
  */
 struct __pyx_obj_9navconfig_7logging_6logger_Logger {
@@ -1225,6 +1225,13 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 /* PyObjectCallOneArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
+/* PyObjectCallNoArg.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
+#else
+#define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
+#endif
+
 /* DictGetItem.proto */
 #if PY_MAJOR_VERSION >= 3 && !CYTHON_COMPILING_IN_PYPY
 static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
@@ -1250,13 +1257,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #define __Pyx_PyCallable_Check(obj)   (Py_TYPE(obj)->tp_call != NULL)
 #else
 #define __Pyx_PyCallable_Check(obj)   PyCallable_Check(obj)
-#endif
-
-/* PyObjectCallNoArg.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
-#else
-#define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
 #endif
 
 /* PyObjectFormatSimple.proto */
@@ -1460,6 +1460,7 @@ static const char __pyx_k__3[] = "-\r\n";
 static const char __pyx_k__4[] = "\r\n";
 static const char __pyx_k_get[] = "get";
 static const char __pyx_k_new[] = "__new__";
+static const char __pyx_k_sys[] = "sys";
 static const char __pyx_k_INFO[] = "INFO";
 static const char __pyx_k_dict[] = "__dict__";
 static const char __pyx_k_info[] = "info";
@@ -1479,6 +1480,8 @@ static const char __pyx_k_logger[] = "_logger";
 static const char __pyx_k_name_2[] = "__name__";
 static const char __pyx_k_pickle[] = "pickle";
 static const char __pyx_k_reduce[] = "__reduce__";
+static const char __pyx_k_stdout[] = "stdout";
+static const char __pyx_k_stream[] = "stream";
 static const char __pyx_k_typing[] = "typing";
 static const char __pyx_k_update[] = "update";
 static const char __pyx_k_asyncio[] = "asyncio";
@@ -1487,24 +1490,27 @@ static const char __pyx_k_inspect[] = "inspect";
 static const char __pyx_k_logging[] = "logging";
 static const char __pyx_k_manager[] = "manager";
 static const char __pyx_k_message[] = "message";
+static const char __pyx_k_verbose[] = "verbose";
 static const char __pyx_k_warning[] = "warning";
 static const char __pyx_k_CRITICAL[] = "CRITICAL";
 static const char __pyx_k_LOGLEVEL[] = "LOGLEVEL";
 static const char __pyx_k_Optional[] = "Optional";
 static const char __pyx_k_bold_red[] = "bold_red";
 static const char __pyx_k_critical[] = "critical";
+static const char __pyx_k_darkgrey[] = "darkgrey";
 static const char __pyx_k_getstate[] = "__getstate__";
+static const char __pyx_k_logger_2[] = "logger";
 static const char __pyx_k_loglevel[] = "loglevel";
 static const char __pyx_k_pyx_type[] = "__pyx_type";
 static const char __pyx_k_setLevel[] = "setLevel";
 static const char __pyx_k_setstate[] = "__setstate__";
 static const char __pyx_k_getLogger[] = "getLogger";
-static const char __pyx_k_lightgrey[] = "lightgrey";
 static const char __pyx_k_navconfig[] = "navconfig";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_serialize[] = "serialize";
 static const char __pyx_k_traceback[] = "traceback";
+static const char __pyx_k_addHandler[] = "addHandler";
 static const char __pyx_k_dictConfig[] = "dictConfig";
 static const char __pyx_k_format_exc[] = "format_exc";
 static const char __pyx_k_loggerDict[] = "loggerDict";
@@ -1514,10 +1520,14 @@ static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_json_decoder[] = "json_decoder";
 static const char __pyx_k_json_encoder[] = "json_encoder";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
+static const char __pyx_k_setFormatter[] = "setFormatter";
 static const char __pyx_k_stringsource[] = "stringsource";
+static const char __pyx_k_StreamHandler[] = "StreamHandler";
+static const char __pyx_k_VerboseLogger[] = "VerboseLogger";
 static const char __pyx_k_asyncio_tasks[] = "asyncio.tasks";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
 static const char __pyx_k_logging_config[] = "logging.config";
+static const char __pyx_k_setLoggerClass[] = "setLoggerClass";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
 static const char __pyx_k_ColoredFormatter[] = "ColoredFormatter";
@@ -1538,9 +1548,12 @@ static PyObject *__pyx_n_s_LOGLEVEL;
 static PyObject *__pyx_n_s_Logger;
 static PyObject *__pyx_n_s_Optional;
 static PyObject *__pyx_n_s_PickleError;
+static PyObject *__pyx_n_s_StreamHandler;
 static PyObject *__pyx_n_s_Union;
+static PyObject *__pyx_n_s_VerboseLogger;
 static PyObject *__pyx_kp_u__3;
 static PyObject *__pyx_kp_u__4;
+static PyObject *__pyx_n_s_addHandler;
 static PyObject *__pyx_n_s_asyncio;
 static PyObject *__pyx_n_s_asyncio_coroutines;
 static PyObject *__pyx_n_s_asyncio_tasks;
@@ -1548,6 +1561,7 @@ static PyObject *__pyx_n_s_bold_red;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_config;
 static PyObject *__pyx_n_s_critical;
+static PyObject *__pyx_n_s_darkgrey;
 static PyObject *__pyx_n_s_debug;
 static PyObject *__pyx_n_u_debug;
 static PyObject *__pyx_n_u_debug_2;
@@ -1563,9 +1577,9 @@ static PyObject *__pyx_n_s_info;
 static PyObject *__pyx_n_s_inspect;
 static PyObject *__pyx_n_s_json_decoder;
 static PyObject *__pyx_n_s_json_encoder;
-static PyObject *__pyx_n_s_lightgrey;
 static PyObject *__pyx_n_u_logger;
 static PyObject *__pyx_n_s_loggerDict;
+static PyObject *__pyx_n_u_logger_2;
 static PyObject *__pyx_n_s_logging;
 static PyObject *__pyx_n_s_logging_config;
 static PyObject *__pyx_n_s_loglevel;
@@ -1592,27 +1606,38 @@ static PyObject *__pyx_n_s_reduce_cython;
 static PyObject *__pyx_n_s_reduce_ex;
 static PyObject *__pyx_n_s_reset;
 static PyObject *__pyx_n_s_serialize;
+static PyObject *__pyx_n_s_setFormatter;
 static PyObject *__pyx_n_s_setLevel;
+static PyObject *__pyx_n_s_setLoggerClass;
 static PyObject *__pyx_n_s_setstate;
 static PyObject *__pyx_n_s_setstate_cython;
 static PyObject *__pyx_n_s_slots;
 static PyObject *__pyx_n_s_stacktrace;
+static PyObject *__pyx_n_s_stdout;
+static PyObject *__pyx_n_s_stream;
 static PyObject *__pyx_kp_s_stringsource;
+static PyObject *__pyx_n_s_sys;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_traceback;
 static PyObject *__pyx_n_s_typing;
 static PyObject *__pyx_n_s_update;
+static PyObject *__pyx_n_s_verbose;
 static PyObject *__pyx_n_s_warning;
 static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_config, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UNUSED struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_loglevel); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_stacktrace, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_16__reduce_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_18__setstate_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2addConsole(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6logger___get__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4disable(CYTHON_UNUSED struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_loglevel); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6setLevel(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_level); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8addHandler(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_handler); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10setName(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12info(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14debug(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_16verbose(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_18warning(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_20error(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_22critical(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_stacktrace, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_24__reduce_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_26__setstate_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_9navconfig_7logging_6logger___pyx_unpickle_Logger(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_tp_new_9navconfig_7logging_6logger_Logger(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_get = {0, &__pyx_n_s_get, 0, 0, 0};
@@ -1625,7 +1650,7 @@ static PyObject *__pyx_tuple__6;
 static PyObject *__pyx_codeobj__7;
 /* Late includes */
 
-/* "navconfig/logging/logger.pyx":27
+/* "navconfig/logging/logger.pyx":29
  *     cdef object _logger
  * 
  *     def __init__(self, name: str = '', config: dict = None, **kwargs) -> None:             # <<<<<<<<<<<<<<
@@ -1678,7 +1703,7 @@ static int __pyx_pw_9navconfig_7logging_6logger_6Logger_1__init__(PyObject *__py
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 27, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 29, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -1695,15 +1720,15 @@ static int __pyx_pw_9navconfig_7logging_6logger_6Logger_1__init__(PyObject *__py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 27, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 29, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("navconfig.logging.logger.Logger.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 27, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_config), (&PyDict_Type), 1, "config", 1))) __PYX_ERR(0, 27, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 29, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_config), (&PyDict_Type), 1, "config", 1))) __PYX_ERR(0, 29, __pyx_L1_error)
   __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_name, __pyx_v_config, __pyx_v_kwargs);
 
   /* function exit code */
@@ -1731,7 +1756,7 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "navconfig/logging/logger.pyx":29
+  /* "navconfig/logging/logger.pyx":31
  *     def __init__(self, name: str = '', config: dict = None, **kwargs) -> None:
  *         ### Logging handler:
  *         self.name = ''             # <<<<<<<<<<<<<<
@@ -1744,7 +1769,7 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   __Pyx_DECREF(__pyx_v_self->name);
   __pyx_v_self->name = __pyx_kp_u_;
 
-  /* "navconfig/logging/logger.pyx":30
+  /* "navconfig/logging/logger.pyx":32
  *         ### Logging handler:
  *         self.name = ''
  *         if not name:             # <<<<<<<<<<<<<<
@@ -1755,23 +1780,23 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   __pyx_t_2 = ((!__pyx_t_1) != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":31
+    /* "navconfig/logging/logger.pyx":33
  *         self.name = ''
  *         if not name:
  *             self.name = __name__             # <<<<<<<<<<<<<<
  *         else:
  *             self.name = name
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_name_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_name_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||((void)PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 31, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||((void)PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GIVEREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_v_self->name);
     __Pyx_DECREF(__pyx_v_self->name);
     __pyx_v_self->name = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "navconfig/logging/logger.pyx":30
+    /* "navconfig/logging/logger.pyx":32
  *         ### Logging handler:
  *         self.name = ''
  *         if not name:             # <<<<<<<<<<<<<<
@@ -1781,7 +1806,7 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
     goto __pyx_L3;
   }
 
-  /* "navconfig/logging/logger.pyx":33
+  /* "navconfig/logging/logger.pyx":35
  *             self.name = __name__
  *         else:
  *             self.name = name             # <<<<<<<<<<<<<<
@@ -1797,40 +1822,40 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   }
   __pyx_L3:;
 
-  /* "navconfig/logging/logger.pyx":34
+  /* "navconfig/logging/logger.pyx":36
  *         else:
  *             self.name = name
  *         self._debug = kwargs.get('debug', DEBUG)             # <<<<<<<<<<<<<<
  *         if config:
  *             dictConfig(config)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyDict_GetItemDefault(__pyx_v_kwargs, __pyx_n_u_debug, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItemDefault(__pyx_v_kwargs, __pyx_n_u_debug, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_5 == ((bool)-1)) && PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_5 == ((bool)-1)) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_self->_debug = __pyx_t_5;
 
-  /* "navconfig/logging/logger.pyx":35
+  /* "navconfig/logging/logger.pyx":37
  *             self.name = name
  *         self._debug = kwargs.get('debug', DEBUG)
  *         if config:             # <<<<<<<<<<<<<<
  *             dictConfig(config)
- *         self._logger = logging.getLogger(self.name)
+ *         setLoggerClass(VerboseLogger)
  */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_config); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_config); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 37, __pyx_L1_error)
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":36
+    /* "navconfig/logging/logger.pyx":38
  *         self._debug = kwargs.get('debug', DEBUG)
  *         if config:
  *             dictConfig(config)             # <<<<<<<<<<<<<<
+ *         setLoggerClass(VerboseLogger)
  *         self._logger = logging.getLogger(self.name)
- *         self._logger.setLevel(LOGLEVEL)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_dictConfig); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_dictConfig); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -1844,30 +1869,59 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
     }
     __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_6, __pyx_v_config) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_config);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 36, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":35
+    /* "navconfig/logging/logger.pyx":37
  *             self.name = name
  *         self._debug = kwargs.get('debug', DEBUG)
  *         if config:             # <<<<<<<<<<<<<<
  *             dictConfig(config)
- *         self._logger = logging.getLogger(self.name)
+ *         setLoggerClass(VerboseLogger)
  */
   }
 
-  /* "navconfig/logging/logger.pyx":37
+  /* "navconfig/logging/logger.pyx":39
  *         if config:
  *             dictConfig(config)
+ *         setLoggerClass(VerboseLogger)             # <<<<<<<<<<<<<<
+ *         self._logger = logging.getLogger(self.name)
+ *         self._logger.setLevel(LOGLEVEL)
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_setLoggerClass); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_VerboseLogger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_7 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_7)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_7);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_7, __pyx_t_6) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":40
+ *             dictConfig(config)
+ *         setLoggerClass(VerboseLogger)
  *         self._logger = logging.getLogger(self.name)             # <<<<<<<<<<<<<<
  *         self._logger.setLevel(LOGLEVEL)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_logging); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_logging); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_getLogger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_getLogger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -1882,7 +1936,7 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   }
   __pyx_t_4 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_3, __pyx_v_self->name) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_self->name);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 37, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_GIVEREF(__pyx_t_4);
@@ -1891,16 +1945,16 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   __pyx_v_self->_logger = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "navconfig/logging/logger.pyx":38
- *             dictConfig(config)
+  /* "navconfig/logging/logger.pyx":41
+ *         setLoggerClass(VerboseLogger)
  *         self._logger = logging.getLogger(self.name)
  *         self._logger.setLevel(LOGLEVEL)             # <<<<<<<<<<<<<<
  * 
- *     def disable(self, name: str, loglevel = logging.CRITICAL):
+ *     def addConsole(self) -> None:
  */
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_LOGLEVEL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_LOGLEVEL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_7 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_6))) {
@@ -1915,12 +1969,12 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   __pyx_t_4 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_7, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_3);
   __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "navconfig/logging/logger.pyx":27
+  /* "navconfig/logging/logger.pyx":29
  *     cdef object _logger
  * 
  *     def __init__(self, name: str = '', config: dict = None, **kwargs) -> None:             # <<<<<<<<<<<<<<
@@ -1943,8 +1997,285 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":40
+/* "navconfig/logging/logger.pyx":43
  *         self._logger.setLevel(LOGLEVEL)
+ * 
+ *     def addConsole(self) -> None:             # <<<<<<<<<<<<<<
+ *         # create a stream handler with sys.stdout as the stream
+ *         ch = logging.StreamHandler(stream=sys.stdout)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3addConsole(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_2addConsole[] = "Logger.addConsole(self) -> None";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3addConsole(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("addConsole (wrapper)", 0);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_2addConsole(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2addConsole(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self) {
+  PyObject *__pyx_v_ch = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("addConsole", 0);
+
+  /* "navconfig/logging/logger.pyx":45
+ *     def addConsole(self) -> None:
+ *         # create a stream handler with sys.stdout as the stream
+ *         ch = logging.StreamHandler(stream=sys.stdout)             # <<<<<<<<<<<<<<
+ *         ch.setLevel(logging.DEBUG)
+ *         ch.setFormatter(ColoredFormatter())
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_StreamHandler); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_stdout); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_stream, __pyx_t_4) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_ch = __pyx_t_4;
+  __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":46
+ *         # create a stream handler with sys.stdout as the stream
+ *         ch = logging.StreamHandler(stream=sys.stdout)
+ *         ch.setLevel(logging.DEBUG)             # <<<<<<<<<<<<<<
+ *         ch.setFormatter(ColoredFormatter())
+ *         self._logger.addHandler(ch)
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ch, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":47
+ *         ch = logging.StreamHandler(stream=sys.stdout)
+ *         ch.setLevel(logging.DEBUG)
+ *         ch.setFormatter(ColoredFormatter())             # <<<<<<<<<<<<<<
+ *         self._logger.addHandler(ch)
+ *         ## also, changing the logLevel of root logger
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ch, __pyx_n_s_setFormatter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":48
+ *         ch.setLevel(logging.DEBUG)
+ *         ch.setFormatter(ColoredFormatter())
+ *         self._logger.addHandler(ch)             # <<<<<<<<<<<<<<
+ *         ## also, changing the logLevel of root logger
+ *         self._logger.setLevel(logging.DEBUG)
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_addHandler); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_3, __pyx_v_ch) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_ch);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":50
+ *         self._logger.addHandler(ch)
+ *         ## also, changing the logLevel of root logger
+ *         self._logger.setLevel(logging.DEBUG)             # <<<<<<<<<<<<<<
+ * 
+ *     @property
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_logging); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "navconfig/logging/logger.pyx":43
+ *         self._logger.setLevel(LOGLEVEL)
+ * 
+ *     def addConsole(self) -> None:             # <<<<<<<<<<<<<<
+ *         # create a stream handler with sys.stdout as the stream
+ *         ch = logging.StreamHandler(stream=sys.stdout)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("navconfig.logging.logger.Logger.addConsole", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_ch);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "navconfig/logging/logger.pyx":53
+ * 
+ *     @property
+ *     def logger(self):             # <<<<<<<<<<<<<<
+ *         return self._logger
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_6logger_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_6logger_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_6logger___get__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6logger___get__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+
+  /* "navconfig/logging/logger.pyx":54
+ *     @property
+ *     def logger(self):
+ *         return self._logger             # <<<<<<<<<<<<<<
+ * 
+ *     def disable(self, name: str, loglevel = logging.CRITICAL):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->_logger);
+  __pyx_r = __pyx_v_self->_logger;
+  goto __pyx_L0;
+
+  /* "navconfig/logging/logger.pyx":53
+ * 
+ *     @property
+ *     def logger(self):             # <<<<<<<<<<<<<<
+ *         return self._logger
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "navconfig/logging/logger.pyx":56
+ *         return self._logger
  * 
  *     def disable(self, name: str, loglevel = logging.CRITICAL):             # <<<<<<<<<<<<<<
  *         ## disable logger
@@ -1952,9 +2283,9 @@ static int __pyx_pf_9navconfig_7logging_6logger_6Logger___init__(struct __pyx_ob
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_2disable[] = "Logger.disable(self, unicode name: str, loglevel=logging.CRITICAL)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_5disable(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_4disable[] = "Logger.disable(self, unicode name: str, loglevel=logging.CRITICAL)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_5disable(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_name = 0;
   PyObject *__pyx_v_loglevel = 0;
   int __pyx_lineno = 0;
@@ -1991,7 +2322,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable(PyObject 
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "disable") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "disable") < 0)) __PYX_ERR(0, 56, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -2007,14 +2338,14 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable(PyObject 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("disable", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 40, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("disable", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 56, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("navconfig.logging.logger.Logger.disable", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 40, __pyx_L1_error)
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_name, __pyx_v_loglevel);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_4disable(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_name, __pyx_v_loglevel);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2025,7 +2356,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable(PyObject 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UNUSED struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_loglevel) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4disable(CYTHON_UNUSED struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_loglevel) {
   PyObject *__pyx_v_aio = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -2037,16 +2368,16 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UN
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("disable", 0);
 
-  /* "navconfig/logging/logger.pyx":42
+  /* "navconfig/logging/logger.pyx":58
  *     def disable(self, name: str, loglevel = logging.CRITICAL):
  *         ## disable logger
  *         aio = logging.getLogger(name)             # <<<<<<<<<<<<<<
  *         aio.setLevel(loglevel)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_getLogger); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_getLogger); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -2061,20 +2392,20 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UN
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_v_name) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_name);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 42, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_aio = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "navconfig/logging/logger.pyx":43
+  /* "navconfig/logging/logger.pyx":59
  *         ## disable logger
  *         aio = logging.getLogger(name)
  *         aio.setLevel(loglevel)             # <<<<<<<<<<<<<<
  * 
- *     def setName(self, name: str):
+ *     def setLevel(self, level) -> None:
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_aio, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_aio, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -2088,13 +2419,13 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UN
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_v_loglevel) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_loglevel);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "navconfig/logging/logger.pyx":40
- *         self._logger.setLevel(LOGLEVEL)
+  /* "navconfig/logging/logger.pyx":56
+ *         return self._logger
  * 
  *     def disable(self, name: str, loglevel = logging.CRITICAL):             # <<<<<<<<<<<<<<
  *         ## disable logger
@@ -2117,8 +2448,172 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UN
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":45
+/* "navconfig/logging/logger.pyx":61
  *         aio.setLevel(loglevel)
+ * 
+ *     def setLevel(self, level) -> None:             # <<<<<<<<<<<<<<
+ *         self._logger.setLevel(level)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7setLevel(PyObject *__pyx_v_self, PyObject *__pyx_v_level); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_6setLevel[] = "Logger.setLevel(self, level) -> None";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7setLevel(PyObject *__pyx_v_self, PyObject *__pyx_v_level) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("setLevel (wrapper)", 0);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_6setLevel(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject *)__pyx_v_level));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6setLevel(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_level) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("setLevel", 0);
+
+  /* "navconfig/logging/logger.pyx":62
+ * 
+ *     def setLevel(self, level) -> None:
+ *         self._logger.setLevel(level)             # <<<<<<<<<<<<<<
+ * 
+ *     def addHandler(self, handler) -> None:
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_setLevel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_level) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_level);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "navconfig/logging/logger.pyx":61
+ *         aio.setLevel(loglevel)
+ * 
+ *     def setLevel(self, level) -> None:             # <<<<<<<<<<<<<<
+ *         self._logger.setLevel(level)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("navconfig.logging.logger.Logger.setLevel", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "navconfig/logging/logger.pyx":64
+ *         self._logger.setLevel(level)
+ * 
+ *     def addHandler(self, handler) -> None:             # <<<<<<<<<<<<<<
+ *         self._logger.addHandler(handler)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9addHandler(PyObject *__pyx_v_self, PyObject *__pyx_v_handler); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_8addHandler[] = "Logger.addHandler(self, handler) -> None";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9addHandler(PyObject *__pyx_v_self, PyObject *__pyx_v_handler) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("addHandler (wrapper)", 0);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_8addHandler(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject *)__pyx_v_handler));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8addHandler(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_handler) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("addHandler", 0);
+
+  /* "navconfig/logging/logger.pyx":65
+ * 
+ *     def addHandler(self, handler) -> None:
+ *         self._logger.addHandler(handler)             # <<<<<<<<<<<<<<
+ * 
+ *     def setName(self, name: str):
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_addHandler); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_handler) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_handler);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "navconfig/logging/logger.pyx":64
+ *         self._logger.setLevel(level)
+ * 
+ *     def addHandler(self, handler) -> None:             # <<<<<<<<<<<<<<
+ *         self._logger.addHandler(handler)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("navconfig.logging.logger.Logger.addHandler", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "navconfig/logging/logger.pyx":67
+ *         self._logger.addHandler(handler)
  * 
  *     def setName(self, name: str):             # <<<<<<<<<<<<<<
  *         ## change the logger:
@@ -2126,17 +2621,17 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_2disable(CYTHON_UN
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_5setName(PyObject *__pyx_v_self, PyObject *__pyx_v_name); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_4setName[] = "Logger.setName(self, unicode name: str)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_5setName(PyObject *__pyx_v_self, PyObject *__pyx_v_name) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11setName(PyObject *__pyx_v_self, PyObject *__pyx_v_name); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_10setName[] = "Logger.setName(self, unicode name: str)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11setName(PyObject *__pyx_v_self, PyObject *__pyx_v_name) {
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("setName (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 45, __pyx_L1_error)
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject*)__pyx_v_name));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 1, "name", 1))) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_10setName(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject*)__pyx_v_name));
 
   /* function exit code */
   goto __pyx_L0;
@@ -2147,7 +2642,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_5setName(PyObject 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10setName(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_name) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2157,33 +2652,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("setName", 0);
 
-  /* "navconfig/logging/logger.pyx":47
+  /* "navconfig/logging/logger.pyx":69
  *     def setName(self, name: str):
  *         ## change the logger:
  *         logging.Logger.manager.loggerDict[self.name].name = name             # <<<<<<<<<<<<<<
- *         # self._logger = logging.getLogger(name)
  *         self.name = name
+ * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_Logger); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_Logger); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_manager); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_manager); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_loggerDict); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_loggerDict); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_v_self->name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_v_self->name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_name, __pyx_v_name) < 0) __PYX_ERR(0, 47, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_name, __pyx_v_name) < 0) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "navconfig/logging/logger.pyx":49
+  /* "navconfig/logging/logger.pyx":70
+ *         ## change the logger:
  *         logging.Logger.manager.loggerDict[self.name].name = name
- *         # self._logger = logging.getLogger(name)
  *         self.name = name             # <<<<<<<<<<<<<<
  * 
  *     def info(self, message, *args, serialize = False, **kwargs):
@@ -2194,8 +2689,8 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __
   __Pyx_DECREF(__pyx_v_self->name);
   __pyx_v_self->name = __pyx_v_name;
 
-  /* "navconfig/logging/logger.pyx":45
- *         aio.setLevel(loglevel)
+  /* "navconfig/logging/logger.pyx":67
+ *         self._logger.addHandler(handler)
  * 
  *     def setName(self, name: str):             # <<<<<<<<<<<<<<
  *         ## change the logger:
@@ -2216,7 +2711,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":51
+/* "navconfig/logging/logger.pyx":72
  *         self.name = name
  * 
  *     def info(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -2225,9 +2720,9 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_4setName(struct __
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_6info[] = "Logger.info(self, message, *args, serialize=False, **kwargs)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13info(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_12info[] = "Logger.info(self, message, *args, serialize=False, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13info(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_message = 0;
   PyObject *__pyx_v_serialize = 0;
   PyObject *__pyx_v_args = 0;
@@ -2277,7 +2772,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "info") < 0)) __PYX_ERR(0, 51, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "info") < 0)) __PYX_ERR(0, 72, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -2289,7 +2784,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("info", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 51, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("info", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 72, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -2297,7 +2792,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_6info(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_12info(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
   __Pyx_XDECREF(__pyx_v_args);
@@ -2306,7 +2801,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_7info(PyObject *__
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12info(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   PyObject *__pyx_v_msg = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -2321,33 +2816,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("info", 0);
 
-  /* "navconfig/logging/logger.pyx":52
+  /* "navconfig/logging/logger.pyx":73
  * 
  *     def info(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
  *             msg = message(*args, **kwargs)
  *         else:
  */
-  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 73, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":53
+    /* "navconfig/logging/logger.pyx":74
  *     def info(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):
  *             msg = message(*args, **kwargs)             # <<<<<<<<<<<<<<
  *         else:
  *             msg = message
  */
-    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 53, __pyx_L1_error)
+    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 53, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 74, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_msg = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":52
+    /* "navconfig/logging/logger.pyx":73
  * 
  *     def info(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
@@ -2357,7 +2852,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
     goto __pyx_L3;
   }
 
-  /* "navconfig/logging/logger.pyx":55
+  /* "navconfig/logging/logger.pyx":76
  *             msg = message(*args, **kwargs)
  *         else:
  *             msg = message             # <<<<<<<<<<<<<<
@@ -2370,7 +2865,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
   }
   __pyx_L3:;
 
-  /* "navconfig/logging/logger.pyx":56
+  /* "navconfig/logging/logger.pyx":77
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -2381,14 +2876,14 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "navconfig/logging/logger.pyx":57
+    /* "navconfig/logging/logger.pyx":78
  *             msg = message
  *         if serialize is True:
  *             msg = json_encoder(msg)             # <<<<<<<<<<<<<<
  *         self._logger.info(msg, *args, **kwargs)
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -2402,13 +2897,13 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_msg) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_msg);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 57, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":56
+    /* "navconfig/logging/logger.pyx":77
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -2417,33 +2912,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
  */
   }
 
-  /* "navconfig/logging/logger.pyx":58
+  /* "navconfig/logging/logger.pyx":79
  *         if serialize is True:
  *             msg = json_encoder(msg)
  *         self._logger.info(msg, *args, **kwargs)             # <<<<<<<<<<<<<<
  * 
  *     def debug(self, message, *args, serialize = False, **kwargs):
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_info); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_info); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_msg);
   __Pyx_GIVEREF(__pyx_v_msg);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_msg);
-  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "navconfig/logging/logger.pyx":51
+  /* "navconfig/logging/logger.pyx":72
  *         self.name = name
  * 
  *     def info(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -2468,7 +2963,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":60
+/* "navconfig/logging/logger.pyx":81
  *         self._logger.info(msg, *args, **kwargs)
  * 
  *     def debug(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -2477,9 +2972,9 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_6info(struct __pyx
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_8debug[] = "Logger.debug(self, message, *args, serialize=False, **kwargs)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15debug(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_14debug[] = "Logger.debug(self, message, *args, serialize=False, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15debug(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_message = 0;
   PyObject *__pyx_v_serialize = 0;
   PyObject *__pyx_v_args = 0;
@@ -2529,7 +3024,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *_
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "debug") < 0)) __PYX_ERR(0, 60, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "debug") < 0)) __PYX_ERR(0, 81, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -2541,7 +3036,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("debug", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 60, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("debug", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 81, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -2549,7 +3044,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *_
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_14debug(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
   __Pyx_XDECREF(__pyx_v_args);
@@ -2558,7 +3053,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug(PyObject *_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14debug(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   PyObject *__pyx_v_msg = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -2573,33 +3068,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("debug", 0);
 
-  /* "navconfig/logging/logger.pyx":61
+  /* "navconfig/logging/logger.pyx":82
  * 
  *     def debug(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
  *             msg = message(*args, **kwargs)
  *         else:
  */
-  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 82, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":62
+    /* "navconfig/logging/logger.pyx":83
  *     def debug(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):
  *             msg = message(*args, **kwargs)             # <<<<<<<<<<<<<<
  *         else:
  *             msg = message
  */
-    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_msg = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":61
+    /* "navconfig/logging/logger.pyx":82
  * 
  *     def debug(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
@@ -2609,7 +3104,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
     goto __pyx_L3;
   }
 
-  /* "navconfig/logging/logger.pyx":64
+  /* "navconfig/logging/logger.pyx":85
  *             msg = message(*args, **kwargs)
  *         else:
  *             msg = message             # <<<<<<<<<<<<<<
@@ -2622,7 +3117,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
   }
   __pyx_L3:;
 
-  /* "navconfig/logging/logger.pyx":65
+  /* "navconfig/logging/logger.pyx":86
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -2633,14 +3128,14 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "navconfig/logging/logger.pyx":66
+    /* "navconfig/logging/logger.pyx":87
  *             msg = message
  *         if serialize is True:
  *             msg = json_encoder(msg)             # <<<<<<<<<<<<<<
  *         self._logger.debug(msg, *args, **kwargs)
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 87, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -2654,13 +3149,13 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_msg) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_msg);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":65
+    /* "navconfig/logging/logger.pyx":86
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -2669,33 +3164,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
  */
   }
 
-  /* "navconfig/logging/logger.pyx":67
+  /* "navconfig/logging/logger.pyx":88
  *         if serialize is True:
  *             msg = json_encoder(msg)
  *         self._logger.debug(msg, *args, **kwargs)             # <<<<<<<<<<<<<<
  * 
- *     def warning(self, message, *args, **kwargs):
+ *     def verbose(self, message, *args, serialize = False, **kwargs):
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_debug); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_debug); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_msg);
   __Pyx_GIVEREF(__pyx_v_msg);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_msg);
-  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "navconfig/logging/logger.pyx":60
+  /* "navconfig/logging/logger.pyx":81
  *         self._logger.info(msg, *args, **kwargs)
  * 
  *     def debug(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -2720,8 +3215,260 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":69
+/* "navconfig/logging/logger.pyx":90
  *         self._logger.debug(msg, *args, **kwargs)
+ * 
+ *     def verbose(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
+ *         if callable(message):
+ *             msg = message(*args, **kwargs)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_17verbose(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_16verbose[] = "Logger.verbose(self, message, *args, serialize=False, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_17verbose(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_message = 0;
+  PyObject *__pyx_v_serialize = 0;
+  PyObject *__pyx_v_args = 0;
+  PyObject *__pyx_v_kwargs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("verbose (wrapper)", 0);
+  __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return NULL;
+  __Pyx_GOTREF(__pyx_v_kwargs);
+  if (PyTuple_GET_SIZE(__pyx_args) > 1) {
+    __pyx_v_args = PyTuple_GetSlice(__pyx_args, 1, PyTuple_GET_SIZE(__pyx_args));
+    if (unlikely(!__pyx_v_args)) {
+      __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+      __Pyx_RefNannyFinishContext();
+      return NULL;
+    }
+    __Pyx_GOTREF(__pyx_v_args);
+  } else {
+    __pyx_v_args = __pyx_empty_tuple; __Pyx_INCREF(__pyx_empty_tuple);
+  }
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_message,&__pyx_n_s_serialize,0};
+    PyObject* values[2] = {0,0};
+    values[1] = ((PyObject *)Py_False);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        default:
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_message)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+      }
+      if (kw_args == 1) {
+        const Py_ssize_t index = 1;
+        PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, *__pyx_pyargnames[index]);
+        if (value) { values[index] = value; kw_args--; }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "verbose") < 0)) __PYX_ERR(0, 90, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+    }
+    __pyx_v_message = values[0];
+    __pyx_v_serialize = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("verbose", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 90, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
+  __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+  __Pyx_AddTraceback("navconfig.logging.logger.Logger.verbose", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_16verbose(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
+
+  /* function exit code */
+  __Pyx_XDECREF(__pyx_v_args);
+  __Pyx_XDECREF(__pyx_v_kwargs);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_16verbose(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+  PyObject *__pyx_v_msg = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("verbose", 0);
+
+  /* "navconfig/logging/logger.pyx":91
+ * 
+ *     def verbose(self, message, *args, serialize = False, **kwargs):
+ *         if callable(message):             # <<<<<<<<<<<<<<
+ *             msg = message(*args, **kwargs)
+ *         else:
+ */
+  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_2 = (__pyx_t_1 != 0);
+  if (__pyx_t_2) {
+
+    /* "navconfig/logging/logger.pyx":92
+ *     def verbose(self, message, *args, serialize = False, **kwargs):
+ *         if callable(message):
+ *             msg = message(*args, **kwargs)             # <<<<<<<<<<<<<<
+ *         else:
+ *             msg = message
+ */
+    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 92, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_v_msg = __pyx_t_4;
+    __pyx_t_4 = 0;
+
+    /* "navconfig/logging/logger.pyx":91
+ * 
+ *     def verbose(self, message, *args, serialize = False, **kwargs):
+ *         if callable(message):             # <<<<<<<<<<<<<<
+ *             msg = message(*args, **kwargs)
+ *         else:
+ */
+    goto __pyx_L3;
+  }
+
+  /* "navconfig/logging/logger.pyx":94
+ *             msg = message(*args, **kwargs)
+ *         else:
+ *             msg = message             # <<<<<<<<<<<<<<
+ *         if serialize is True:
+ *             msg = json_encoder(msg)
+ */
+  /*else*/ {
+    __Pyx_INCREF(__pyx_v_message);
+    __pyx_v_msg = __pyx_v_message;
+  }
+  __pyx_L3:;
+
+  /* "navconfig/logging/logger.pyx":95
+ *         else:
+ *             msg = message
+ *         if serialize is True:             # <<<<<<<<<<<<<<
+ *             msg = json_encoder(msg)
+ *         self._logger.verbose(msg, *args, **kwargs)
+ */
+  __pyx_t_2 = (__pyx_v_serialize == Py_True);
+  __pyx_t_1 = (__pyx_t_2 != 0);
+  if (__pyx_t_1) {
+
+    /* "navconfig/logging/logger.pyx":96
+ *             msg = message
+ *         if serialize is True:
+ *             msg = json_encoder(msg)             # <<<<<<<<<<<<<<
+ *         self._logger.verbose(msg, *args, **kwargs)
+ * 
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_5 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_5)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_msg) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_msg);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_4);
+    __pyx_t_4 = 0;
+
+    /* "navconfig/logging/logger.pyx":95
+ *         else:
+ *             msg = message
+ *         if serialize is True:             # <<<<<<<<<<<<<<
+ *             msg = json_encoder(msg)
+ *         self._logger.verbose(msg, *args, **kwargs)
+ */
+  }
+
+  /* "navconfig/logging/logger.pyx":97
+ *         if serialize is True:
+ *             msg = json_encoder(msg)
+ *         self._logger.verbose(msg, *args, **kwargs)             # <<<<<<<<<<<<<<
+ * 
+ *     def warning(self, message, *args, **kwargs):
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_verbose); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_INCREF(__pyx_v_msg);
+  __Pyx_GIVEREF(__pyx_v_msg);
+  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_msg);
+  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "navconfig/logging/logger.pyx":90
+ *         self._logger.debug(msg, *args, **kwargs)
+ * 
+ *     def verbose(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
+ *         if callable(message):
+ *             msg = message(*args, **kwargs)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("navconfig.logging.logger.Logger.verbose", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_msg);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "navconfig/logging/logger.pyx":99
+ *         self._logger.verbose(msg, *args, **kwargs)
  * 
  *     def warning(self, message, *args, **kwargs):             # <<<<<<<<<<<<<<
  *         self._logger.warning(message, *args, **kwargs)
@@ -2729,9 +3476,9 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_8debug(struct __py
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_10warning[] = "Logger.warning(self, message, *args, **kwargs)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_19warning(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_18warning[] = "Logger.warning(self, message, *args, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_19warning(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_message = 0;
   PyObject *__pyx_v_args = 0;
   PyObject *__pyx_v_kwargs = 0;
@@ -2774,7 +3521,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "warning") < 0)) __PYX_ERR(0, 69, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "warning") < 0)) __PYX_ERR(0, 99, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -2785,7 +3532,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("warning", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 69, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("warning", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 99, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -2793,7 +3540,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_args, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_18warning(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
   __Pyx_XDECREF(__pyx_v_args);
@@ -2802,7 +3549,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning(PyObject
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_18warning(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2814,34 +3561,34 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(struct _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("warning", 0);
 
-  /* "navconfig/logging/logger.pyx":70
+  /* "navconfig/logging/logger.pyx":100
  * 
  *     def warning(self, message, *args, **kwargs):
  *         self._logger.warning(message, *args, **kwargs)             # <<<<<<<<<<<<<<
  * 
  *     def error(self, message, *args, serialize = False, **kwargs):
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_warning); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_warning); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_v_message);
   __Pyx_GIVEREF(__pyx_v_message);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_message);
-  __pyx_t_3 = PyNumber_Add(__pyx_t_2, __pyx_v_args); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Add(__pyx_t_2, __pyx_v_args); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_2 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "navconfig/logging/logger.pyx":69
- *         self._logger.debug(msg, *args, **kwargs)
+  /* "navconfig/logging/logger.pyx":99
+ *         self._logger.verbose(msg, *args, **kwargs)
  * 
  *     def warning(self, message, *args, **kwargs):             # <<<<<<<<<<<<<<
  *         self._logger.warning(message, *args, **kwargs)
@@ -2864,7 +3611,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(struct _
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":72
+/* "navconfig/logging/logger.pyx":102
  *         self._logger.warning(message, *args, **kwargs)
  * 
  *     def error(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -2873,9 +3620,9 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_10warning(struct _
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_12error[] = "Logger.error(self, message, *args, serialize=False, **kwargs)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_21error(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_20error[] = "Logger.error(self, message, *args, serialize=False, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_21error(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_message = 0;
   PyObject *__pyx_v_serialize = 0;
   PyObject *__pyx_v_args = 0;
@@ -2925,7 +3672,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "error") < 0)) __PYX_ERR(0, 72, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "error") < 0)) __PYX_ERR(0, 102, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -2937,7 +3684,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("error", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 72, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("error", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 102, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -2945,7 +3692,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_12error(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_20error(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
   __Pyx_XDECREF(__pyx_v_args);
@@ -2954,7 +3701,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_13error(PyObject *
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_20error(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   PyObject *__pyx_v_msg = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -2969,33 +3716,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("error", 0);
 
-  /* "navconfig/logging/logger.pyx":73
+  /* "navconfig/logging/logger.pyx":103
  * 
  *     def error(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
  *             msg = message(*args, **kwargs)
  *         else:
  */
-  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 103, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":74
+    /* "navconfig/logging/logger.pyx":104
  *     def error(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):
  *             msg = message(*args, **kwargs)             # <<<<<<<<<<<<<<
  *         else:
  *             msg = message
  */
-    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
+    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 74, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_msg = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":73
+    /* "navconfig/logging/logger.pyx":103
  * 
  *     def error(self, message, *args, serialize = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
@@ -3005,7 +3752,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
     goto __pyx_L3;
   }
 
-  /* "navconfig/logging/logger.pyx":76
+  /* "navconfig/logging/logger.pyx":106
  *             msg = message(*args, **kwargs)
  *         else:
  *             msg = message             # <<<<<<<<<<<<<<
@@ -3018,7 +3765,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
   }
   __pyx_L3:;
 
-  /* "navconfig/logging/logger.pyx":77
+  /* "navconfig/logging/logger.pyx":107
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -3029,14 +3776,14 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "navconfig/logging/logger.pyx":78
+    /* "navconfig/logging/logger.pyx":108
  *             msg = message
  *         if serialize is True:
  *             msg = json_encoder(msg)             # <<<<<<<<<<<<<<
  *         self._logger.error(msg, *args, **kwargs)
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 78, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -3050,13 +3797,13 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_msg) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_msg);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 78, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":77
+    /* "navconfig/logging/logger.pyx":107
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -3065,33 +3812,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
  */
   }
 
-  /* "navconfig/logging/logger.pyx":79
+  /* "navconfig/logging/logger.pyx":109
  *         if serialize is True:
  *             msg = json_encoder(msg)
  *         self._logger.error(msg, *args, **kwargs)             # <<<<<<<<<<<<<<
  * 
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_error); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_error); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_msg);
   __Pyx_GIVEREF(__pyx_v_msg);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_msg);
-  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "navconfig/logging/logger.pyx":72
+  /* "navconfig/logging/logger.pyx":102
  *         self._logger.warning(message, *args, **kwargs)
  * 
  *     def error(self, message, *args, serialize = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -3116,7 +3863,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
   return __pyx_r;
 }
 
-/* "navconfig/logging/logger.pyx":81
+/* "navconfig/logging/logger.pyx":111
  *         self._logger.error(msg, *args, **kwargs)
  * 
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -3125,9 +3872,9 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_12error(struct __p
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_14critical[] = "Logger.critical(self, message, *args, serialize=False, stacktrace=False, **kwargs)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_23critical(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_22critical[] = "Logger.critical(self, message, *args, serialize=False, stacktrace=False, **kwargs)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_23critical(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_message = 0;
   PyObject *__pyx_v_serialize = 0;
   PyObject *__pyx_v_stacktrace = 0;
@@ -3181,7 +3928,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObjec
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "critical") < 0)) __PYX_ERR(0, 81, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "critical") < 0)) __PYX_ERR(0, 111, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -3194,7 +3941,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObjec
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("critical", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 81, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("critical", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 111, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
@@ -3202,7 +3949,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObjec
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_stacktrace, __pyx_v_args, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_22critical(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), __pyx_v_message, __pyx_v_serialize, __pyx_v_stacktrace, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
   __Pyx_XDECREF(__pyx_v_args);
@@ -3211,7 +3958,7 @@ static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical(PyObjec
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_stacktrace, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_22critical(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v_message, PyObject *__pyx_v_serialize, PyObject *__pyx_v_stacktrace, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   PyObject *__pyx_v_msg = NULL;
   PyObject *__pyx_v_stack = NULL;
   PyObject *__pyx_v_error = NULL;
@@ -3230,33 +3977,33 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("critical", 0);
 
-  /* "navconfig/logging/logger.pyx":82
+  /* "navconfig/logging/logger.pyx":112
  * 
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
  *             msg = message(*args, **kwargs)
  *         else:
  */
-  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyCallable_Check(__pyx_v_message); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 112, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":83
+    /* "navconfig/logging/logger.pyx":113
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):
  *         if callable(message):
  *             msg = message(*args, **kwargs)             # <<<<<<<<<<<<<<
  *         else:
  *             msg = message
  */
-    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_v_message, __pyx_v_args, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_msg = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":82
+    /* "navconfig/logging/logger.pyx":112
  * 
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):
  *         if callable(message):             # <<<<<<<<<<<<<<
@@ -3266,7 +4013,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
     goto __pyx_L3;
   }
 
-  /* "navconfig/logging/logger.pyx":85
+  /* "navconfig/logging/logger.pyx":115
  *             msg = message(*args, **kwargs)
  *         else:
  *             msg = message             # <<<<<<<<<<<<<<
@@ -3279,7 +4026,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
   }
   __pyx_L3:;
 
-  /* "navconfig/logging/logger.pyx":86
+  /* "navconfig/logging/logger.pyx":116
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -3290,14 +4037,14 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "navconfig/logging/logger.pyx":87
+    /* "navconfig/logging/logger.pyx":117
  *             msg = message
  *         if serialize is True:
  *             msg = json_encoder(msg)             # <<<<<<<<<<<<<<
  *         if stacktrace is True:
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 87, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -3311,13 +4058,13 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_msg) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_msg);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":86
+    /* "navconfig/logging/logger.pyx":116
  *         else:
  *             msg = message
  *         if serialize is True:             # <<<<<<<<<<<<<<
@@ -3326,32 +4073,32 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
  */
   }
 
-  /* "navconfig/logging/logger.pyx":88
+  /* "navconfig/logging/logger.pyx":118
  *         if serialize is True:
  *             msg = json_encoder(msg)
  *         if stacktrace is True:             # <<<<<<<<<<<<<<
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
  */
   __pyx_t_1 = (__pyx_v_stacktrace == Py_True);
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "navconfig/logging/logger.pyx":89
+    /* "navconfig/logging/logger.pyx":119
  *             msg = json_encoder(msg)
  *         if stacktrace is True:
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset             # <<<<<<<<<<<<<<
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset             # <<<<<<<<<<<<<<
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
  *             msg = f"-\r\n{stack}\r\n{error}"
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_lightgrey); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_darkgrey); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_traceback); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_traceback); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_format_exc); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_format_exc); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -3366,59 +4113,59 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_5) : __Pyx_PyObject_CallNoArg(__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_reset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_reset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyNumber_Add(__pyx_t_6, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+    __pyx_t_4 = PyNumber_Add(__pyx_t_6, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_stack = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "navconfig/logging/logger.pyx":90
+    /* "navconfig/logging/logger.pyx":120
  *         if stacktrace is True:
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset             # <<<<<<<<<<<<<<
  *             msg = f"-\r\n{stack}\r\n{error}"
  *         self._logger.critical(msg, *args, **kwargs)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_bold_red); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_bold_red); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyNumber_Add(__pyx_t_3, __pyx_v_msg); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_4 = PyNumber_Add(__pyx_t_3, __pyx_v_msg); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_reset); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_reset); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyNumber_Add(__pyx_t_4, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_3 = PyNumber_Add(__pyx_t_4, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_v_error = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "navconfig/logging/logger.pyx":91
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+    /* "navconfig/logging/logger.pyx":121
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
  *             msg = f"-\r\n{stack}\r\n{error}"             # <<<<<<<<<<<<<<
  *         self._logger.critical(msg, *args, **kwargs)
  */
-    __pyx_t_3 = PyTuple_New(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_7 = 0;
     __pyx_t_8 = 127;
@@ -3426,7 +4173,7 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
     __pyx_t_7 += 3;
     __Pyx_GIVEREF(__pyx_kp_u__3);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u__3);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_stack, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_stack, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_8 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_8) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_8;
     __pyx_t_7 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
@@ -3437,53 +4184,53 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
     __pyx_t_7 += 2;
     __Pyx_GIVEREF(__pyx_kp_u__4);
     PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__4);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_error, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_error, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_8 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_8) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_8;
     __pyx_t_7 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_6);
     PyTuple_SET_ITEM(__pyx_t_3, 3, __pyx_t_6);
     __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_3, 4, __pyx_t_7, __pyx_t_8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_3, 4, __pyx_t_7, __pyx_t_8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF_SET(__pyx_v_msg, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "navconfig/logging/logger.pyx":88
+    /* "navconfig/logging/logger.pyx":118
  *         if serialize is True:
  *             msg = json_encoder(msg)
  *         if stacktrace is True:             # <<<<<<<<<<<<<<
- *             stack = ColoredFormatter.lightgrey + traceback.format_exc() + ColoredFormatter.reset
+ *             stack = ColoredFormatter.darkgrey + traceback.format_exc() + ColoredFormatter.reset
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
  */
   }
 
-  /* "navconfig/logging/logger.pyx":92
+  /* "navconfig/logging/logger.pyx":122
  *             error = ColoredFormatter.bold_red + msg + ColoredFormatter.reset
  *             msg = f"-\r\n{stack}\r\n{error}"
  *         self._logger.critical(msg, *args, **kwargs)             # <<<<<<<<<<<<<<
  */
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_critical); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_logger, __pyx_n_s_critical); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_msg);
   __Pyx_GIVEREF(__pyx_v_msg);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_msg);
-  __pyx_t_4 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_4 = PyNumber_Add(__pyx_t_3, __pyx_v_args); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_3 = PyDict_Copy(__pyx_v_kwargs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "navconfig/logging/logger.pyx":81
+  /* "navconfig/logging/logger.pyx":111
  *         self._logger.error(msg, *args, **kwargs)
  * 
  *     def critical(self, message, *args, serialize = False, stacktrace = False, **kwargs):             # <<<<<<<<<<<<<<
@@ -3517,20 +4264,20 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_14critical(struct 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_17__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_16__reduce_cython__[] = "Logger.__reduce_cython__(self)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_17__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_25__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_24__reduce_cython__[] = "Logger.__reduce_cython__(self)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_25__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_16__reduce_cython__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self));
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_24__reduce_cython__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_16__reduce_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_24__reduce_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self) {
   PyObject *__pyx_v_state = 0;
   PyObject *__pyx_v__dict = 0;
   int __pyx_v_use_setstate;
@@ -3772,20 +4519,20 @@ static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_16__reduce_cython_
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_19__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state); /*proto*/
-static char __pyx_doc_9navconfig_7logging_6logger_6Logger_18__setstate_cython__[] = "Logger.__setstate_cython__(self, __pyx_state)";
-static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_19__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_27__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state); /*proto*/
+static char __pyx_doc_9navconfig_7logging_6logger_6Logger_26__setstate_cython__[] = "Logger.__setstate_cython__(self, __pyx_state)";
+static PyObject *__pyx_pw_9navconfig_7logging_6logger_6Logger_27__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_18__setstate_cython__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject *)__pyx_v___pyx_state));
+  __pyx_r = __pyx_pf_9navconfig_7logging_6logger_6Logger_26__setstate_cython__(((struct __pyx_obj_9navconfig_7logging_6logger_Logger *)__pyx_v_self), ((PyObject *)__pyx_v___pyx_state));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_18__setstate_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_9navconfig_7logging_6logger_6Logger_26__setstate_cython__(struct __pyx_obj_9navconfig_7logging_6logger_Logger *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4286,17 +5033,30 @@ static int __pyx_tp_clear_9navconfig_7logging_6logger_Logger(PyObject *o) {
   return 0;
 }
 
+static PyObject *__pyx_getprop_9navconfig_7logging_6logger_6Logger_logger(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_9navconfig_7logging_6logger_6Logger_6logger_1__get__(o);
+}
+
 static PyMethodDef __pyx_methods_9navconfig_7logging_6logger_Logger[] = {
-  {"disable", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_3disable, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_2disable},
-  {"setName", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_5setName, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_4setName},
-  {"info", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_7info, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_6info},
-  {"debug", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_9debug, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_8debug},
-  {"warning", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_11warning, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_10warning},
-  {"error", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_13error, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_12error},
-  {"critical", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_15critical, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_14critical},
-  {"__reduce_cython__", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_17__reduce_cython__, METH_NOARGS, __pyx_doc_9navconfig_7logging_6logger_6Logger_16__reduce_cython__},
-  {"__setstate_cython__", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_19__setstate_cython__, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_18__setstate_cython__},
+  {"addConsole", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_3addConsole, METH_NOARGS, __pyx_doc_9navconfig_7logging_6logger_6Logger_2addConsole},
+  {"disable", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_5disable, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_4disable},
+  {"setLevel", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_7setLevel, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_6setLevel},
+  {"addHandler", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_9addHandler, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_8addHandler},
+  {"setName", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_11setName, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_10setName},
+  {"info", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_13info, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_12info},
+  {"debug", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_15debug, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_14debug},
+  {"verbose", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_17verbose, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_16verbose},
+  {"warning", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_19warning, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_18warning},
+  {"error", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_21error, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_20error},
+  {"critical", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9navconfig_7logging_6logger_6Logger_23critical, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9navconfig_7logging_6logger_6Logger_22critical},
+  {"__reduce_cython__", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_25__reduce_cython__, METH_NOARGS, __pyx_doc_9navconfig_7logging_6logger_6Logger_24__reduce_cython__},
+  {"__setstate_cython__", (PyCFunction)__pyx_pw_9navconfig_7logging_6logger_6Logger_27__setstate_cython__, METH_O, __pyx_doc_9navconfig_7logging_6logger_6Logger_26__setstate_cython__},
   {0, 0, 0, 0}
+};
+
+static struct PyGetSetDef __pyx_getsets_9navconfig_7logging_6logger_Logger[] = {
+  {(char *)"logger", __pyx_getprop_9navconfig_7logging_6logger_6Logger_logger, 0, (char *)0, 0},
+  {0, 0, 0, 0, 0}
 };
 
 static PyTypeObject __pyx_type_9navconfig_7logging_6logger_Logger = {
@@ -4339,7 +5099,7 @@ static PyTypeObject __pyx_type_9navconfig_7logging_6logger_Logger = {
   0, /*tp_iternext*/
   __pyx_methods_9navconfig_7logging_6logger_Logger, /*tp_methods*/
   0, /*tp_members*/
-  0, /*tp_getset*/
+  __pyx_getsets_9navconfig_7logging_6logger_Logger, /*tp_getset*/
   0, /*tp_base*/
   0, /*tp_dict*/
   0, /*tp_descr_get*/
@@ -4427,9 +5187,12 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Logger, __pyx_k_Logger, sizeof(__pyx_k_Logger), 0, 0, 1, 1},
   {&__pyx_n_s_Optional, __pyx_k_Optional, sizeof(__pyx_k_Optional), 0, 0, 1, 1},
   {&__pyx_n_s_PickleError, __pyx_k_PickleError, sizeof(__pyx_k_PickleError), 0, 0, 1, 1},
+  {&__pyx_n_s_StreamHandler, __pyx_k_StreamHandler, sizeof(__pyx_k_StreamHandler), 0, 0, 1, 1},
   {&__pyx_n_s_Union, __pyx_k_Union, sizeof(__pyx_k_Union), 0, 0, 1, 1},
+  {&__pyx_n_s_VerboseLogger, __pyx_k_VerboseLogger, sizeof(__pyx_k_VerboseLogger), 0, 0, 1, 1},
   {&__pyx_kp_u__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 1, 0, 0},
   {&__pyx_kp_u__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 1, 0, 0},
+  {&__pyx_n_s_addHandler, __pyx_k_addHandler, sizeof(__pyx_k_addHandler), 0, 0, 1, 1},
   {&__pyx_n_s_asyncio, __pyx_k_asyncio, sizeof(__pyx_k_asyncio), 0, 0, 1, 1},
   {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
   {&__pyx_n_s_asyncio_tasks, __pyx_k_asyncio_tasks, sizeof(__pyx_k_asyncio_tasks), 0, 0, 1, 1},
@@ -4437,6 +5200,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_config, __pyx_k_config, sizeof(__pyx_k_config), 0, 0, 1, 1},
   {&__pyx_n_s_critical, __pyx_k_critical, sizeof(__pyx_k_critical), 0, 0, 1, 1},
+  {&__pyx_n_s_darkgrey, __pyx_k_darkgrey, sizeof(__pyx_k_darkgrey), 0, 0, 1, 1},
   {&__pyx_n_s_debug, __pyx_k_debug, sizeof(__pyx_k_debug), 0, 0, 1, 1},
   {&__pyx_n_u_debug, __pyx_k_debug, sizeof(__pyx_k_debug), 0, 1, 0, 1},
   {&__pyx_n_u_debug_2, __pyx_k_debug_2, sizeof(__pyx_k_debug_2), 0, 1, 0, 1},
@@ -4452,9 +5216,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_inspect, __pyx_k_inspect, sizeof(__pyx_k_inspect), 0, 0, 1, 1},
   {&__pyx_n_s_json_decoder, __pyx_k_json_decoder, sizeof(__pyx_k_json_decoder), 0, 0, 1, 1},
   {&__pyx_n_s_json_encoder, __pyx_k_json_encoder, sizeof(__pyx_k_json_encoder), 0, 0, 1, 1},
-  {&__pyx_n_s_lightgrey, __pyx_k_lightgrey, sizeof(__pyx_k_lightgrey), 0, 0, 1, 1},
   {&__pyx_n_u_logger, __pyx_k_logger, sizeof(__pyx_k_logger), 0, 1, 0, 1},
   {&__pyx_n_s_loggerDict, __pyx_k_loggerDict, sizeof(__pyx_k_loggerDict), 0, 0, 1, 1},
+  {&__pyx_n_u_logger_2, __pyx_k_logger_2, sizeof(__pyx_k_logger_2), 0, 1, 0, 1},
   {&__pyx_n_s_logging, __pyx_k_logging, sizeof(__pyx_k_logging), 0, 0, 1, 1},
   {&__pyx_n_s_logging_config, __pyx_k_logging_config, sizeof(__pyx_k_logging_config), 0, 0, 1, 1},
   {&__pyx_n_s_loglevel, __pyx_k_loglevel, sizeof(__pyx_k_loglevel), 0, 0, 1, 1},
@@ -4481,16 +5245,22 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_reduce_ex, __pyx_k_reduce_ex, sizeof(__pyx_k_reduce_ex), 0, 0, 1, 1},
   {&__pyx_n_s_reset, __pyx_k_reset, sizeof(__pyx_k_reset), 0, 0, 1, 1},
   {&__pyx_n_s_serialize, __pyx_k_serialize, sizeof(__pyx_k_serialize), 0, 0, 1, 1},
+  {&__pyx_n_s_setFormatter, __pyx_k_setFormatter, sizeof(__pyx_k_setFormatter), 0, 0, 1, 1},
   {&__pyx_n_s_setLevel, __pyx_k_setLevel, sizeof(__pyx_k_setLevel), 0, 0, 1, 1},
+  {&__pyx_n_s_setLoggerClass, __pyx_k_setLoggerClass, sizeof(__pyx_k_setLoggerClass), 0, 0, 1, 1},
   {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
   {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
   {&__pyx_n_s_slots, __pyx_k_slots, sizeof(__pyx_k_slots), 0, 0, 1, 1},
   {&__pyx_n_s_stacktrace, __pyx_k_stacktrace, sizeof(__pyx_k_stacktrace), 0, 0, 1, 1},
+  {&__pyx_n_s_stdout, __pyx_k_stdout, sizeof(__pyx_k_stdout), 0, 0, 1, 1},
+  {&__pyx_n_s_stream, __pyx_k_stream, sizeof(__pyx_k_stream), 0, 0, 1, 1},
   {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
+  {&__pyx_n_s_sys, __pyx_k_sys, sizeof(__pyx_k_sys), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_traceback, __pyx_k_traceback, sizeof(__pyx_k_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_typing, __pyx_k_typing, sizeof(__pyx_k_typing), 0, 0, 1, 1},
   {&__pyx_n_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 1},
+  {&__pyx_n_s_verbose, __pyx_k_verbose, sizeof(__pyx_k_verbose), 0, 0, 1, 1},
   {&__pyx_n_s_warning, __pyx_k_warning, sizeof(__pyx_k_warning), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -4579,15 +5349,15 @@ static int __Pyx_modinit_type_init_code(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_9navconfig_7logging_6logger_Logger.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_9navconfig_7logging_6logger_Logger.tp_dictoffset && __pyx_type_9navconfig_7logging_6logger_Logger.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_9navconfig_7logging_6logger_Logger.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Logger, (PyObject *)&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Logger, (PyObject *)&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_9navconfig_7logging_6logger_Logger) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
   __pyx_ptype_9navconfig_7logging_6logger_Logger = &__pyx_type_9navconfig_7logging_6logger_Logger;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -4826,23 +5596,35 @@ if (!__Pyx_RefNanny) {
   /* "navconfig/logging/logger.pyx":4
  * # Copyright (C) 2018-present Jesus Lara
  * #
- * import asyncio             # <<<<<<<<<<<<<<
+ * import sys             # <<<<<<<<<<<<<<
+ * import asyncio
  * from typing import Optional, Union
- * import logging
  */
-  __pyx_t_1 = __Pyx_patch_asyncio(__Pyx_Import(__pyx_n_s_asyncio, 0, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_sys, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_asyncio, __pyx_t_1) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_sys, __pyx_t_1) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "navconfig/logging/logger.pyx":5
  * #
- * import asyncio
- * from typing import Optional, Union             # <<<<<<<<<<<<<<
- * import logging
+ * import sys
+ * import asyncio             # <<<<<<<<<<<<<<
+ * from typing import Optional, Union
  * from logging.config import dictConfig
  */
-  __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_patch_asyncio(__Pyx_Import(__pyx_n_s_asyncio, 0, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_asyncio, __pyx_t_1) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "navconfig/logging/logger.pyx":6
+ * import sys
+ * import asyncio
+ * from typing import Optional, Union             # <<<<<<<<<<<<<<
+ * from logging.config import dictConfig
+ * from libcpp cimport bool as bool_t
+ */
+  __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_s_Optional);
   __Pyx_GIVEREF(__pyx_n_s_Optional);
@@ -4850,37 +5632,25 @@ if (!__Pyx_RefNanny) {
   __Pyx_INCREF(__pyx_n_s_Union);
   __Pyx_GIVEREF(__pyx_n_s_Union);
   PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_Union);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_typing, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_typing, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Optional); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Optional); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Optional, __pyx_t_1) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Optional, __pyx_t_1) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Union); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Union); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Union, __pyx_t_1) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Union, __pyx_t_1) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "navconfig/logging/logger.pyx":6
- * import asyncio
- * from typing import Optional, Union
- * import logging             # <<<<<<<<<<<<<<
- * from logging.config import dictConfig
- * from libcpp cimport bool as bool_t
- */
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_logging, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_logging, __pyx_t_2) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "navconfig/logging/logger.pyx":7
+ * import asyncio
  * from typing import Optional, Union
- * import logging
  * from logging.config import dictConfig             # <<<<<<<<<<<<<<
  * from libcpp cimport bool as bool_t
- * from navconfig import config, DEBUG
+ * import traceback
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -4899,122 +5669,157 @@ if (!__Pyx_RefNanny) {
   /* "navconfig/logging/logger.pyx":9
  * from logging.config import dictConfig
  * from libcpp cimport bool as bool_t
- * from navconfig import config, DEBUG             # <<<<<<<<<<<<<<
- * from navconfig.utils.json import json_decoder, json_encoder
- * from navconfig.logging.formatter import ColoredFormatter
+ * import traceback             # <<<<<<<<<<<<<<
+ * from logging import setLoggerClass
+ * from navconfig import config, DEBUG
  */
-  __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_traceback, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(__pyx_n_s_config);
-  __Pyx_GIVEREF(__pyx_n_s_config);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_config);
-  __Pyx_INCREF(__pyx_n_s_DEBUG);
-  __Pyx_GIVEREF(__pyx_n_s_DEBUG);
-  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_DEBUG);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_navconfig, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_traceback, __pyx_t_1) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_config); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_config, __pyx_t_1) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_DEBUG, __pyx_t_1) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "navconfig/logging/logger.pyx":10
  * from libcpp cimport bool as bool_t
- * from navconfig import config, DEBUG
- * from navconfig.utils.json import json_decoder, json_encoder             # <<<<<<<<<<<<<<
- * from navconfig.logging.formatter import ColoredFormatter
  * import traceback
+ * from logging import setLoggerClass             # <<<<<<<<<<<<<<
+ * from navconfig import config, DEBUG
+ * from navconfig.utils.json import json_decoder, json_encoder
  */
-  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(__pyx_n_s_json_decoder);
-  __Pyx_GIVEREF(__pyx_n_s_json_decoder);
-  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_json_decoder);
-  __Pyx_INCREF(__pyx_n_s_json_encoder);
-  __Pyx_GIVEREF(__pyx_n_s_json_encoder);
-  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_json_encoder);
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_navconfig_utils_json, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_json_decoder); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_INCREF(__pyx_n_s_setLoggerClass);
+  __Pyx_GIVEREF(__pyx_n_s_setLoggerClass);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_setLoggerClass);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_logging, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_json_decoder, __pyx_t_2) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_json_encoder, __pyx_t_2) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_setLoggerClass); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_setLoggerClass, __pyx_t_1) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "navconfig/logging/logger.pyx":11
- * from navconfig import config, DEBUG
- * from navconfig.utils.json import json_decoder, json_encoder
- * from navconfig.logging.formatter import ColoredFormatter             # <<<<<<<<<<<<<<
  * import traceback
- * 
+ * from logging import setLoggerClass
+ * from navconfig import config, DEBUG             # <<<<<<<<<<<<<<
+ * from navconfig.utils.json import json_decoder, json_encoder
+ * from navconfig.logging.formatter import logging, VerboseLogger, ColoredFormatter
  */
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(__pyx_n_s_ColoredFormatter);
-  __Pyx_GIVEREF(__pyx_n_s_ColoredFormatter);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_ColoredFormatter);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_navconfig_logging_formatter, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_INCREF(__pyx_n_s_config);
+  __Pyx_GIVEREF(__pyx_n_s_config);
+  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_config);
+  __Pyx_INCREF(__pyx_n_s_DEBUG);
+  __Pyx_GIVEREF(__pyx_n_s_DEBUG);
+  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_DEBUG);
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_navconfig, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ColoredFormatter, __pyx_t_1) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_config); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_config, __pyx_t_2) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_DEBUG, __pyx_t_2) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "navconfig/logging/logger.pyx":12
- * from navconfig.utils.json import json_decoder, json_encoder
- * from navconfig.logging.formatter import ColoredFormatter
- * import traceback             # <<<<<<<<<<<<<<
+ * from logging import setLoggerClass
+ * from navconfig import config, DEBUG
+ * from navconfig.utils.json import json_decoder, json_encoder             # <<<<<<<<<<<<<<
+ * from navconfig.logging.formatter import logging, VerboseLogger, ColoredFormatter
  * 
- * ### Logging
  */
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_traceback, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_n_s_json_decoder);
+  __Pyx_GIVEREF(__pyx_n_s_json_decoder);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_json_decoder);
+  __Pyx_INCREF(__pyx_n_s_json_encoder);
+  __Pyx_GIVEREF(__pyx_n_s_json_encoder);
+  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_json_encoder);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_navconfig_utils_json, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_traceback, __pyx_t_2) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_json_decoder); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_json_decoder, __pyx_t_1) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_json_encoder); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_json_encoder, __pyx_t_1) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "navconfig/logging/logger.pyx":15
+  /* "navconfig/logging/logger.pyx":13
+ * from navconfig import config, DEBUG
+ * from navconfig.utils.json import json_decoder, json_encoder
+ * from navconfig.logging.formatter import logging, VerboseLogger, ColoredFormatter             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_INCREF(__pyx_n_s_logging);
+  __Pyx_GIVEREF(__pyx_n_s_logging);
+  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_logging);
+  __Pyx_INCREF(__pyx_n_s_VerboseLogger);
+  __Pyx_GIVEREF(__pyx_n_s_VerboseLogger);
+  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_VerboseLogger);
+  __Pyx_INCREF(__pyx_n_s_ColoredFormatter);
+  __Pyx_GIVEREF(__pyx_n_s_ColoredFormatter);
+  PyList_SET_ITEM(__pyx_t_2, 2, __pyx_n_s_ColoredFormatter);
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_navconfig_logging_formatter, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_logging, __pyx_t_2) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_VerboseLogger); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_VerboseLogger, __pyx_t_2) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_ColoredFormatter); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ColoredFormatter, __pyx_t_2) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "navconfig/logging/logger.pyx":17
  * 
  * ### Logging
  * if DEBUG is True:             # <<<<<<<<<<<<<<
  *     LOGLEVEL = logging.DEBUG
  * else:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = (__pyx_t_2 == Py_True);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = (__pyx_t_1 == Py_True);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_4 = (__pyx_t_3 != 0);
   if (__pyx_t_4) {
 
-    /* "navconfig/logging/logger.pyx":16
+    /* "navconfig/logging/logger.pyx":18
  * ### Logging
  * if DEBUG is True:
  *     LOGLEVEL = logging.DEBUG             # <<<<<<<<<<<<<<
  * else:
  *     LOGLEVEL = logging.INFO
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 16, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (PyDict_SetItem(__pyx_d, __pyx_n_s_LOGLEVEL, __pyx_t_1) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_DEBUG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 18, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (PyDict_SetItem(__pyx_d, __pyx_n_s_LOGLEVEL, __pyx_t_2) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "navconfig/logging/logger.pyx":15
+    /* "navconfig/logging/logger.pyx":17
  * 
  * ### Logging
  * if DEBUG is True:             # <<<<<<<<<<<<<<
@@ -5024,7 +5829,7 @@ if (!__Pyx_RefNanny) {
     goto __pyx_L2;
   }
 
-  /* "navconfig/logging/logger.pyx":18
+  /* "navconfig/logging/logger.pyx":20
  *     LOGLEVEL = logging.DEBUG
  * else:
  *     LOGLEVEL = logging.INFO             # <<<<<<<<<<<<<<
@@ -5032,73 +5837,76 @@ if (!__Pyx_RefNanny) {
  * 
  */
   /*else*/ {
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_INFO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 18, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 20, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (PyDict_SetItem(__pyx_d, __pyx_n_s_LOGLEVEL, __pyx_t_2) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_INFO); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (PyDict_SetItem(__pyx_d, __pyx_n_s_LOGLEVEL, __pyx_t_1) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
   __pyx_L2:;
 
-  /* "navconfig/logging/logger.pyx":22
+  /* "navconfig/logging/logger.pyx":24
  * 
  * cdef class Logger(object):
- *     __slots__ = ['name', '_debug', '_logger']             # <<<<<<<<<<<<<<
+ *     __slots__ = ['name', '_debug', '_logger', 'logger']             # <<<<<<<<<<<<<<
  *     cdef bool_t _debug
  *     cdef str name
  */
-  __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = PyList_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_u_name);
   __Pyx_GIVEREF(__pyx_n_u_name);
-  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_u_name);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_u_name);
   __Pyx_INCREF(__pyx_n_u_debug_2);
   __Pyx_GIVEREF(__pyx_n_u_debug_2);
-  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_u_debug_2);
+  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_u_debug_2);
   __Pyx_INCREF(__pyx_n_u_logger);
   __Pyx_GIVEREF(__pyx_n_u_logger);
-  PyList_SET_ITEM(__pyx_t_2, 2, __pyx_n_u_logger);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_9navconfig_7logging_6logger_Logger->tp_dict, __pyx_n_s_slots, __pyx_t_2) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyList_SET_ITEM(__pyx_t_1, 2, __pyx_n_u_logger);
+  __Pyx_INCREF(__pyx_n_u_logger_2);
+  __Pyx_GIVEREF(__pyx_n_u_logger_2);
+  PyList_SET_ITEM(__pyx_t_1, 3, __pyx_n_u_logger_2);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_9navconfig_7logging_6logger_Logger->tp_dict, __pyx_n_s_slots, __pyx_t_1) < 0) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_9navconfig_7logging_6logger_Logger);
 
-  /* "navconfig/logging/logger.pyx":40
- *         self._logger.setLevel(LOGLEVEL)
+  /* "navconfig/logging/logger.pyx":56
+ *         return self._logger
  * 
  *     def disable(self, name: str, loglevel = logging.CRITICAL):             # <<<<<<<<<<<<<<
  *         ## disable logger
  *         aio = logging.getLogger(name)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 40, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_CRITICAL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_k__2 = __pyx_t_1;
-  __Pyx_GIVEREF(__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_CRITICAL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_k__2 = __pyx_t_2;
+  __Pyx_GIVEREF(__pyx_t_2);
+  __pyx_t_2 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_Logger(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9navconfig_7logging_6logger_1__pyx_unpickle_Logger, NULL, __pyx_n_s_navconfig_logging_logger); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Logger, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_9navconfig_7logging_6logger_1__pyx_unpickle_Logger, NULL, __pyx_n_s_navconfig_logging_logger); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Logger, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "navconfig/logging/logger.pyx":1
  * # cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=True, initializedcheck=False             # <<<<<<<<<<<<<<
  * # Copyright (C) 2018-present Jesus Lara
  * #
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -5804,6 +6612,28 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObjec
 }
 #endif
 
+/* PyObjectCallNoArg */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
+#if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(func)) {
+        return __Pyx_PyFunction_FastCall(func, NULL, 0);
+    }
+#endif
+#if defined(__Pyx_CyFunction_USED) && defined(NDEBUG)
+    if (likely(PyCFunction_Check(func) || __Pyx_CyFunction_Check(func)))
+#else
+    if (likely(PyCFunction_Check(func)))
+#endif
+    {
+        if (likely(PyCFunction_GET_FLAGS(func) & METH_NOARGS)) {
+            return __Pyx_PyObject_CallMethO(func, NULL);
+        }
+    }
+    return __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL);
+}
+#endif
+
 /* DictGetItem */
 #if PY_MAJOR_VERSION >= 3 && !CYTHON_COMPILING_IN_PYPY
 static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
@@ -5839,28 +6669,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
         return tp->tp_setattr(obj, PyString_AS_STRING(attr_name), value);
 #endif
     return PyObject_SetAttr(obj, attr_name, value);
-}
-#endif
-
-/* PyObjectCallNoArg */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
-#if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(func)) {
-        return __Pyx_PyFunction_FastCall(func, NULL, 0);
-    }
-#endif
-#if defined(__Pyx_CyFunction_USED) && defined(NDEBUG)
-    if (likely(PyCFunction_Check(func) || __Pyx_CyFunction_Check(func)))
-#else
-    if (likely(PyCFunction_Check(func)))
-#endif
-    {
-        if (likely(PyCFunction_GET_FLAGS(func) & METH_NOARGS)) {
-            return __Pyx_PyObject_CallMethO(func, NULL);
-        }
-    }
-    return __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL);
 }
 #endif
 
