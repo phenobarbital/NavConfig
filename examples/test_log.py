@@ -2,7 +2,8 @@ from navconfig.logging import logger
 
 ## set a new logger name
 logger.setName('config.example')
-
+# verbose debugging:
+logger.verbose('This is a verbose message')
 ## debugging
 logger.debug("Hello World!")
 ## error:
