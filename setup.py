@@ -52,6 +52,12 @@ COMPILE_ARGS = ["-O2"]
 
 extensions = [
     Extension(
+        name='navconfig.exceptions',
+        sources=['navconfig/exceptions.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c"
+    ),
+    Extension(
         name='navconfig.utils.functions',
         sources=['navconfig/utils/functions.pyx'],
         extra_compile_args=COMPILE_ARGS,

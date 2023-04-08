@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from navconfig.utils.functions import strtobool
 from navconfig.utils.types import Singleton
 from navconfig.loaders import import_loader
+from navconfig.exceptions import ConfigError, NavConfigError
 
 ## memcache
 try:
@@ -59,16 +60,18 @@ class cellarConfig(metaclass=Singleton):
         else:
             self._site_path = Path(site_root).resolve()
         # Get External Readers:
-        if REDIS_LOADER:
-            try:
-                self._readers['redis'] = REDIS_LOADER()
-            except Exception as err:
-                raise Exception(err) from err
-        if MEMCACHE_LOADER:
-            try:
-                self._readers['memcache'] = MEMCACHE_LOADER()
-            except Exception as err:
-                raise Exception(err) from err
+        if os.environ.get('USE_REDIS', False):
+            if REDIS_LOADER:
+                try:
+                    self._readers['redis'] = REDIS_LOADER()
+                except Exception as err:
+                    raise ConfigError(str(err)) from err
+        if os.environ.get('USE_MEMCACHED', False):
+            if MEMCACHE_LOADER:
+                try:
+                    self._readers['memcache'] = MEMCACHE_LOADER()
+                except Exception as err:
+                    raise ConfigError(str(err)) from err
         # then: configure the instance:
         self.configure(env, **kwargs)
 
@@ -207,9 +210,11 @@ class cellarConfig(metaclass=Singleton):
                     override=False
                 )
             except Exception as err:
-                raise Exception(err) from err
+                raise NavConfigError(str(err)) from err
         else:
-            raise Exception('Failed to load a new ENV file')
+            raise NavConfigError(
+                f'Failed to load a new ENV file from {file}'
+            )
 
     def _get_external(self, key: str) -> Any:
         """Get value fron an External Reader.
