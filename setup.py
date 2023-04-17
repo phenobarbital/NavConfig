@@ -118,8 +118,8 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=["docs", "tests", "settings"]),
     setup_requires=[
-        'wheel==0.38.4',
-        'cython==0.29.33'
+        'wheel==0.40.0',
+        'Cython==0.29.33'
     ],
     install_requires=[
         'asyncio==3.4.3',
