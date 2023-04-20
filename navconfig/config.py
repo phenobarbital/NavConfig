@@ -31,9 +31,6 @@ try:
 except ModuleNotFoundError:
     REDIS_LOADER=None
 
-# class Reader(TypedDict):
-#     name: str
-#     reader: Union[Callable, Awaitable]
 
 class cellarConfig(metaclass=Singleton):
     """
@@ -59,19 +56,6 @@ class cellarConfig(metaclass=Singleton):
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
-        # Get External Readers:
-        if os.environ.get('USE_REDIS', False):
-            if REDIS_LOADER:
-                try:
-                    self._readers['redis'] = REDIS_LOADER()
-                except Exception as err:
-                    raise ConfigError(str(err)) from err
-        if os.environ.get('USE_MEMCACHED', False):
-            if MEMCACHE_LOADER:
-                try:
-                    self._readers['memcache'] = MEMCACHE_LOADER()
-                except Exception as err:
-                    raise ConfigError(str(err)) from err
         # then: configure the instance:
         self.configure(env, **kwargs)
 
@@ -94,6 +78,25 @@ class cellarConfig(metaclass=Singleton):
             logging.error(
                 'NavConfig Error: Environment (.env) File Missing.'
             )
+        # Get External Readers:
+        self._use_redis: bool = os.environ.get('USE_REDIS', False)
+        if self._use_redis:
+            if REDIS_LOADER:
+                try:
+                    self._readers['redis'] = REDIS_LOADER()
+                except Exception as err:
+                    logging.warning(f'Redis error: {err}')
+                    raise ConfigError(
+                        str(err)
+                    ) from err
+        self._use_memcache: bool = os.environ.get('USE_MEMCACHED', False)
+        if self._use_memcache:
+            if MEMCACHE_LOADER:
+                logging.warning(f'MemCache error: {err}')
+                try:
+                    self._readers['memcache'] = MEMCACHE_LOADER()
+                except Exception as err:
+                    raise ConfigError(str(err)) from err
         # define debug
         # self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
         self._debug = bool(self.getboolean('DEBUG', fallback=False))
@@ -415,8 +418,11 @@ class cellarConfig(metaclass=Singleton):
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        if REDIS_LOADER:
-            return self._readers['redis'].set(key, value)
+        if self._use_redis:
+            try:
+                return self._readers['redis'].set(key, value)
+            except KeyError:
+                logging.warning(f'Unable to Set key {key} in Redis')
         return False
 
     def setext(self, key: str, value: Any, timeout: int = None) -> bool:
@@ -424,11 +430,14 @@ class cellarConfig(metaclass=Singleton):
         set
             set a variable in redis with expiration
         """
-        if REDIS_LOADER:
+        if self._use_redis:
             if not isinstance(timeout, int):
                 time = 3600
             else:
                 time = timeout
-            return self._readers['redis'].set(key, value, time)
+            try:
+                return self._readers['redis'].set(key, value, time)
+            except KeyError:
+                logging.warning(f'Unable to Set key {key} in Redis')
         else:
             return False
