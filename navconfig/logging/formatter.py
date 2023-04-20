@@ -30,6 +30,7 @@ class ColoredFormatter(logging.Formatter):
     lightgrey = "\033[37m"
     darkgrey = "\033[90m"
     green = '\x1b[32m'
+    lightgreen = '\x1b[92m'
     blue = "\033[34m"
     lightblue = "\033[94m"
     purple = "\033[35m"
@@ -45,10 +46,10 @@ class ColoredFormatter(logging.Formatter):
     _notice = "[%(levelname)s] %(asctime)s :: %(message)s"
 
     FORMATS = {
-        logging.DEBUG: green + _format + reset,
-        logging.VERBOSE: lightblue + _format + reset,
+        logging.DEBUG: lightgreen + _format + reset,
+        logging.VERBOSE: green + _format + reset,
+        logging.NOTICE: lightblue + _notice + reset,
         logging.INFO: lightgrey + _format + reset,
-        logging.NOTICE: blue + _notice + reset,
         logging.WARNING: yellow + _format + reset,
         logging.ERROR: lightyellow + _format + reset,
         logging.CRITICAL: bold_red + _format + reset
