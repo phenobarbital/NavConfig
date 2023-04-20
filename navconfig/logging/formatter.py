@@ -46,8 +46,8 @@ class ColoredFormatter(logging.Formatter):
     _notice = "[%(levelname)s] %(asctime)s :: %(message)s"
 
     FORMATS = {
-        logging.DEBUG: lightgreen + _format + reset,
-        logging.VERBOSE: green + _format + reset,
+        logging.DEBUG: green + _format + reset,
+        logging.VERBOSE: lightgreen + _format + reset,
         logging.NOTICE: lightblue + _notice + reset,
         logging.INFO: lightgrey + _format + reset,
         logging.WARNING: yellow + _format + reset,
