@@ -8,6 +8,7 @@ logger.verbose('This is a verbose message')
 logger.debug("Hello World!")
 ## error:
 logger.info("info message")
+logger.notice("notice message")
 logger.warning("warning message")
 logger.error("error message")
 logger.critical("critical message")

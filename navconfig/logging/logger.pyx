@@ -78,6 +78,15 @@ cdef class Logger(object):
             msg = json_encoder(msg)
         self._logger.info(msg, *args, **kwargs)
 
+    def notice(self, message, *args, serialize = False, **kwargs):
+        if callable(message):
+            msg = message(*args, **kwargs)
+        else:
+            msg = message
+        if serialize is True:
+            msg = json_encoder(msg)
+        self._logger.notice(msg, *args, **kwargs)
+
     def debug(self, message, *args, serialize = False, **kwargs):
         if callable(message):
             msg = message(*args, **kwargs)
