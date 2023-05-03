@@ -18,7 +18,7 @@ from navconfig.utils.types import Singleton
 from navconfig.loaders import import_loader
 from navconfig.exceptions import ConfigError, NavConfigError
 
-## memcache
+## memcache:
 try:
     from .readers.memcache import mcache
     MEMCACHE_LOADER=mcache
@@ -31,6 +31,12 @@ try:
 except ModuleNotFoundError:
     REDIS_LOADER=None
 
+## Hashicorp Vault:
+try:
+    from .readers.vault import VaultReader
+    HVAULT_LOADER=VaultReader
+except ModuleNotFoundError:
+    HVAULT_LOADER=None
 
 class cellarConfig(metaclass=Singleton):
     """
@@ -97,6 +103,17 @@ class cellarConfig(metaclass=Singleton):
                     self._readers['memcache'] = MEMCACHE_LOADER()
                 except Exception as err:
                     raise ConfigError(str(err)) from err
+        ## Hashicorp Vault:
+        self._use_vault: bool = os.environ.get('USE_VAULT', False)
+        if self._use_vault:
+            if HVAULT_LOADER:
+                try:
+                    self._readers['vault'] = HVAULT_LOADER()
+                except Exception as err:
+                    logging.warning(f'Vault error: {err}')
+                    raise ConfigError(
+                        str(err)
+                    ) from err
         # define debug
         # self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
         self._debug = bool(self.getboolean('DEBUG', fallback=False))
@@ -168,7 +185,8 @@ class cellarConfig(metaclass=Singleton):
                 env_path=env_path,
                 env_file='',
                 override=override,
-                create=self._create
+                create=self._create,
+                env=self.ENV
             )
             self._mapping_ = self._env_loader.load_environment()
             if self._mapping_ is None:
@@ -412,12 +430,19 @@ class cellarConfig(metaclass=Singleton):
                 f"NavigatorConfig Error: has not attribute {key}"
             )
 
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: Any, vault: bool = False) -> None:
         """
         set.
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
+        if vault is True:
+            try:
+                return self._readers['vault'].set(key, value)
+            except KeyError:
+                logging.warning(
+                    f'Unable to Set key {key} in Vault'
+                )
         if self._use_redis:
             try:
                 return self._readers['redis'].set(key, value)
@@ -425,7 +450,7 @@ class cellarConfig(metaclass=Singleton):
                 logging.warning(f'Unable to Set key {key} in Redis')
         return False
 
-    def setext(self, key: str, value: Any, timeout: int = None) -> bool:
+    def setext(self, key: str, value: Any, timeout: int = None, vault: bool = False) -> bool:
         """
         set
             set a variable in redis with expiration
@@ -439,5 +464,16 @@ class cellarConfig(metaclass=Singleton):
                 return self._readers['redis'].set(key, value, time)
             except KeyError:
                 logging.warning(f'Unable to Set key {key} in Redis')
+        elif vault is True:
+            if not isinstance(timeout, int):
+                time = 3600
+            else:
+                time = timeout
+            try:
+                return self._readers['vault'].set(key, value, timeout=timeout)
+            except (ValueError, AttributeError):
+                logging.warning(
+                    f'Unable to Set key {key} in Vault'
+                )
         else:
             return False
