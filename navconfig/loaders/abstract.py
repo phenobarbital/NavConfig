@@ -19,17 +19,18 @@ class BaseLoader(ABC):
         self.env_file = '.env'
         self._kwargs = kwargs
         self.downloadable: bool = False
-        if not env_path.exists():
-            if create:
-                try:
-                    env_path.mkdir(parents=True, exist_ok=True)
-                except IOError as ex:
-                    raise RuntimeError(
-                        f'{type(self).__name__}: IO error creating directory {env_path}: {ex}'
-                    ) from ex
-            raise FileExistsError(
-                f'{type(self).__name__}: No Directory Path: {env_path}'
-            )
+        if isinstance(self.env_path, PurePath):
+            if not env_path.exists():
+                if create:
+                    try:
+                        env_path.mkdir(parents=True, exist_ok=True)
+                    except IOError as ex:
+                        raise RuntimeError(
+                            f'{type(self).__name__}: IO error creating directory {env_path}: {ex}'
+                        ) from ex
+                raise FileExistsError(
+                    f'{type(self).__name__}: No Directory Path: {env_path}'
+                )
 
     @abstractmethod
     def load_environment(self):

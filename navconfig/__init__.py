@@ -8,8 +8,7 @@ import sys
 from pathlib import Path
 from .config import cellarConfig  # noqa
 from .utils import project_root
-from .version import (__author__, __author_email__, __description__, __title__,
-                      __version__)
+from .version import __version__
 
 # PROJECT PATH IS DEFINED?
 SITE_ROOT = project_root(__file__)
