@@ -135,6 +135,7 @@ logging_config = dict(
     root={
         'handlers': ['ErrorFileHandler'],
         'level': loglevel,
+        'propagate': True,
     },
 )
 
@@ -165,43 +166,21 @@ if logging_enable_mailer is True:
 if logging_echo is True:
     logging_config['root']['handlers'].append('console')
 
-if logstash_logging:
+if logstash_logging is True:
     logging.debug(
         "Logstash configuration Enabled."
     )
-    environment = config.ENV if config.ENV is not None else 'production'
-    # basic configuration of Logstash
-    try:
-        import logstash_async  # pylint: disable=W0611
-    except ImportError as ex:
-        raise RuntimeError(
-            "NavConfig: Logstash Logging is enabled but Logstash async \
-                dependency is not installed.\
-            Hint: run 'pip install logstash_async'."
-        ) from ex
-    LOGSTASH_HOST = config.get('LOGSTASH_HOST', fallback='localhost')
-    LOGSTASH_PORT = config.getint('LOGSTASH_PORT', fallback=6000)
-    LOG_TAG = config.get('FLUENT_TAG', fallback='app.log')
-    logging_config['formatters']['logstash'] = {
-        '()': 'logstash_async.formatter.LogstashFormatter',
-        'message_type': 'python-logstash',
-        'fqdn': False,  # Fully qualified domain name. Default value: false.
-        'extra_prefix': 'dev',
-        'extra': {
-            'application': f'{APP_NAME}',
-            'project_path': f'{BASE_DIR}',
-            'environment': environment
-        }
-    }
-    logging_config['handlers']['LogstashHandler'] = {
-        'class': 'logstash_async.handler.AsynchronousLogstashHandler',
-        'formatter': 'logstash',
-        'transport': 'logstash_async.transport.TcpTransport',
-        'host': LOGSTASH_HOST,
-        'port': int(LOGSTASH_PORT),
-        'level': loglevel,
-        'database_path': f'{LOG_DIR}/logstash.db',
-    }
+    ### Importing Logstash Handler and returning Logging Config:
+    from .handlers import LogstashHandler
+    lh = LogstashHandler(
+        config=config
+    )
+    logging_config['formatters']['logstash'] = lh.formatter(
+        application=APP_NAME, path=BASE_DIR
+    )
+    logging_config['handlers']['LogstashHandler'] = lh.handler(
+        loglevel=loglevel, propagate=True
+    )
     if 'root' not in logging_config:
         logging_config['root'] = {}
     if 'handlers' not in logging_config['root']:
