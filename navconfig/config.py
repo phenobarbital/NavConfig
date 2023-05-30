@@ -242,7 +242,7 @@ class cellarConfig(metaclass=Singleton):
         """
         for _, reader in self._readers.items():
             try:
-                if reader.exists(key) is True:
+                if reader.enabled is True and reader.exists(key) is True:
                     return reader.get(key)
             except RuntimeError:
                 continue

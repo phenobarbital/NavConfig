@@ -7,6 +7,8 @@ class AbstractReader(ABC):
 
     Description: Abstract class for External Readers.
     """
+    enabled: bool = True
+
     @abstractmethod
     def get(self, key: str, default: Any = None) -> Any:
         pass

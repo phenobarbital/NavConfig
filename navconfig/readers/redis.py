@@ -30,15 +30,18 @@ class mredis(AbstractReader):
                 url=self.redis_url, **self.params
             )
         except (TimeoutError) as err:
+            self.enabled = False
             raise Exception(
                 f"Redis Config: Redis Timeout: {err}"
             ) from err
         except (RedisError, ConnectionError) as err:
+            self.enabled = False
             raise Exception(
                 f"Redis Config: Unable to connect to Redis: {err}"
             ) from err
         except Exception as err:
             logging.exception(err)
+            self.enabled = False
             raise
 
     def set(self, key, value):
