@@ -22,10 +22,11 @@ class VaultReader(AbstractReader):
         try:
             self.client = hvac.Client(url=url, token=token)
             self.open()
-        except Exception as err: # pylint: disable=W0703
-            logging.exception(
-                f"Vault Error: {err}", stack_info=True
+        except Exception as err:  # pylint: disable=W0703
+            logging.error(
+                f"Vault Error: {err}", stack_info=False
             )
+            self.enabled = False
 
     def open(self) -> bool:
         if self.client.is_authenticated():

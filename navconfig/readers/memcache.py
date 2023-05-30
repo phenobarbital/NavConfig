@@ -20,7 +20,8 @@ class mcache(AbstractReader):
                 binary=True,
                 behaviors=self._args
             )
-        except Exception as err: # pylint: disable=W0703
+        except Exception as err:  # pylint: disable=W0703
+            self.enabled = False
             logging.exception(err, stack_info=True)
 
     def get(self, key, default=None):

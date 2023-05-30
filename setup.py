@@ -136,7 +136,7 @@ setup(
         'aiofiles==23.1.0',
         'aiofile==3.8.1',
     ],
-    extras_require = {
+    extras_require={
         "memcache": [
             "pylibmc==1.6.3",
             "aiomcache==0.8.1",
@@ -147,6 +147,7 @@ setup(
         "logstash": [
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
+            'elasticsearch==8.8.0'
         ],
         "redis": [
             'redis==4.5.1',
@@ -156,10 +157,10 @@ setup(
             'pytomlpp==1.0.11'
         ],
         "yaml": [
-          'PyYAML>=6.0',
+            'PyYAML>=6.0',
         ],
         "hvac": [
-          "hvac==1.1.0"
+            "hvac==1.1.0"
         ],
         "default": [
             'pytomlpp==1.0.11',
