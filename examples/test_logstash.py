@@ -5,7 +5,10 @@ from navconfig.logging import logger
 ## set a new logger name
 logger.setName('config.example')
 # verbose debugging:
-logger.verbose('This is a verbose message')
+logger.verbose(
+    'Working Example',
+    extra={"custom_name": "example", "ipaddr": "90.71.169.159"}
+)
 
 # Give Elasticsearch some time to index the new log entry
 sleep(5)
@@ -19,12 +22,12 @@ es = Elasticsearch(
 # Define the search query
 search_query = {
     "match": {
-        "message": "This is a verbose message"
+        "message": "Working Example"
     }
 }
 
 # Perform the search
-res = es.search(index="logstash-*", query=search_query)
+res = es.search(index="logdb", query=search_query)
 
 
 # Extract the total number of hits
