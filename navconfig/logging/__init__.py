@@ -20,42 +20,36 @@ from .logger import logging, Logger, LOGLEVEL, ColoredFormatter
 loglevel = LOGLEVEL
 
 APP_NAME = config.get('APP_NAME', fallback='navigator')
-APP_TITLE = config.get('APP_TITLE', section='info', fallback='navigator')
 LOG_DIR = config.get(
     'logdir', section='logging', fallback=str(BASE_DIR.joinpath('logs'))
 )
-LOG_NAME = config.get('logname', section='logging', fallback=APP_TITLE)
 TMP_DIR = config.get('temp_path', section='temp', fallback='/tmp')
 
 """
 Logging Information.
 """
-logstash_logging = config.getboolean(
-    'logstash_enabled', section='logging', fallback=False)
-
 logging_disable_other = config.getboolean(
     'logging_disable_other', section='logging', fallback=False
 )
 
-## disable mail alerts:
-logging_enable_mailer = config.getboolean(
-    'logging_enable_mailer', section='logging', fallback=False
-)
+### Logging Echo (standard output)
 logging_echo = config.getboolean(
-    'logging_echo', section='logging', fallback=False)
-## can disable the rotating file handler
-logging_enable_filehandler = config.getboolean(
-    'logging_enable_filehandler', section='logging', fallback=False
+    'logging_echo', section='logging', fallback=False
 )
 
-logging_host = config.get(
-    'logging_host', section='logging', fallback="localhost"
+## Mail Alerts:
+logging_enable_mailer = config.getboolean(
+    'mailer_enabled', section='logging', fallback=False
 )
-logging_admin = config.get(
-    'logging_admin', section='logging', fallback="dev@domain.com"
+
+## can disable the rotating file handler
+logging_enable_filehandler = config.getboolean(
+    'filehandler_enabled', section='logging', fallback=False
 )
-logging_email = config.get(
-    'logging_email', section='logging', fallback='no-reply@domain.com'
+
+### External Loggers:
+logging_enable_logstash = config.getboolean(
+    'logstash_enabled', section='logging', fallback=False
 )
 
 # Path version of the log directory
@@ -64,12 +58,14 @@ if not logdir.exists():
     try:
         logdir.mkdir(parents=True, exist_ok=True)
     except OSError:
-        logging.exception('Error Creating Logging Directory', exc_info=True)
+        logging.exception(
+            'Error Creating Logging Directory', exc_info=True
+        )
 
 HANDLERS = config.get(
     'handlers',
     section='logging',
-    fallback=['StreamHandler', 'ErrorFileHandler']
+    fallback=['StreamHandler']
 )
 if isinstance(HANDLERS, str):
     HANDLERS = HANDLERS.split(',')
@@ -83,13 +79,16 @@ logging_config = dict(
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
         'default': {
-            'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s'
+            'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: \
+                %(message)s'
         },
         'error': {
-            'format': '%(asctime)s-%(levelname)s-%(name)s-%(process)d::%(module)s|%(lineno)s:: %(message)s'
+            'format': '%(asctime)s-%(levelname)s-%(name)s-%(process)d::\
+                %(module)s|%(lineno)s:: %(message)s'
         },
         'file': {
-            'format': "%(asctime)s: [%(levelname)s]: %(pathname)s: %(lineno)d: \n%(message)s\n"
+            'format': "%(asctime)s: [%(levelname)s]: %(pathname)s: %(lineno)d:\
+                \n%(message)s\n"
         },
     },
     handlers={
@@ -104,15 +103,6 @@ logging_config = dict(
             'formatter': 'default',
             "stream": "ext://sys.stdout",
             'level': loglevel
-        },
-        'ErrorFileHandler': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': logging.ERROR,
-            'filename': f'{LOG_DIR}/{LOG_NAME}.error.log',
-            'formatter': 'error',
-            'maxBytes': (1048576 * 5),
-            'backupCount': 2,
-            'mode': 'a',
         }
     },
     loggers={
@@ -133,60 +123,64 @@ logging_config = dict(
         }
     },
     root={
-        'handlers': ['ErrorFileHandler'],
+        'handlers': ['StreamHandler'],
         'level': loglevel,
         'propagate': True,
     },
 )
 
-if logging_enable_filehandler is True:
-    logging_config['handlers']['RotatingFileHandler'] = {
-        'class': 'logging.handlers.RotatingFileHandler',
-        'filename': f'{LOG_DIR}/{LOG_NAME}.log',
-        'maxBytes': (1048576 * 5),
-        'backupCount': 2,
-        'encoding': 'utf-8',
-        'formatter': 'file',
-        'level': loglevel
-    }
-    logging_config['root']['handlers'].append('RotatingFileHandler')
-
-if logging_enable_mailer is True:
-    logging_config['handlers']['CriticalMailHandler'] = {
-        'level': logging.CRITICAL,
-        'formatter': 'error',
-        'class': 'logging.handlers.SMTPHandler',
-        'mailhost': logging_host,
-        'fromaddr': logging_email,
-        'toaddrs': [logging_admin],
-        'subject': f'Critical Error on {APP_NAME}'
-    }
-    logging_config['root']['handlers'].append('CriticalMailHandler')
-
 if logging_echo is True:
     logging_config['root']['handlers'].append('console')
 
-if logstash_logging is True:
+
+if logging_enable_filehandler is True:
+    from .handlers.file import FileHandler
+    lf = FileHandler(
+        config=config,
+        loglevel=loglevel,
+        application=APP_NAME
+    )
+    logging_config['handlers']['RotatingFileHandler'] = lf.handler(
+        path=LOG_DIR
+    )
+    ## Also Error Handler:
+    logging_config['handlers']['ErrorFileHandler'] = lf.handler(
+        path=LOG_DIR, loglevel=logging.ERROR
+    )
+    logging_config['root']['handlers'].append('RotatingFileHandler')
+    logging_config['root']['handlers'].append('ErrorFileHandler')
+
+
+if logging_enable_mailer is True:
+    from .handlers.mail import MailerHandler
+    lm = MailerHandler(
+        config=config,
+        loglevel=logging.CRITICAL,
+        application=APP_NAME
+    )
+    logging_config['handlers']['CriticalMailHandler'] = lm.handler()
+    logging_config['root']['handlers'].append(
+        'CriticalMailHandler'
+    )
+
+
+if logging_enable_logstash is True:
     logging.debug(
         "Logstash configuration Enabled."
     )
     ### Importing Logstash Handler and returning Logging Config:
-    from .handlers import LogstashHandler
+    from .handlers.logstash import LogstashHandler
     lh = LogstashHandler(
-        config=config
+        config=config, loglevel=loglevel, application=APP_NAME
     )
     logging_config['formatters']['logstash'] = lh.formatter(
-        application=APP_NAME, path=BASE_DIR
+        path=BASE_DIR
     )
     logging_config['handlers']['LogstashHandler'] = lh.handler(
-        loglevel=loglevel, propagate=True
+        propagate=True
     )
-    if 'root' not in logging_config:
-        logging_config['root'] = {}
-    if 'handlers' not in logging_config['root']:
-        logging_config['root']['handlers'] = []
-    logging_config['root']['handlers'].extend(
-        ['LogstashHandler', 'StreamHandler']
+    logging_config['root']['handlers'].append(
+        'LogstashHandler'
     )
 
 
