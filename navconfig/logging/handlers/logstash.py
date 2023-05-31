@@ -7,17 +7,15 @@ except ImportError as ex:
             dependency is not installed.\
         Hint: run 'pip install logstash_async'."
     ) from ex
+from .abstract import AbstractLog
 
+class LogstashHandler(AbstractLog):
+    """LogstashHandler.
 
-class LogstashHandler:
-    def __init__(self, config) -> None:
-        self.env = config.ENV if config.ENV is not None else 'production'
-        self.host = config.get('LOGSTASH_HOST', fallback='127.0.0.1')
-        self.port = config.getint('LOGSTASH_PORT', fallback=6000)
-
+    Send Logs to Logstash using Logstash-async.
+    """
     def formatter(
             self,
-            application: str,
             path: str,
             fqdn: bool = False,
             **kwargs
@@ -28,21 +26,21 @@ class LogstashHandler:
             'fqdn': fqdn,
             "extra_prefix": 'dev',
             'extra': {
-                'application': f'{application}',
+                'application': f'{self.application}',
                 'project_path': f'{path}',
                 'environment': self.env,
                 **kwargs
             }
         }
 
-    def handler(self, loglevel, enable_localdb: bool = False, **kwargs):
+    def handler(self, enable_localdb: bool = False, **kwargs):
         hdlr = {
             'class': 'logstash_async.handler.AsynchronousLogstashHandler',
             'formatter': 'logstash',
             'transport': 'logstash_async.transport.TcpTransport',
             'host': self.host,
             'port': int(self.port),
-            'level': loglevel
+            'level': self.loglevel
         }
         if enable_localdb is True:
             log_dir = kwargs['logdir']
