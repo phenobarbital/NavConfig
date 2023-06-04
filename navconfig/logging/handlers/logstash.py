@@ -38,6 +38,7 @@ class LogstashHandler(AbstractLog):
             'class': 'logstash_async.handler.AsynchronousLogstashHandler',
             'formatter': 'logstash',
             'transport': 'logstash_async.transport.TcpTransport',
+            'transport_type': 'tcp',
             'host': self.host,
             'port': int(self.port),
             'level': self.loglevel
