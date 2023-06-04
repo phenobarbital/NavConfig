@@ -14,6 +14,12 @@ class LogstashHandler(AbstractLog):
 
     Send Logs to Logstash using Logstash-async.
     """
+    def __init__(self, config, loglevel, application: str) -> None:
+        super(LogstashHandler, self).__init__(config, loglevel, application)
+        self._flush_timeout = config.getint(
+            'logstash_flush_timeout', section='logging', fallback=20
+        )
+
     def formatter(
             self,
             path: str,
@@ -41,6 +47,7 @@ class LogstashHandler(AbstractLog):
             'transport_type': 'tcp',
             'host': self.host,
             'port': int(self.port),
+            'flush_timeout': self._flush_timeout,  # set the flush_timeout
             'level': self.loglevel
         }
         if enable_localdb is True:
