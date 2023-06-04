@@ -126,8 +126,14 @@ logging_config = dict(
         'handlers': ['StreamHandler'],
         'level': loglevel,
         'propagate': True,
-    },
+    }
 )
+
+logging_config[APP_NAME] = {
+    'handlers': ['StreamHandler'],
+    'level': loglevel,
+    'propagate': True,
+}
 
 if logging_echo is True:
     logging_config['root']['handlers'].append('console')
@@ -163,7 +169,7 @@ if logging_enable_mailer is True:
         'CriticalMailHandler'
     )
 
-
+print('LOGGING ', logging_config)
 if logging_enable_logstash is True:
     logging.debug(
         "Logstash configuration Enabled."
@@ -171,15 +177,21 @@ if logging_enable_logstash is True:
     ### Importing Logstash Handler and returning Logging Config:
     from .handlers.logstash import LogstashHandler
     lh = LogstashHandler(
-        config=config, loglevel=loglevel, application=APP_NAME
+        config=config,
+        loglevel=loglevel,
+        application=APP_NAME
     )
     logging_config['formatters']['logstash'] = lh.formatter(
         path=BASE_DIR
     )
     logging_config['handlers']['LogstashHandler'] = lh.handler(
-        propagate=True
+        enable_localdb=config.getboolean('LOGSTASH_ENABLE_DB', fallback=True),
+        logdir=LOG_DIR
     )
     logging_config['root']['handlers'].append(
+        'LogstashHandler'
+    )
+    logging_config[APP_NAME]['handlers'].append(
         'LogstashHandler'
     )
 

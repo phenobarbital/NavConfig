@@ -6,7 +6,7 @@ from navconfig.logging import logger
 logger.setName('config.example')
 # verbose debugging:
 logger.verbose(
-    'Working Example',
+    'Logstash Example',
     extra={"custom_name": "example", "ipaddr": "90.71.169.159"}
 )
 
@@ -22,7 +22,7 @@ es = Elasticsearch(
 # Define the search query
 search_query = {
     "match": {
-        "message": "Working Example"
+        "message": "Logstash"
     }
 }
 
