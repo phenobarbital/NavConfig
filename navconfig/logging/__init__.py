@@ -169,16 +169,21 @@ if logging_enable_mailer is True:
         'CriticalMailHandler'
     )
 
-print('LOGGING ', logging_config)
+
 if logging_enable_logstash is True:
     logging.debug(
         "Logstash configuration Enabled."
+    )
+    logstash_logging = config.get(
+        'logstash_logging',
+        section="logging",
+        fallback='INFO'
     )
     ### Importing Logstash Handler and returning Logging Config:
     from .handlers.logstash import LogstashHandler
     lh = LogstashHandler(
         config=config,
-        loglevel=loglevel,
+        loglevel=logstash_logging,
         application=APP_NAME
     )
     logging_config['formatters']['logstash'] = lh.formatter(
