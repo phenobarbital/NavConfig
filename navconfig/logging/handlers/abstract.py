@@ -13,7 +13,7 @@ class AbstractLog(metaclass=ABCMeta):
             'logging_host', section='logging', fallback="localhost"
         )
         self.port = config.getint(
-            'logging_port', section='logging', fallback=6000
+            'logging_port', section='logging', fallback=9600
         )
         # log name:
         self._logname = config.get(
