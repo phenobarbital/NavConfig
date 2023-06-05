@@ -190,7 +190,7 @@ class cellarConfig(metaclass=Singleton):
             )
             self._mapping_ = self._env_loader.load_environment()
             if self._mapping_ is None:
-                self._mapping_ = {} # empty dict
+                self._mapping_ = {}  # empty dict
         except (FileExistsError, FileNotFoundError) as ex:
             logging.warning(ex)
             raise
@@ -297,17 +297,18 @@ class cellarConfig(metaclass=Singleton):
                     val = self._ini.getint(section, key)
                 except (NoOptionError, NoSectionError):
                     pass
-        if key in os.environ:
+        elif key in os.environ:
             val = os.getenv(key, fallback)
         else:
             val = self._get_external(key)
         if not val:
             return fallback
-        if val.isdigit():  # Check if val is Integer
-            try:
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            if val.isdigit():
                 return int(val)
-            except (TypeError, ValueError):
-                return fallback
+            return fallback
 
     def getlist(self, key: str, section: str = None, fallback: Any = None):
         """
