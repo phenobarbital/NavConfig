@@ -29,7 +29,7 @@ CREATE = os.getenv('CONFIG_CREATE', None)
 """
 Loading main Configuration Object.
 """
-config = cellarConfig(SITE_ROOT, env_type = ENV_TYPE, create=CREATE)
+config = cellarConfig(SITE_ROOT, env_type=ENV_TYPE, create=CREATE)
 # ENV version (dev, prod, staging)
 ENV = config.ENV
 

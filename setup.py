@@ -27,26 +27,27 @@ with open(version, 'r', encoding='utf-8') as meta:
     for node in (n for n in t.body if isinstance(n, ast.Assign)):
         if len(node.targets) == 1:
             name = node.targets[0]
-            if isinstance(name, ast.Name) and \
-                    name.id in (
-                        '__version__',
-                        '__title__',
-                        '__description__',
-                        '__author__',
-                        '__license__', '__author_email__'):
-                        v = node.value
-                        if name.id == '__version__':
-                            __version__ = v.s
-                        if name.id == '__title__':
-                            __title__ = v.s
-                        if name.id == '__description__':
-                            __description__ = v.s
-                        if name.id == '__license__':
-                            __license__ = v.s
-                        if name.id == '__author__':
-                            __author__ = v.s
-                        if name.id == '__author_email__':
-                            __author_email__ = v.s
+            if isinstance(name, ast.Name) and name.id in (
+                '__version__',
+                '__title__',
+                '__description__',
+                '__author__',
+                '__license__',
+                '__author_email__'
+            ):
+                v = node.value
+                if name.id == '__version__':
+                    __version__ = v.s
+                if name.id == '__title__':
+                    __title__ = v.s
+                if name.id == '__description__':
+                    __description__ = v.s
+                if name.id == '__license__':
+                    __license__ = v.s
+                if name.id == '__author__':
+                    __author__ = v.s
+                if name.id == '__author_email__':
+                    __author_email__ = v.s
 
 COMPILE_ARGS = ["-O2"]
 
@@ -150,7 +151,7 @@ setup(
             'elasticsearch==8.8.0'
         ],
         "redis": [
-            'redis==4.5.1',
+            'redis==4.5.5',
             'aioredis==2.0.1',
         ],
         "toml": [
@@ -164,7 +165,7 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.11',
-            'redis==4.5.1',
+            'redis==4.5.5',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
@@ -173,7 +174,7 @@ setup(
         ],
         "all": [
             'pytomlpp==1.0.11',
-            'redis==4.5.1',
+            'redis==4.5.5',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
