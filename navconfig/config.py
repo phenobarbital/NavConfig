@@ -223,12 +223,12 @@ class cellarConfig(metaclass=Singleton):
         """
         self._ini.read(files)
 
-    def addEnv(self, file):
+    def addEnv(self, file, override: bool = False):
         if file.exists() and file.is_file():
             try:
                 load_dotenv(
                     dotenv_path=file,
-                    override=False
+                    override=override
                 )
             except Exception as err:
                 raise NavConfigError(str(err)) from err
