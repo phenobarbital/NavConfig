@@ -128,5 +128,5 @@ class mredis(AbstractReader):
     def close(self):
         try:
             self._redis.close()
-        except Exception as err: # pylint: disable=W0703
+        except Exception as err:  # pylint: disable=W0703
             logging.error(err)
