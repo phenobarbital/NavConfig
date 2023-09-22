@@ -17,7 +17,13 @@ class LogstashHandler(AbstractLog):
     def __init__(self, config, loglevel, application: str) -> None:
         super(LogstashHandler, self).__init__(config, loglevel, application)
         self._flush_timeout = config.getint(
-            'logstash_flush_timeout', section='logging', fallback=20
+            'logstash_flush_timeout', section='logging', fallback=10
+        )
+        self.host = config.get(
+            'LOGSTASH_HOST', fallback=self.host
+        )
+        self.port = config.get(
+            'LOGSTASH_PORT', fallback=self.port
         )
 
     def formatter(
