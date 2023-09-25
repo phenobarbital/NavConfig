@@ -148,7 +148,7 @@ setup(
         "logstash": [
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
-            'elasticsearch==8.8.0'
+            'elasticsearch==8.10.0'
         ],
         "redis": [
             'redis==4.5.5',
