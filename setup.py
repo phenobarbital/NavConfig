@@ -126,7 +126,7 @@ setup(
         'asyncio==3.4.3',
         'uvloop==0.19.0',
         'python-dotenv==1.0.0',
-        'configparser==5.3.0',
+        'configparser==6.0.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
         'iso8601==1.1.0',
