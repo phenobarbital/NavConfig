@@ -113,14 +113,15 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Framework :: AsyncIO'
     ],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=["docs", "tests", "settings"]),
     setup_requires=[
-        'wheel==0.40.0',
-        'Cython==0.29.33'
+        'wheel==0.42.0',
+        'Cython==3.0.6'
     ],
     install_requires=[
         'asyncio==3.4.3',
@@ -129,12 +130,12 @@ setup(
         'configparser==6.0.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
-        'iso8601==1.1.0',
+        'iso8601==2.1.0',
         'pycparser==2.21',
-        "orjson==3.9.9",
+        "orjson==3.9.10",
         'pycryptodomex==3.17',
-        "cryptography==37.0.4",
-        'aiofiles==23.1.0',
+        "cryptography==41.0.7",
+        "aiofiles==23.2.1",
         'aiofile==3.8.8',
     ],
     extras_require={
