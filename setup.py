@@ -127,7 +127,7 @@ setup(
         'asyncio==3.4.3',
         'uvloop==0.19.0',
         'python-dotenv==1.0.0',
-        'configparser==5.3.0',
+        'configparser==6.0.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
         'iso8601==1.1.0',
@@ -136,7 +136,7 @@ setup(
         'pycryptodomex==3.17',
         "cryptography==37.0.4",
         'aiofiles==23.1.0',
-        'aiofile==3.8.1',
+        'aiofile==3.8.8',
     ],
     extras_require={
         "memcache": [
@@ -149,10 +149,10 @@ setup(
         "logstash": [
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
-            'elasticsearch==8.8.0'
+            'elasticsearch==8.10.1'
         ],
         "redis": [
-            'redis==4.5.5',
+            'redis==5.0.1',
             'aioredis==2.0.1',
         ],
         "toml": [
@@ -162,26 +162,26 @@ setup(
             'PyYAML>=6.0',
         ],
         "hvac": [
-            "hvac==1.1.0"
+            "hvac==2.0.0"
         ],
         "default": [
             'pytomlpp==1.0.11',
-            'redis==4.5.5',
+            'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
-            "hvac==1.1.0"
+            "hvac==2.0.0"
         ],
         "all": [
             'pytomlpp==1.0.11',
-            'redis==4.5.5',
+            'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.5.0',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
-            "hvac==1.1.0"
+            "hvac==2.0.0"
         ]
     },
     ext_modules=cythonize(extensions),
