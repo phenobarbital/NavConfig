@@ -133,7 +133,7 @@ setup(
         'iso8601==2.1.0',
         'pycparser==2.21',
         "orjson==3.9.10",
-        'pycryptodomex==3.17',
+        'pycryptodomex==3.19.0',
         "cryptography==41.0.7",
         "aiofiles==23.2.1",
         'aiofile==3.8.8',
@@ -147,9 +147,9 @@ setup(
             'PyDrive==1.3.1',
         ],
         "logstash": [
-            'python-logstash-async==2.5.0',
+            'python-logstash-async==2.7.2',
             'aiologstash==2.0.0',
-            'elasticsearch==8.10.1'
+            'elasticsearch==8.11.0'
         ],
         "redis": [
             'redis==5.0.1',
@@ -168,7 +168,7 @@ setup(
             'pytomlpp==1.0.11',
             'redis==5.0.1',
             'aioredis==2.0.1',
-            'python-logstash-async==2.5.0',
+            'python-logstash-async==2.7.2',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
             "hvac==2.0.0"
@@ -177,7 +177,7 @@ setup(
             'pytomlpp==1.0.11',
             'redis==5.0.1',
             'aioredis==2.0.1',
-            'python-logstash-async==2.5.0',
+            'python-logstash-async==2.7.2',
             'aiologstash==2.0.0',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
