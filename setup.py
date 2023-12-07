@@ -113,14 +113,15 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Framework :: AsyncIO'
     ],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=["docs", "tests", "settings"]),
     setup_requires=[
-        'wheel==0.40.0',
-        'Cython==0.29.33'
+        'wheel==0.42.0',
+        'Cython==3.0.6'
     ],
     install_requires=[
         'asyncio==3.4.3',
