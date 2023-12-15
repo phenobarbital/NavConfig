@@ -21,22 +21,23 @@ from navconfig.exceptions import ConfigError, NavConfigError
 ## memcache:
 try:
     from .readers.memcache import mcache
-    MEMCACHE_LOADER=mcache
+    MEMCACHE_LOADER = mcache
 except ModuleNotFoundError:
-    MEMCACHE_LOADER=None
+    MEMCACHE_LOADER = None
 ## redis:
 try:
     from .readers.redis import mredis
-    REDIS_LOADER=mredis
+    REDIS_LOADER = mredis
 except ModuleNotFoundError:
-    REDIS_LOADER=None
+    REDIS_LOADER = None
 
 ## Hashicorp Vault:
 try:
     from .readers.vault import VaultReader
-    HVAULT_LOADER=VaultReader
+    HVAULT_LOADER = VaultReader
 except ModuleNotFoundError:
-    HVAULT_LOADER=None
+    HVAULT_LOADER = None
+
 
 class cellarConfig(metaclass=Singleton):
     """
@@ -48,15 +49,24 @@ class cellarConfig(metaclass=Singleton):
     _readers: dict = {}
     _mapping_: dict = {}
 
-    def __init__(self, site_root: str = None, env: str = None, create: bool = True, **kwargs):
+    def __init__(
+        self,
+        site_root: str = None,
+        env: str = None,
+        create: bool = True,
+        **kwargs
+    ):
         if self.__initialized__ is True:
             return
         self.__initialized__ = True
         self._create: bool = create
         self._ini: Callable = None
         # asyncio loop
-        self._loop = asyncio.get_event_loop()
-        asyncio.set_event_loop(self._loop)
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         # this only load at first time
         if not site_root:
             self._site_path = Path(__file__).resolve().parent.parent
@@ -70,7 +80,7 @@ class cellarConfig(metaclass=Singleton):
             env: str = None,
             env_type: str = 'file',
             override: bool = False
-        ):
+    ):
         # Environment Configuration:
         if env is not None:
             self.ENV = env
