@@ -148,7 +148,6 @@ setup(
         ],
         "logstash": [
             'python-logstash-async==2.7.2',
-            'aiologstash==2.0.0',
             'elasticsearch==8.11.0'
         ],
         "redis": [
@@ -169,7 +168,6 @@ setup(
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
-            'aiologstash==2.0.0',
             'PyYAML>=6.0',
             "hvac==2.0.0"
         ],
@@ -178,7 +176,6 @@ setup(
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
-            'aiologstash==2.0.0',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
             "hvac==2.0.0"
