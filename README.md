@@ -3,12 +3,14 @@
 NavConfig is a configuration tool for getting variables from environment and other sources.
 Is used by Navigator Framework, but is possible to use in other applications as well.
 
-Navigator NavConfig can load Configuration directives from different sources:
+NavConfig can load Configuration directives from different sources (can be mixed):
 
 - Environment files (.env)
-- Memcached Variables
 - INI files (using configParser)
-- Redis Server
+- TOML/YAML files
+- REDIS variables
+- Memcached Variables
+- Python files (using settings.py)
 
 The main goal of NavConfig is centralize configuration access in a single and
 immutable unique point of truth.
@@ -17,9 +19,9 @@ NavConfig can be shared across several modules.
 
 ## Motivation ##
 
-Any Application require too many configuration options, some configuration options need to be secrets, credentials, etc, and also, can be dependable of the environment an application runs (development, testing, production, etc.).
+Any Application requires too many configuration options, some configuration options need to be secrets, credentials, etc, and also, can depend on the environment where the application runs (development, testing, production, etc.).
 
-Instead of creating python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig support also getting data instead of INI files from YAML or TOML files (for complex types).
+Instead of creating Python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig also supports getting data instead of INI files from YAML or TOML files (for complex types).
 
 ## Installation
 ```bash
@@ -38,11 +40,12 @@ mkdir {env,etc}
 
 put a .env file inside of the "env" folder, the first line is the directive to know where the "INI" file lives (even if we can put the . INI file outside of the current dir).
 
-the directory tree is very clear:
+the directory tree is very simple:
 
 ```text
 |- myapp/
 |  |- __init__.py
+|  |- pyproject.toml
 |  |- env/
 |  |  |- .env
 |  |  |- dev/
@@ -60,7 +63,7 @@ CONFIG_FILE=etc/myconfig.ini
 APP_NAME=My App
 ```
 
-Then, in your code, call navconfig "config" object, and start getting your environment variables inside your application.
+Navconfig exposes a "config" object to retrieve your environment variables inside your application.
 
 ```python
 from navconfig import config
@@ -169,19 +172,13 @@ if LOCAL_DEVELOPMENT is True:
 
 ## Dependencies ##
 
+ * Python >= 3.9
  * ConfigParser
  * Python-Dotenv
  * pytomlpp
  * PyYAML
  * redis
  * pylibmc
-
-
-### Requirements ###
-
-* Python >= 3.8
-* asyncio (https://pypi.python.org/pypi/asyncio/)
-* python-dotenv
 
 ### Contribution guidelines ###
 

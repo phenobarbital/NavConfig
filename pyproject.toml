@@ -1,22 +1,20 @@
 [build-system]
 requires = [
-    'setuptools==67.6.1',
+    'setuptools==69.0.3',
     'Cython==3.0.6',
-    'wheel==0.42.0',
-    'toml>=0.10.2',
-    'flit'
+    'wheel==0.42.0'
 ]
 
 build-backend = "setuptools.build_meta"
 
-[tool.flit.metadata]
-module = "navconfig"
+[metadata]
+name = "navconfig"
+description = "Universal Configuration Management."
 author = "Jesus Lara Gimenez"
-author-email = "jesuslarag@gmail.com"
-home-page = "https://github.com/phenobarbital/navconfig"
+author_email = "jesuslarag@gmail.com"
+url = "https://github.com/phenobarbital/navconfig"
 license = "MIT"
-keywords=["aiohttp", "settings", "configuration", "conf", "configuration-management"]
-classifiers=[
+classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
@@ -32,18 +30,19 @@ classifiers=[
   "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Software Development :: Build Tools",
-  "License :: OSI Approved :: BSD License",
+  "License :: OSI Approved :: MIT License",
 ]
-description-file = "README.md"
-requires-python = ">=3.9.16"
-readme = "README.md"
+long_description = "file:README.md"
+long_description_content_type = "text/markdown"
+keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
+python_requires = ">=3.9.16"
+
 
 [tool.pytest.ini_options]
 addopts = [
   "--strict-config",
   "--strict-markers",
 ]
-
 filterwarnings = [
     "error",
     'ignore:The loop argument is deprecated since Python 3\.8, and scheduled for removal in Python 3\.10:DeprecationWarning:asyncio',

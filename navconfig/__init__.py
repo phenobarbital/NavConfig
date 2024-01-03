@@ -6,7 +6,7 @@ Main object for Configuration of several Navigator-related Tools.
 import os
 import sys
 from pathlib import Path
-from .config import cellarConfig  # noqa
+from .config import Kardex  # noqa
 from .utils import project_root
 from .version import __version__
 
@@ -29,7 +29,11 @@ CREATE = os.getenv('CONFIG_CREATE', None)
 """
 Loading main Configuration Object.
 """
-config = cellarConfig(SITE_ROOT, env_type=ENV_TYPE, create=CREATE)
+config = Kardex(
+    SITE_ROOT,
+    env_type=ENV_TYPE,
+    create=CREATE
+)
 # ENV version (dev, prod, staging)
 ENV = config.ENV
 

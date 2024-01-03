@@ -2,6 +2,7 @@ from typing import Any
 import os
 import logging
 import hvac
+from ..exceptions import ReaderNotSet
 from .abstract import AbstractReader
 
 
@@ -23,10 +24,11 @@ class VaultReader(AbstractReader):
             self.client = hvac.Client(url=url, token=token)
             self.open()
         except Exception as err:  # pylint: disable=W0703
-            logging.error(
-                f"Vault Error: {err}", stack_info=False
-            )
             self.enabled = False
+            raise ReaderNotSet(
+                f"Vault Error: {err}"
+            )
+
 
     def open(self) -> bool:
         if self.client.is_authenticated():
@@ -38,6 +40,8 @@ class VaultReader(AbstractReader):
         pass
 
     def get(self, key: str, default: Any = None, version: int = None, path: str = 'secrets', sub_key: str = None) -> Any:
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
@@ -49,10 +53,7 @@ class VaultReader(AbstractReader):
             response = self.client.secrets.kv.read_secret_version(
                 path=secret_path, version=version, mount_point=self._mount
             )
-        except hvac.exceptions.InvalidPath as exc:
-            # logging.error(
-            #      f"Vault Error over key {key}: {exc}"
-            # )
+        except hvac.exceptions.InvalidPath:
             return default
         if secret_key == "*":
             return response['data']['data']
@@ -62,8 +63,9 @@ class VaultReader(AbstractReader):
             return secret_data.get(sub_key, default)
         return secret_data
 
-
     def exists(self, key: str, path: str = 'secrets', version: int = None) -> bool:
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
@@ -85,6 +87,8 @@ class VaultReader(AbstractReader):
         return secret_key in response['data']['data']
 
     def set(self, key: str, value: Any, path: str = 'secrets', timeout: int = None, version: int = None) -> None:
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             secret_path, secret_key = key.split("/", 1)
         except ValueError:
@@ -92,7 +96,10 @@ class VaultReader(AbstractReader):
             secret_key = key
         secret_data = {secret_key: value}
         self.client.secrets.kv.v2.create_or_update_secret(
-            path=secret_path, version=version, secret=secret_data, mount_point=self._mount
+            path=secret_path,
+            version=version,
+            secret=secret_data,
+            mount_point=self._mount
         )
 
     def delete(self, key: str, path: str = 'secrets', version: int = None) -> bool:
@@ -107,7 +114,9 @@ class VaultReader(AbstractReader):
         if secret_key in response['data']['data']:
             del response['data']['data'][secret_key]
             self.client.secrets.kv.v2.create_or_update_secret(
-                path=secret_path, secret=response['data']['data'], mount_point=self._mount
+                path=secret_path,
+                secret=response['data']['data'],
+                mount_point=self._mount
             )
             return True
         return False
