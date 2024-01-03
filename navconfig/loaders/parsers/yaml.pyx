@@ -13,7 +13,7 @@ cdef class YAMLParser:
             content = None
             async with aiofiles.open(filename) as f:
                 content = await f.read()
-            return yaml.load(content, Loader=yaml.CBaseLoader)
+            return yaml.load(content, Loader=yaml.SafeLoader)
         except Exception as err:
             raise RuntimeError(
                 f'Error parsing Yaml content: {err!s}.'

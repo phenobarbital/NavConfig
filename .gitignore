@@ -7,6 +7,8 @@ __pycache__
 .vscode/*
 # C extensions
 *.so
+*.cpp
+*.c
 *.pyc
 # Migrations Folder
 migrations/

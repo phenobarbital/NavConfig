@@ -118,7 +118,9 @@ setup(
     ],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
-    packages=find_packages(exclude=["docs", "tests", "settings"]),
+    packages=find_packages(
+        exclude=["docs", "tests", "settings", "examples", "dist", "etc"]
+    ),
     setup_requires=[
         'wheel==0.42.0',
         'Cython==3.0.6'
