@@ -7,6 +7,7 @@ from redis.exceptions import (
     ResponseError,
     ReadOnlyError
 )
+from ..exceptions import ReaderNotSet
 from .abstract import AbstractReader
 
 class mredis(AbstractReader):
@@ -29,22 +30,27 @@ class mredis(AbstractReader):
             self._redis = redis.from_url(
                 url=self.redis_url, **self.params
             )
+            response = self._redis.ping()
+            if not response:
+                self.enabled = False
+        except (ConnectionError, RedisError) as err:
+            self.enabled = False
+            raise ReaderNotSet(
+                f"Unable to Connecto to Redis: {err} :: Redis Disabled ::"
+            )
         except (TimeoutError) as err:
             self.enabled = False
             raise Exception(
                 f"Redis Config: Redis Timeout: {err}"
             ) from err
-        except (RedisError, ConnectionError) as err:
-            self.enabled = False
-            raise Exception(
-                f"Redis Config: Unable to connect to Redis: {err}"
-            ) from err
         except Exception as err:
-            logging.exception(err)
             self.enabled = False
+            logging.exception(err)
             raise
 
     def set(self, key, value):
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             return self._redis.set(key, value)
         except (ReadOnlyError) as err:
@@ -60,6 +66,8 @@ class mredis(AbstractReader):
         pass
 
     def exists(self, key, *keys):
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             return bool(
                 self._redis.exists(key, *keys)
@@ -78,6 +86,8 @@ class mredis(AbstractReader):
             ) from err
 
     def get(self, key):
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             return self._redis.get(key)
         except ResponseError as err:
@@ -102,6 +112,8 @@ class mredis(AbstractReader):
             value: value of the key
             timeout: expiration time in seconds
         """
+        if self.enabled is False:
+            raise ReaderNotSet()
         if not isinstance(timeout, int):
             time = 900
         else:

@@ -13,10 +13,14 @@ from configparser import (
 )
 from pathlib import Path
 from dotenv import load_dotenv
-from navconfig.utils.functions import strtobool
-from navconfig.utils.types import Singleton
-from navconfig.loaders import import_loader
-from navconfig.exceptions import ConfigError, NavConfigError
+from .utils.functions import strtobool
+from .utils.types import Singleton
+from .loaders import import_loader, pyProjectLoader
+from .exceptions import (
+    ConfigError,
+    NavConfigError,
+    ReaderNotSet
+)
 
 ## memcache:
 try:
@@ -39,9 +43,9 @@ except ModuleNotFoundError:
     HVAULT_LOADER = None
 
 
-class cellarConfig(metaclass=Singleton):
+class Kardex(metaclass=Singleton):
     """
-    cellarConfig.
+    Kardex.
         Universal container for Configuration Management.
     """
     _conffile: str = 'etc/config.ini'
@@ -69,6 +73,7 @@ class cellarConfig(metaclass=Singleton):
             asyncio.set_event_loop(self._loop)
         # this only load at first time
         if not site_root:
+            # TODO: better discovery of Project Root
             self._site_path = Path(__file__).resolve().parent.parent
         else:
             self._site_path = Path(site_root).resolve()
@@ -89,10 +94,13 @@ class cellarConfig(metaclass=Singleton):
             self.ENV = environment
         # getting type of enviroment consumer:
         try:
-            self.load_enviroment(env_type, override=override)
+            self.load_enviroment(
+                env_type,
+                override=override
+            )
         except FileNotFoundError:
             logging.error(
-                'NavConfig Error: Environment (.env) File Missing.'
+                'NavConfig Error: Environment (.env) File is Missing.'
             )
         # Get External Readers:
         self._use_redis: bool = os.environ.get('USE_REDIS', False)
@@ -100,6 +108,8 @@ class cellarConfig(metaclass=Singleton):
             if REDIS_LOADER:
                 try:
                     self._readers['redis'] = REDIS_LOADER()
+                except ReaderNotSet as err:
+                    logging.error(f'{err}')
                 except Exception as err:
                     logging.warning(f'Redis error: {err}')
                     raise ConfigError(
@@ -108,33 +118,37 @@ class cellarConfig(metaclass=Singleton):
         self._use_memcache: bool = os.environ.get('USE_MEMCACHED', False)
         if self._use_memcache:
             if MEMCACHE_LOADER:
-                logging.warning(f'MemCache error: {err}')
                 try:
                     self._readers['memcache'] = MEMCACHE_LOADER()
+                except ReaderNotSet as err:
+                    logging.error(f'{err}')
                 except Exception as err:
-                    raise ConfigError(str(err)) from err
+                    raise ConfigError(
+                        str(err)
+                    ) from err
         ## Hashicorp Vault:
         self._use_vault: bool = os.environ.get('USE_VAULT', False)
         if self._use_vault:
             if HVAULT_LOADER:
                 try:
                     self._readers['vault'] = HVAULT_LOADER()
+                except ReaderNotSet as err:
+                    logging.error(f'{err}')
                 except Exception as err:
                     logging.warning(f'Vault error: {err}')
                     raise ConfigError(
                         str(err)
                     ) from err
         # define debug
-        # self._debug = bool(strtobool(os.getenv('DEBUG', 'False')))
         self._debug = bool(self.getboolean('DEBUG', fallback=False))
         # and get the config file declared in the environment file
         config_file = self.get('CONFIG_FILE', fallback=self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
-
         if not cf.exists():
             # try ini file from etc/ directory.
             cf = self._site_path.joinpath(self._conffile)
+        self._ini_path = cf
         if cf.exists():
             try:
                 self._ini.read(cf)
@@ -155,6 +169,8 @@ class cellarConfig(metaclass=Singleton):
                     cf.mkdir(parents=True, exist_ok=True)
                 except IOError:
                     pass
+        # Running Load PyProject:
+        self.load_pyproject()
 
     def __del__(self):
         try:
@@ -166,12 +182,41 @@ class cellarConfig(metaclass=Singleton):
         for _, reader in self._readers.items():
             try:
                 reader.close()
-            except Exception as err: # pylint: disable=W0703
-                logging.error(err)
+            except Exception as err:  # pylint: disable=W0703
+                logging.error(
+                    f"NavConfig: Error on Reader close: {err}"
+                )
 
     @property
     def debug(self):
         return self._debug
+
+    def load_pyproject(self):
+        """
+        Load a pyproject.toml file and set the configuration
+        """
+        try:
+            project_name = os.getenv('PROJECT_NAME', 'navconfig')
+            project_path = os.getenv('PROJECT_PATH', self.site_root)
+            project_file = os.getenv('PROJECT_FILE', 'pyproject.toml')
+            if isinstance(project_path, str):
+                project_path = Path(project_path).resolve()
+            try:
+                self._pyproject = pyProjectLoader(
+                    env_path=project_path,
+                    project_name=project_name,
+                    project_file=project_file,
+                    create=self._create
+                )
+                data = self._pyproject.load_environment()
+                self._mapping_ = {**self._mapping_, **data}
+            except FileNotFoundError as err:
+                logging.warning(err)
+        except Exception as err:
+            logging.exception(err)
+            raise ConfigError(
+                str(err)
+            ) from err
 
     def save_environment(self, env_type: str = 'drive'):
         """
@@ -214,9 +259,27 @@ class cellarConfig(metaclass=Singleton):
                 f"Navconfig: Exception on Env loader: {ex}"
             ) from ex
 
+    def source(self, option: str = 'ini') -> object:
+        """
+        source.
+            Return a configuration source.
+        """
+        if option == 'ini':
+            return self._ini
+        elif option == 'env':
+            return self._env_loader
+        elif option in self._readers:
+            return self._readers[option]
+        else:
+            return None
+
     @property
     def site_root(self):
         return self._site_path
+
+    @property
+    def ini_path(self):
+        return self._ini_path
 
     @property
     def ini(self):
@@ -234,6 +297,14 @@ class cellarConfig(metaclass=Singleton):
         self._ini.read(files)
 
     def addEnv(self, file, override: bool = False):
+        """
+        Add a new ENV file to the current environment.
+
+        Args:
+            file (Path): File to be loaded on ENV
+            override (bool, optional): Override current ENV variables.
+              Defaults to False.
+        """
         if file.exists() and file.is_file():
             try:
                 load_dotenv(
@@ -336,6 +407,10 @@ class cellarConfig(metaclass=Singleton):
                     pass
         if key in os.environ:
             val = os.getenv(key, fallback)
+        elif key in self._mapping_:
+            val = self._mapping_[key]
+            if isinstance(val, (list, tuple)):
+                return val
         if val:
             return val.split(',')
         else:
@@ -371,7 +446,7 @@ class cellarConfig(metaclass=Singleton):
             val = os.getenv(key, fallback)
             return val
         # get data from external readers:
-        if val:= self._get_external(key):
+        if val := self._get_external(key):
             return val
         return fallback
 
@@ -384,7 +459,7 @@ class cellarConfig(metaclass=Singleton):
         elif key in self._mapping_:
             return self._mapping_[key]
         else:
-            pass # Adding to Mutable Mapping
+            pass  # Adding to Mutable Mapping
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -435,7 +510,7 @@ class cellarConfig(metaclass=Singleton):
                 elif val.isdigit():
                     return int(val)
             finally:
-                return val # pylint: disable=W0150
+                return val  # pylint: disable=W0150
         else:
             raise TypeError(
                 f"NavigatorConfig Error: has not attribute {key}"
@@ -461,7 +536,12 @@ class cellarConfig(metaclass=Singleton):
                 logging.warning(f'Unable to Set key {key} in Redis')
         return False
 
-    def setext(self, key: str, value: Any, timeout: int = None, vault: bool = False) -> bool:
+    def setext(
+        self, key: str,
+        value: Any,
+        timeout: int = None,
+        vault: bool = False
+    ) -> bool:
         """
         set
             set a variable in redis with expiration

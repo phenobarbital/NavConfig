@@ -1,6 +1,7 @@
 import os
 import logging
 import pylibmc
+from ..exceptions import ReaderNotSet
 from .abstract import AbstractReader
 
 class mcache(AbstractReader):
@@ -20,11 +21,20 @@ class mcache(AbstractReader):
                 binary=True,
                 behaviors=self._args
             )
+            # Set a temporary value
+            self._memcached.set('ping', 'pong', time=1)
+        except pylibmc.ConnectionError as err:
+            self.enabled = False
+            raise ReaderNotSet(
+                f"Unable to Connect: {err} :: Memcached Disabled ::"
+            )
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
             logging.exception(err, stack_info=True)
 
     def get(self, key, default=None):
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             result = self._memcached.get(bytes(key, "utf-8"), default)
             if result:
@@ -37,16 +47,20 @@ class mcache(AbstractReader):
             ) from err
 
     def exists(self, key: str) -> bool:
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             result = self._memcached.get(bytes(key, "utf-8"))
             if result:
                 return True
             else:
                 return False
-        except Exception: #pylint: disable=W0703
+        except Exception:  # pylint: disable=W0703
             return False
 
     def set(self, key, value, timeout: int = None):
+        if self.enabled is False:
+            raise ReaderNotSet()
         try:
             if timeout:
                 return self._memcached.set(
@@ -63,7 +77,7 @@ class mcache(AbstractReader):
 
     def multi_get(self, *keys):
         try:
-            return  self._memcached.multi_get(
+            return self._memcached.multi_get(
                 *[bytes(v, 'utf-8') for v in keys]
             )
         except Exception as err:
@@ -82,5 +96,5 @@ class mcache(AbstractReader):
     def close(self):
         try:
             self._memcached.disconnect_all()
-        except Exception as err: # pylint: disable=W0703
+        except Exception as err:  # pylint: disable=W0703
             logging.exception(err, stack_info=False)

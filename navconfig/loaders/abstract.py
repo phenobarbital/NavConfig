@@ -1,3 +1,4 @@
+from typing import Any
 from typing import Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
@@ -13,12 +14,13 @@ class BaseLoader(ABC):
             override: bool = False,
             create: bool = True,
             **kwargs
-        ) -> None:
+    ) -> None:
         self.override: bool = override
         self.env_path = env_path
         self.env_file = '.env'
         self._kwargs = kwargs
         self.downloadable: bool = False
+        self._content: Any = None
         if isinstance(self.env_path, PurePath):
             if not env_path.exists():
                 if create:
@@ -26,7 +28,7 @@ class BaseLoader(ABC):
                         env_path.mkdir(parents=True, exist_ok=True)
                     except IOError as ex:
                         raise RuntimeError(
-                            f'{type(self).__name__}: IO error creating directory {env_path}: {ex}'
+                            f'{type(self).__name__}: Error creating directory {env_path}: {ex}'
                         ) from ex
                 raise FileExistsError(
                     f'{type(self).__name__}: No Directory Path: {env_path}'
@@ -39,7 +41,6 @@ class BaseLoader(ABC):
     @abstractmethod
     def save_environment(self):
         pass
-
 
     def load_from_file(self, path):
         load_dotenv(
@@ -60,3 +61,7 @@ class BaseLoader(ABC):
             dotenv_values(stream=filelike)
         else:
             return content
+
+    def load(self):
+        # TODO: making some validation of content
+        return self._content

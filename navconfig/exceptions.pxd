@@ -12,3 +12,6 @@ cdef class LoaderError(NavConfigError):
 
 cdef class ConfigError(NavConfigError):
     """Runtime Error for bad configuration"""
+
+cdef class ReaderNotSet(Exception):
+    """Reader is Disabled."""

@@ -19,10 +19,10 @@ cdef class NavConfigError(Exception):
         self.code = int(code)
 
     def __repr__(self):
-        return f"{self.message}, code: {self.code}"
+        return f"{self.message}"
 
     def __str__(self):
-        return f"{self.message}, code: {self.code}"
+        return f"{self.message}"
 
 cdef class ReaderError(NavConfigError):
     """An error Triggered by Reader."""
@@ -32,3 +32,6 @@ cdef class LoaderError(NavConfigError):
 
 cdef class ConfigError(NavConfigError):
     """Runtime Error for bad configuration"""
+
+cdef class ReaderNotSet(Exception):
+    """Reader is Disabled."""
