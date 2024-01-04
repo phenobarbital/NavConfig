@@ -47,3 +47,7 @@ filterwarnings = [
     "error",
     'ignore:The loop argument is deprecated since Python 3\.8, and scheduled for removal in Python 3\.10:DeprecationWarning:asyncio',
 ]
+
+[navconfig]
+foo = "bar"
+keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]

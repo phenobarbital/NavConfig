@@ -29,7 +29,6 @@ class VaultReader(AbstractReader):
                 f"Vault Error: {err}"
             )
 
-
     def open(self) -> bool:
         if self.client.is_authenticated():
             logging.debug('Hashicorp Vault Connected')
@@ -39,7 +38,14 @@ class VaultReader(AbstractReader):
     def close(self) -> None:
         pass
 
-    def get(self, key: str, default: Any = None, version: int = None, path: str = 'secrets', sub_key: str = None) -> Any:
+    def get(
+        self,
+        key: str,
+        default: Any = None,
+        version: int = None,
+        path: str = 'secrets',
+        sub_key: str = None
+    ) -> Any:
         if self.enabled is False:
             raise ReaderNotSet()
         try:
@@ -63,7 +69,12 @@ class VaultReader(AbstractReader):
             return secret_data.get(sub_key, default)
         return secret_data
 
-    def exists(self, key: str, path: str = 'secrets', version: int = None) -> bool:
+    def exists(
+        self,
+        key: str,
+        path: str = 'secrets',
+        version: int = None
+    ) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
         try:
@@ -86,7 +97,14 @@ class VaultReader(AbstractReader):
             return True
         return secret_key in response['data']['data']
 
-    def set(self, key: str, value: Any, path: str = 'secrets', timeout: int = None, version: int = None) -> None:
+    def set(
+        self,
+        key: str,
+        value: Any,
+        path: str = 'secrets',
+        timeout: int = None,
+        version: int = None
+    ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
         try:
@@ -102,7 +120,12 @@ class VaultReader(AbstractReader):
             mount_point=self._mount
         )
 
-    def delete(self, key: str, path: str = 'secrets', version: int = None) -> bool:
+    def delete(
+        self,
+        key: str,
+        path: str = 'secrets',
+        version: int = None
+    ) -> bool:
         try:
             secret_path, secret_key = key.split("/", 1)
         except ValueError:

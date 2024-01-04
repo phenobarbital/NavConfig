@@ -6,6 +6,7 @@ Is used by Navigator Framework, but is possible to use in other applications as 
 NavConfig can load Configuration directives from different sources (can be mixed):
 
 - Environment files (.env)
+- pyproject.toml files
 - INI files (using configParser)
 - TOML/YAML files
 - REDIS variables
@@ -21,7 +22,7 @@ NavConfig can be shared across several modules.
 
 Any Application requires too many configuration options, some configuration options need to be secrets, credentials, etc, and also, can depend on the environment where the application runs (development, testing, production, etc.).
 
-Instead of creating Python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig also supports getting data instead of INI files from YAML or TOML files (for complex types).
+Instead of creating Python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig also supports getting data instead of INI files from YAML or TOML files (for complex types), pyproject.toml files or REDIS variables.
 
 ## Installation
 ```bash
@@ -59,7 +60,7 @@ the directory tree is very simple:
 
 ```text
 # file: .env
-CONFIG_FILE=etc/myconfig.ini
+CONFIG_FILE=etc/myconfig.ini # CONFIG FILE reference to INI location.
 APP_NAME=My App
 ```
 

@@ -15,7 +15,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .utils.functions import strtobool
 from .utils.types import Singleton
-from .loaders import import_loader
+from .loaders import import_loader, pyProjectLoader
 from .exceptions import (
     ConfigError,
     NavConfigError,
@@ -145,10 +145,10 @@ class Kardex(metaclass=Singleton):
         config_file = self.get('CONFIG_FILE', fallback=self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
-
         if not cf.exists():
             # try ini file from etc/ directory.
             cf = self._site_path.joinpath(self._conffile)
+        self._ini_path = cf
         if cf.exists():
             try:
                 self._ini.read(cf)
@@ -169,6 +169,8 @@ class Kardex(metaclass=Singleton):
                     cf.mkdir(parents=True, exist_ok=True)
                 except IOError:
                     pass
+        # Running Load PyProject:
+        self.load_pyproject()
 
     def __del__(self):
         try:
@@ -188,6 +190,33 @@ class Kardex(metaclass=Singleton):
     @property
     def debug(self):
         return self._debug
+
+    def load_pyproject(self):
+        """
+        Load a pyproject.toml file and set the configuration
+        """
+        try:
+            project_name = os.getenv('PROJECT_NAME', 'navconfig')
+            project_path = os.getenv('PROJECT_PATH', self.site_root)
+            project_file = os.getenv('PROJECT_FILE', 'pyproject.toml')
+            if isinstance(project_path, str):
+                project_path = Path(project_path).resolve()
+            try:
+                self._pyproject = pyProjectLoader(
+                    env_path=project_path,
+                    project_name=project_name,
+                    project_file=project_file,
+                    create=self._create
+                )
+                data = self._pyproject.load_environment()
+                self._mapping_ = {**self._mapping_, **data}
+            except FileNotFoundError as err:
+                logging.warning(err)
+        except Exception as err:
+            logging.exception(err)
+            raise ConfigError(
+                str(err)
+            ) from err
 
     def save_environment(self, env_type: str = 'drive'):
         """
@@ -230,9 +259,27 @@ class Kardex(metaclass=Singleton):
                 f"Navconfig: Exception on Env loader: {ex}"
             ) from ex
 
+    def source(self, option: str = 'ini') -> object:
+        """
+        source.
+            Return a configuration source.
+        """
+        if option == 'ini':
+            return self._ini
+        elif option == 'env':
+            return self._env_loader
+        elif option in self._readers:
+            return self._readers[option]
+        else:
+            return None
+
     @property
     def site_root(self):
         return self._site_path
+
+    @property
+    def ini_path(self):
+        return self._ini_path
 
     @property
     def ini(self):
@@ -250,6 +297,14 @@ class Kardex(metaclass=Singleton):
         self._ini.read(files)
 
     def addEnv(self, file, override: bool = False):
+        """
+        Add a new ENV file to the current environment.
+
+        Args:
+            file (Path): File to be loaded on ENV
+            override (bool, optional): Override current ENV variables.
+              Defaults to False.
+        """
         if file.exists() and file.is_file():
             try:
                 load_dotenv(
@@ -352,6 +407,10 @@ class Kardex(metaclass=Singleton):
                     pass
         if key in os.environ:
             val = os.getenv(key, fallback)
+        elif key in self._mapping_:
+            val = self._mapping_[key]
+            if isinstance(val, (list, tuple)):
+                return val
         if val:
             return val.split(',')
         else:

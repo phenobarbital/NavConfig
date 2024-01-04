@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import PurePath
-from navconfig.loaders.parsers.toml import TOMLParser
+from .parsers.toml import TOMLParser
 from .abstract import BaseLoader
 
 class tomlLoader(BaseLoader):
@@ -8,7 +8,12 @@ class tomlLoader(BaseLoader):
 
     Used to read configuration settings from TOML files.
     """
-    def __init__(self, env_path: PurePath, override: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        env_path: PurePath,
+        override: bool = False,
+        **kwargs
+    ) -> None:
         super().__init__(env_path, override, **kwargs)
         self.env_file = self.env_path.joinpath('env.toml')
         self._parser = TOMLParser()

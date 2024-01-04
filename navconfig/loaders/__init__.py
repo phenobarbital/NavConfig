@@ -1,4 +1,5 @@
 from importlib import import_module
+from .pyproject import pyProjectLoader
 
 
 def import_loader(loader: str = 'file'):
