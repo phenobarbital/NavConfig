@@ -29,6 +29,18 @@ Instead of creating Python files, we are using python-dotenv + INI files to sepa
 pip install navconfig
 ```
 
+if you're looking for supporting memcache,redis:
+
+```bash
+pip install navconfig[memcache,redis]
+```
+
+or adding all features, including logging facility with Logstash Support:
+
+```bash
+pip install navconfig[all]
+```
+
 ## Quickstart ##
 
 First of all, let's create a simple configuration environment.
