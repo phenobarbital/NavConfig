@@ -163,7 +163,7 @@ setup(
             'PyYAML>=6.0',
         ],
         "hvac": [
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ],
         "default": [
             'pytomlpp==1.0.11',
@@ -171,7 +171,7 @@ setup(
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ],
         "all": [
             'pytomlpp==1.0.11',
@@ -180,7 +180,7 @@ setup(
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ]
     },
     ext_modules=cythonize(extensions),
