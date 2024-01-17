@@ -4,7 +4,12 @@ import logging
 import hvac
 from ..exceptions import ReaderNotSet
 from .abstract import AbstractReader
+import urllib3
 
+
+# Disable warnings for insecure requests
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 class VaultReader(AbstractReader):
     """VaultReader.
@@ -58,10 +63,11 @@ class VaultReader(AbstractReader):
             if not secret_path:
                 secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
         try:
             if self.version == 1:
+                print('GET > ', secret_path, self._mount)
                 response = self.client.secrets.kv.v1.read_secret(
                     path=secret_path, mount_point=self._mount
                 )
@@ -222,3 +228,35 @@ class VaultReader(AbstractReader):
                 f"Error deleting key '{key}' from '{secret_path}': {e}"
             )
             return False
+
+    def list(self, path: str = None, filter: str = None) -> list:
+        if self.enabled is False:
+            raise ReaderNotSet()
+        data = {}
+        secret_path = path if path else self._env
+        try:
+            if self.version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]
+            elif self.version == 2:
+                response = self.client.secrets.kv.v2.list_secrets(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]["data"]
+            else:
+                raise ValueError("Invalid KV version specified")
+
+            result = data
+            if filter:
+                result = {
+                    k: v for k, v in data.items() if k.startswith(filter)
+                }
+            return result
+
+        except hvac.exceptions.InvalidPath as ex:
+            return {}
+        except Exception as e:
+            print(f"Error listing keys at path '{secret_path}': {e}")
+            return {}
