@@ -12,26 +12,29 @@ class VaultReader(AbstractReader):
     Description: Class for HashiCorp Vault Reader.
     """
 
-    def __init__(self):
-        url = os.getenv('VAULT_HVAC_URL', 'http://localhost:8200')
-        token = os.getenv('VAULT_HVAC_TOKEN')
-        self._mount = os.getenv('VAULT_HVAC_MOUNT_POINT', 'secret')
+    def __init__(self, env: str = None) -> None:
+        url = os.getenv(
+            "VAULT_HVAC_URL",
+            "http://localhost:8200"
+        )
+        token = os.getenv("VAULT_HVAC_TOKEN")
+        self.version = int(os.getenv("VAULT_HVAC_VERSION", 1))
+        self._mount = os.getenv("VAULT_HVAC_MOUNT_POINT", "navigator")
+        self._env = env
+        if not self._env:
+            self._env = os.getenv("ENV", "")
         if not token:
-            raise ValueError(
-                'VAULT_HVAC_TOKEN is not set'
-            )
+            raise ValueError("VAULT_HVAC_TOKEN is not set")
         try:
             self.client = hvac.Client(url=url, token=token)
             self.open()
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
-            raise ReaderNotSet(
-                f"Vault Error: {err}"
-            )
+            raise ReaderNotSet(f"Vault Error: {err}")
 
     def open(self) -> bool:
         if self.client.is_authenticated():
-            logging.debug('Hashicorp Vault Connected')
+            logging.debug("Hashicorp Vault Connected")
             return True
         return False
 
@@ -42,29 +45,39 @@ class VaultReader(AbstractReader):
         self,
         key: str,
         default: Any = None,
-        version: int = None,
-        path: str = 'secrets',
-        sub_key: str = None
+        path: str = "secrets",
+        sub_key: str = None,
     ) -> Any:
         if self.enabled is False:
             raise ReaderNotSet()
+        data = {}
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
             secret_path = "/".join(secret_parts)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
             secret_path = path
             secret_key = key
         try:
-            response = self.client.secrets.kv.read_secret_version(
-                path=secret_path, version=version, mount_point=self._mount
-            )
+            if self.version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]
+            elif self.version == 2:
+                response = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]["data"]
         except hvac.exceptions.InvalidPath:
             return default
-        if secret_key == "*":
-            return response['data']['data']
 
-        secret_data = response['data']['data'].get(secret_key, default)
+        if secret_key == "*":
+            return data
+
+        secret_data = data.get(secret_key, default)
         if sub_key is not None:
             return secret_data.get(sub_key, default)
         return secret_data
@@ -72,74 +85,140 @@ class VaultReader(AbstractReader):
     def exists(
         self,
         key: str,
-        path: str = 'secrets',
-        version: int = None
     ) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
+        data = {}
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
             secret_path = "/".join(secret_parts)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
         try:
-            response = self.client.secrets.kv.read_secret_version(
-                path=secret_path, version=version, mount_point=self._mount
-            )
-        except hvac.exceptions.InvalidPath as exc:
-            # logging.error(
-            #     f"Vault Error over key {key}: {exc}"
-            # )
+            if self.version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]
+            elif self.version == 2:
+                response = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]["data"]
+        except hvac.exceptions.InvalidPath:
             return False
         if secret_key == "*":
             return True
-        return secret_key in response['data']['data']
+        return secret_key in data
 
     def set(
         self,
         key: str,
         value: Any,
-        path: str = 'secrets',
-        timeout: int = None,
-        version: int = None
+        **kwargs
     ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
         try:
             secret_path, secret_key = key.split("/", 1)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
-        secret_data = {secret_key: value}
-        self.client.secrets.kv.v2.create_or_update_secret(
-            path=secret_path,
-            version=version,
-            secret=secret_data,
-            mount_point=self._mount
-        )
+        try:
+            if self.version == 1:
+                # Read the existing secret data
+                existing_data = {}
+                try:
+                    read_response = self.client.secrets.kv.v1.read_secret(
+                        path=secret_path, mount_point=self._mount
+                    )
+                    existing_data = read_response['data']
+                except hvac.exceptions.InvalidPath:
+                    # If the path doesn't exist yet, it's fine
+                    pass
 
-    def delete(
-        self,
-        key: str,
-        path: str = 'secrets',
-        version: int = None
-    ) -> bool:
+                # Update the existing data with the new key-value pair
+                existing_data[secret_key] = value
+
+                # Write the updated data back to the path
+                self.client.secrets.kv.v1.create_or_update_secret(
+                    path=secret_path,
+                    secret=existing_data,
+                    mount_point=self._mount,
+                )
+            elif self.version == 2:
+                # For KV v2, you need to provide the full data for the path
+                # Fetch existing data if you want to preserve other keys
+                existing_data = {}
+                try:
+                    read_response = self.client.secrets.kv.v2.read_secret_version(
+                        path=secret_path, mount_point=self._mount
+                    )
+                    existing_data = read_response['data']['data']
+                except hvac.exceptions.InvalidPath:
+                    # If the path doesn't exist yet, it's fine
+                    pass
+
+                # Update the existing data with the new key-value pair
+                existing_data[secret_key] = value
+
+                # Write the updated data back to the path
+                self.client.secrets.kv.v2.create_or_update_secret(
+                    path=secret_path,
+                    secret=existing_data,
+                    mount_point=self._mount
+                )
+        except Exception as ex:
+            raise ValueError(
+                f"Error writing to Vault: {ex}"
+            )
+
+    def delete(self, key: str, secret_path: str = None) -> bool:
+        if self.enabled is False:
+            raise ReaderNotSet()  # Or some appropriate exception
+
         try:
             secret_path, secret_key = key.split("/", 1)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
-        response = self.client.secrets.kv.read_secret_version(
-            path=secret_path, version=version, mount_point=self._mount
-        )
-        if secret_key in response['data']['data']:
-            del response['data']['data'][secret_key]
-            self.client.secrets.kv.v2.create_or_update_secret(
-                path=secret_path,
-                secret=response['data']['data'],
-                mount_point=self._mount
-            )
+
+        try:
+            if self.version == 1:
+                current_secret = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path,
+                    mount_point=self._mount
+                )['data']
+                if secret_key in current_secret:
+                    del current_secret[secret_key]
+                    self.client.secrets.kv.v1.create_or_update_secret(
+                        path=secret_path,
+                        secret=current_secret,
+                        mount_point=self._mount
+                    )
+            elif self.version == 2:
+                current_secret = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path,
+                    mount_point=self._mount
+                )['data']['data']
+                if secret_key in current_secret:
+                    del current_secret[secret_key]
+                    self.client.secrets.kv.v2.create_or_update_secret(
+                        path=secret_path,
+                        secret=current_secret,
+                        mount_point=self._mount
+                    )
             return True
-        return False
+        except Exception as e:
+            logging.warning(
+                f"Error deleting key '{key}' from '{secret_path}': {e}"
+            )
+            return False

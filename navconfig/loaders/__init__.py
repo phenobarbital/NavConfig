@@ -2,7 +2,7 @@ from importlib import import_module
 from .pyproject import pyProjectLoader
 
 
-def import_loader(loader: str = 'file'):
+def import_loader(loader: str = "file"):
     classpath = f"navconfig.loaders.{loader}"
     cls = f"{loader}Loader"
     try:
@@ -10,6 +10,4 @@ def import_loader(loader: str = 'file'):
         obj = getattr(module, cls)
         return obj
     except ImportError as err:
-        raise RuntimeError(
-            f"Navconfig Error: Cannot load {cls}: {err}"
-        ) from err
+        raise RuntimeError(f"Navconfig Error: Cannot load {cls}: {err}") from err

@@ -13,6 +13,7 @@ addLevelName(VERBOSE_LEVEL_NUM, "VERBOSE")
 # Set the NOICE level name globaly:
 addLevelName(NOTICE_LEVEL_NUM, "NOTICE")
 
+
 class VerboseLogger(getLoggerClass()):
     def __init__(self, name, level=NOTSET):
         super().__init__(name, level)
@@ -25,12 +26,12 @@ class VerboseLogger(getLoggerClass()):
         if self.isEnabledFor(NOTICE_LEVEL_NUM):
             self._log(NOTICE_LEVEL_NUM, msg, args, **kwargs)
 
-class ColoredFormatter(logging.Formatter):
 
+class ColoredFormatter(logging.Formatter):
     lightgrey = "\033[37m"
     darkgrey = "\033[90m"
-    green = '\x1b[32m'
-    lightgreen = '\x1b[92m'
+    green = "\x1b[32m"
+    lightgreen = "\x1b[92m"
     blue = "\033[34m"
     lightblue = "\033[94m"
     purple = "\033[35m"
@@ -42,7 +43,9 @@ class ColoredFormatter(logging.Formatter):
     lightred = "\033[91m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    _format = "[%(levelname)s] %(asctime)s %(name)s(%(filename)s:%(lineno)d) :: %(message)s"
+    _format = (
+        "[%(levelname)s] %(asctime)s %(name)s(%(filename)s:%(lineno)d) :: %(message)s"
+    )
     _notice = "[%(levelname)s] %(asctime)s :: %(message)s"
 
     FORMATS = {
@@ -52,7 +55,7 @@ class ColoredFormatter(logging.Formatter):
         logging.INFO: lightgrey + _format + reset,
         logging.WARNING: yellow + _format + reset,
         logging.ERROR: lightyellow + _format + reset,
-        logging.CRITICAL: bold_red + _format + reset
+        logging.CRITICAL: bold_red + _format + reset,
     }
 
     def format(self, record):

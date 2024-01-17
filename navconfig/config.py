@@ -16,21 +16,19 @@ from dotenv import load_dotenv
 from .utils.functions import strtobool
 from .utils.types import Singleton
 from .loaders import import_loader, pyProjectLoader
-from .exceptions import (
-    ConfigError,
-    NavConfigError,
-    ReaderNotSet
-)
+from .exceptions import ConfigError, NavConfigError, ReaderNotSet
 
 ## memcache:
 try:
     from .readers.memcache import mcache
+
     MEMCACHE_LOADER = mcache
 except ModuleNotFoundError:
     MEMCACHE_LOADER = None
 ## redis:
 try:
     from .readers.redis import mredis
+
     REDIS_LOADER = mredis
 except ModuleNotFoundError:
     REDIS_LOADER = None
@@ -38,6 +36,7 @@ except ModuleNotFoundError:
 ## Hashicorp Vault:
 try:
     from .readers.vault import VaultReader
+
     HVAULT_LOADER = VaultReader
 except ModuleNotFoundError:
     HVAULT_LOADER = None
@@ -48,7 +47,8 @@ class Kardex(metaclass=Singleton):
     Kardex.
         Universal container for Configuration Management.
     """
-    _conffile: str = 'etc/config.ini'
+
+    _conffile: str = "etc/config.ini"
     __initialized__ = False
     _readers: dict = {}
     _mapping_: dict = {}
@@ -76,21 +76,24 @@ class Kardex(metaclass=Singleton):
             # TODO: better discovery of Project Root
             self._site_path = Path(__file__).resolve().parent.parent
         else:
-            self._site_path = Path(site_root).resolve()
+            if isinstance(site_root, str):
+                self._site_path = Path(site_root).resolve()
+            else:
+                self._site_path = site_root
         # then: configure the instance:
         self.configure(env, **kwargs)
 
     def configure(
-            self,
-            env: str = None,
-            env_type: str = 'file',
-            override: bool = False
+        self,
+        env: str = None,
+        env_type: str = "file",
+        override: bool = False
     ):
         # Environment Configuration:
         if env is not None:
             self.ENV = env
         else:
-            environment = os.getenv('ENV', '')
+            environment = os.getenv("ENV", "")
             self.ENV = environment
         # getting type of enviroment consumer:
         try:
@@ -100,49 +103,45 @@ class Kardex(metaclass=Singleton):
             )
         except FileNotFoundError:
             logging.error(
-                'NavConfig Error: Environment (.env) File is Missing.'
+                "NavConfig Error: Environment (.env) File is Missing."
             )
         # Get External Readers:
-        self._use_redis: bool = os.environ.get('USE_REDIS', False)
+        self._use_redis: bool = strtobool(os.environ.get("USE_REDIS", False))
         if self._use_redis:
             if REDIS_LOADER:
                 try:
-                    self._readers['redis'] = REDIS_LOADER()
+                    self._readers["redis"] = REDIS_LOADER()
                 except ReaderNotSet as err:
-                    logging.error(f'{err}')
+                    logging.error(f"{err}")
                 except Exception as err:
-                    logging.warning(f'Redis error: {err}')
-                    raise ConfigError(
-                        str(err)
-                    ) from err
-        self._use_memcache: bool = os.environ.get('USE_MEMCACHED', False)
+                    logging.warning(f"Redis error: {err}")
+                    raise ConfigError(str(err)) from err
+        self._use_memcache: bool = strtobool(os.environ.get("USE_MEMCACHED", False))
         if self._use_memcache:
             if MEMCACHE_LOADER:
                 try:
-                    self._readers['memcache'] = MEMCACHE_LOADER()
+                    self._readers["memcache"] = MEMCACHE_LOADER()
                 except ReaderNotSet as err:
-                    logging.error(f'{err}')
+                    logging.error(f"{err}")
                 except Exception as err:
-                    raise ConfigError(
-                        str(err)
-                    ) from err
+                    raise ConfigError(str(err)) from err
         ## Hashicorp Vault:
-        self._use_vault: bool = os.environ.get('USE_VAULT', False)
+        self._use_vault: bool = strtobool(os.environ.get("USE_VAULT", False))
         if self._use_vault:
             if HVAULT_LOADER:
                 try:
-                    self._readers['vault'] = HVAULT_LOADER()
+                    self._readers["vault"] = HVAULT_LOADER(
+                        env=self.ENV
+                    )
                 except ReaderNotSet as err:
-                    logging.error(f'{err}')
+                    logging.error(f"{err}")
                 except Exception as err:
-                    logging.warning(f'Vault error: {err}')
-                    raise ConfigError(
-                        str(err)
-                    ) from err
+                    logging.warning(f"Vault error: {err}")
+                    raise ConfigError(str(err)) from err
         # define debug
-        self._debug = bool(self.getboolean('DEBUG', fallback=False))
+        self._debug = bool(self.getboolean("DEBUG", fallback=False))
         # and get the config file declared in the environment file
-        config_file = self.get('CONFIG_FILE', fallback=self._conffile)
+        config_file = self.get("CONFIG_FILE", fallback=self._conffile)
         self._ini = ConfigParser()
         cf = Path(config_file).resolve()
         if not cf.exists():
@@ -183,9 +182,7 @@ class Kardex(metaclass=Singleton):
             try:
                 reader.close()
             except Exception as err:  # pylint: disable=W0703
-                logging.error(
-                    f"NavConfig: Error on Reader close: {err}"
-                )
+                logging.error(f"NavConfig: Error on Reader close: {err}")
 
     @property
     def debug(self):
@@ -196,9 +193,9 @@ class Kardex(metaclass=Singleton):
         Load a pyproject.toml file and set the configuration
         """
         try:
-            project_name = os.getenv('PROJECT_NAME', 'navconfig')
-            project_path = os.getenv('PROJECT_PATH', self.site_root)
-            project_file = os.getenv('PROJECT_FILE', 'pyproject.toml')
+            project_name = os.getenv("PROJECT_NAME", "navconfig")
+            project_path = os.getenv("PROJECT_PATH", self.site_root)
+            project_file = os.getenv("PROJECT_FILE", "pyproject.toml")
             if isinstance(project_path, str):
                 project_path = Path(project_path).resolve()
             try:
@@ -206,7 +203,7 @@ class Kardex(metaclass=Singleton):
                     env_path=project_path,
                     project_name=project_name,
                     project_file=project_file,
-                    create=self._create
+                    create=self._create,
                 )
                 data = self._pyproject.load_environment()
                 self._mapping_ = {**self._mapping_, **data}
@@ -214,59 +211,57 @@ class Kardex(metaclass=Singleton):
                 logging.warning(err)
         except Exception as err:
             logging.exception(err)
-            raise ConfigError(
-                str(err)
-            ) from err
+            raise ConfigError(str(err)) from err
 
-    def save_environment(self, env_type: str = 'drive'):
+    def save_environment(self, env_type: str = "drive"):
         """
         Saving a remote Environment into a local File.
         """
-        env_path = self.site_root.joinpath('env', self.ENV, '.env')
+        env_path = self.site_root.joinpath("env", self.ENV, ".env")
         # pluggable types
-        print('ENV ', env_type)
+        print("ENV ", env_type)
         if self._env_loader.downloadable is True:
             self._env_loader.save_enviroment(env_path)
 
-    def load_enviroment(self, env_type: str = 'file', override: bool = False):
+    def load_enviroment(self, env_type: str = "file", override: bool = False):
         """load_environment.
-            Load an environment from a File or any pluggable Origin.
+        Load an environment from a File or any pluggable Origin.
         """
         try:
-            env_path = self.site_root.joinpath('env', self.ENV)
-            logging.debug(f'Environment Path: {env_path!s}')
+            env_path = self.site_root.joinpath("env", self.ENV)
+            logging.debug(
+                f"Environment Path: {env_path!s}"
+            )
             obj = import_loader(loader=env_type)
             self._env_loader = obj(
                 env_path=env_path,
-                env_file='',
+                env_file="",
                 override=override,
                 create=self._create,
-                env=self.ENV
+                env=self.ENV,
             )
             self._mapping_ = self._env_loader.load_environment()
             if self._mapping_ is None:
                 self._mapping_ = {}  # empty dict
         except (FileExistsError, FileNotFoundError) as ex:
-            logging.warning(ex)
+            logging.warning(str(ex))
             raise
         except RuntimeError as ex:
-            raise RuntimeError(
-                ex
-            ) from ex
+            raise RuntimeError(str(ex)) from ex
         except Exception as ex:
             logging.exception(ex, stack_info=True)
             raise RuntimeError(
                 f"Navconfig: Exception on Env loader: {ex}"
             ) from ex
 
-    def source(self, option: str = 'ini') -> object:
+    def source(self, option: str = "ini") -> object:
         """
         source.
             Return a configuration source.
         """
-        if option == 'ini':
+        if option == "ini":
             return self._ini
-        elif option == 'env':
+        elif option == "env":
             return self._env_loader
         elif option in self._readers:
             return self._readers[option]
@@ -307,20 +302,14 @@ class Kardex(metaclass=Singleton):
         """
         if file.exists() and file.is_file():
             try:
-                load_dotenv(
-                    dotenv_path=file,
-                    override=override
-                )
+                load_dotenv(dotenv_path=file, override=override)
             except Exception as err:
                 raise NavConfigError(str(err)) from err
         else:
-            raise NavConfigError(
-                f'Failed to load a new ENV file from {file}'
-            )
+            raise NavConfigError(f"Failed to load a new ENV file from {file}")
 
     def _get_external(self, key: str) -> Any:
-        """Get value fron an External Reader.
-        """
+        """Get value fron an External Reader."""
         for _, reader in self._readers.items():
             try:
                 if reader.enabled is True and reader.exists(key) is True:
@@ -412,7 +401,7 @@ class Kardex(metaclass=Singleton):
             if isinstance(val, (list, tuple)):
                 return val
         if val:
-            return val.split(',')
+            return val.split(",")
         else:
             return []
 
@@ -450,8 +439,7 @@ class Kardex(metaclass=Singleton):
             return val
         return fallback
 
-# Config Magic Methods (dict like)
-
+    # Config Magic Methods (dict like)
     def __setitem__(self, key: str, value: Any) -> None:
         if key in os.environ:
             # override an environment variable
@@ -512,35 +500,34 @@ class Kardex(metaclass=Singleton):
             finally:
                 return val  # pylint: disable=W0150
         else:
-            raise TypeError(
-                f"NavigatorConfig Error: has not attribute {key}"
+            raise AttributeError(
+                f"Config Error: has not attribute {key}"
             )
 
-    def set(self, key: str, value: Any, vault: bool = False) -> None:
+    def set(self, key: str, value: Any) -> None:
         """
         set.
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        if vault is True:
+        if self._use_vault is True:
             try:
-                return self._readers['vault'].set(key, value)
+                return self._readers["vault"].set(key, value)
             except KeyError:
                 logging.warning(
-                    f'Unable to Set key {key} in Vault'
+                    f"Unable to Set key {key} in Vault"
                 )
+            except Exception:
+                raise
         if self._use_redis:
             try:
-                return self._readers['redis'].set(key, value)
+                return self._readers["redis"].set(key, value)
             except KeyError:
-                logging.warning(f'Unable to Set key {key} in Redis')
+                logging.warning(f"Unable to Set key {key} in Redis")
         return False
 
     def setext(
-        self, key: str,
-        value: Any,
-        timeout: int = None,
-        vault: bool = False
+        self, key: str, value: Any, timeout: int = None, vault: bool = False
     ) -> bool:
         """
         set
@@ -552,19 +539,19 @@ class Kardex(metaclass=Singleton):
             else:
                 time = timeout
             try:
-                return self._readers['redis'].set(key, value, time)
+                return self._readers["redis"].set(key, value, time)
             except KeyError:
-                logging.warning(f'Unable to Set key {key} in Redis')
+                logging.warning(f"Unable to Set key {key} in Redis")
         elif vault is True:
             if not isinstance(timeout, int):
                 time = 3600
             else:
                 time = timeout
             try:
-                return self._readers['vault'].set(key, value, timeout=timeout)
+                return self._readers["vault"].set(key, value, timeout=timeout)
             except (ValueError, AttributeError):
                 logging.warning(
-                    f'Unable to Set key {key} in Vault'
+                    f"Unable to Set key {key} in Vault"
                 )
         else:
             return False

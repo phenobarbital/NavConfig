@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'navconfig'
-copyright = '2022, Jesus Lara G.'
+copyright = '2021, Jesus Lara G.'
 author = 'Jesus Lara G.'
 release = 'Dual License BSD and Apache 2.0'
 
