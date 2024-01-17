@@ -99,7 +99,7 @@ extensions = [
 setup(
     name=__title__,
     version=__version__,
-    python_requires=">=3.9.16",
+    python_requires=">=3.9.13",
     url='https://github.com/phenobarbital/NavConfig',
     description=__description__,
     long_description=readme(),
