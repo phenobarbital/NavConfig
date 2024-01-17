@@ -76,12 +76,18 @@ class Kardex(metaclass=Singleton):
             # TODO: better discovery of Project Root
             self._site_path = Path(__file__).resolve().parent.parent
         else:
-            self._site_path = Path(site_root).resolve()
+            if isinstance(site_root, str):
+                self._site_path = Path(site_root).resolve()
+            else:
+                self._site_path = site_root
         # then: configure the instance:
         self.configure(env, **kwargs)
 
     def configure(
-        self, env: str = None, env_type: str = "file", override: bool = False
+        self,
+        env: str = None,
+        env_type: str = "file",
+        override: bool = False
     ):
         # Environment Configuration:
         if env is not None:
@@ -91,7 +97,10 @@ class Kardex(metaclass=Singleton):
             self.ENV = environment
         # getting type of enviroment consumer:
         try:
-            self.load_enviroment(env_type, override=override)
+            self.load_enviroment(
+                env_type,
+                override=override
+            )
         except FileNotFoundError:
             logging.error(
                 "NavConfig Error: Environment (.env) File is Missing."
@@ -121,7 +130,9 @@ class Kardex(metaclass=Singleton):
         if self._use_vault:
             if HVAULT_LOADER:
                 try:
-                    self._readers["vault"] = HVAULT_LOADER()
+                    self._readers["vault"] = HVAULT_LOADER(
+                        env=self.ENV
+                    )
                 except ReaderNotSet as err:
                     logging.error(f"{err}")
                 except Exception as err:
@@ -218,7 +229,9 @@ class Kardex(metaclass=Singleton):
         """
         try:
             env_path = self.site_root.joinpath("env", self.ENV)
-            logging.debug(f"Environment Path: {env_path!s}")
+            logging.debug(
+                f"Environment Path: {env_path!s}"
+            )
             obj = import_loader(loader=env_type)
             self._env_loader = obj(
                 env_path=env_path,
@@ -231,10 +244,10 @@ class Kardex(metaclass=Singleton):
             if self._mapping_ is None:
                 self._mapping_ = {}  # empty dict
         except (FileExistsError, FileNotFoundError) as ex:
-            logging.warning(ex)
+            logging.warning(str(ex))
             raise
         except RuntimeError as ex:
-            raise RuntimeError(ex) from ex
+            raise RuntimeError(str(ex)) from ex
         except Exception as ex:
             logging.exception(ex, stack_info=True)
             raise RuntimeError(
@@ -427,7 +440,6 @@ class Kardex(metaclass=Singleton):
         return fallback
 
     # Config Magic Methods (dict like)
-
     def __setitem__(self, key: str, value: Any) -> None:
         if key in os.environ:
             # override an environment variable
@@ -488,7 +500,9 @@ class Kardex(metaclass=Singleton):
             finally:
                 return val  # pylint: disable=W0150
         else:
-            raise TypeError(f"NavigatorConfig Error: has not attribute {key}")
+            raise AttributeError(
+                f"Config Error: has not attribute {key}"
+            )
 
     def set(self, key: str, value: Any, vault: bool = False) -> None:
         """
@@ -532,6 +546,8 @@ class Kardex(metaclass=Singleton):
             try:
                 return self._readers["vault"].set(key, value, timeout=timeout)
             except (ValueError, AttributeError):
-                logging.warning(f"Unable to Set key {key} in Vault")
+                logging.warning(
+                    f"Unable to Set key {key} in Vault"
+                )
         else:
             return False

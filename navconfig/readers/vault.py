@@ -12,21 +12,22 @@ class VaultReader(AbstractReader):
     Description: Class for HashiCorp Vault Reader.
     """
 
-    def __init__(self):
+    def __init__(self, env: str = None) -> None:
         url = os.getenv(
             "VAULT_HVAC_URL",
             "http://localhost:8200"
         )
         token = os.getenv("VAULT_HVAC_TOKEN")
-        self.version = os.getenv("VAULT_HVAC_VERSION", 1)
+        self.version = int(os.getenv("VAULT_HVAC_VERSION", 1))
         self._mount = os.getenv("VAULT_HVAC_MOUNT_POINT", "navigator")
-        self._env = os.getenv("ENV", "")
+        self._env = env
+        if not self._env:
+            self._env = os.getenv("ENV", "")
         if not token:
             raise ValueError("VAULT_HVAC_TOKEN is not set")
         try:
             self.client = hvac.Client(url=url, token=token)
             self.open()
-            os.environ["USE_VAULT"] = 'True'
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
             raise ReaderNotSet(f"Vault Error: {err}")
@@ -44,26 +45,28 @@ class VaultReader(AbstractReader):
         self,
         key: str,
         default: Any = None,
-        version: int = 1,
         path: str = "secrets",
         sub_key: str = None,
     ) -> Any:
         if self.enabled is False:
             raise ReaderNotSet()
+        data = {}
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
             secret_path = "/".join(secret_parts)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
             secret_path = path
             secret_key = key
         try:
-            if version == 1:
+            if self.version == 1:
                 response = self.client.secrets.kv.v1.read_secret(
                     path=secret_path, mount_point=self._mount
                 )
                 data = response["data"]
-            elif version == 2:
+            elif self.version == 2:
                 response = self.client.secrets.kv.v2.read_secret_version(
                     path=secret_path, mount_point=self._mount
                 )
@@ -82,10 +85,10 @@ class VaultReader(AbstractReader):
     def exists(
         self,
         key: str,
-        version: int = 1
     ) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
+        data = {}
         try:
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
@@ -96,12 +99,12 @@ class VaultReader(AbstractReader):
             secret_path = self._env
             secret_key = key
         try:
-            if version == 1:
+            if self.version == 1:
                 response = self.client.secrets.kv.v1.read_secret(
                     path=secret_path, mount_point=self._mount
                 )
                 data = response["data"]
-            elif version == 2:
+            elif self.version == 2:
                 response = self.client.secrets.kv.v2.read_secret_version(
                     path=secret_path, mount_point=self._mount
                 )
@@ -117,8 +120,7 @@ class VaultReader(AbstractReader):
         key: str,
         value: Any,
         path: str = "secrets",
-        timeout: int = None,
-        version: int = 1,
+        timeout: int = None
     ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
@@ -130,7 +132,7 @@ class VaultReader(AbstractReader):
         secret_data = {secret_key: value}
         self.client.secrets.kv.v2.create_or_update_secret(
             path=secret_path,
-            version=version,
+            version=self.version,
             secret=secret_data,
             mount_point=self._mount,
         )
@@ -138,8 +140,7 @@ class VaultReader(AbstractReader):
     def delete(
         self,
         key: str,
-        path: str = "secrets",
-        version: int = 1
+        path: str = "secrets"
     ) -> bool:
         try:
             secret_path, secret_key = key.split("/", 1)
@@ -147,7 +148,7 @@ class VaultReader(AbstractReader):
             secret_path = path
             secret_key = key
         response = self.client.secrets.kv.read_secret_version(
-            path=secret_path, version=version, mount_point=self._mount
+            path=secret_path, version=self.version, mount_point=self._mount
         )
         if secret_key in response["data"]["data"]:
             del response["data"]["data"][secret_key]

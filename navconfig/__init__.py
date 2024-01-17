@@ -18,9 +18,6 @@ if not BASE_DIR:
 else:
     BASE_DIR = Path(BASE_DIR).resolve()
 
-# Directory Dir:
-SETTINGS_DIR = BASE_DIR.joinpath("settings")
-
 # configuration of the environment type:
 # environment type can be a file (.env) an encrypted file (crypt)
 ENV_TYPE = os.getenv("ENV_TYPE", "file")
@@ -32,11 +29,15 @@ CREATE = os.getenv("CONFIG_CREATE", None)
 Loading main Configuration Object.
 """
 config = Kardex(SITE_ROOT, env_type=ENV_TYPE, create=CREATE)
+
 # ENV version (dev, prod, staging)
 ENV = config.ENV
 
 # DEBUG VERSION
 DEBUG = config.debug
+
+# Settings Directory
+SETTINGS_DIR = BASE_DIR.joinpath("settings")
 
 # SECURITY WARNING: keep the secret keys used in production secret!
 PRODUCTION = config.getboolean("PRODUCTION", fallback=bool(not DEBUG))
