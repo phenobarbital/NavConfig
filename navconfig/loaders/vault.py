@@ -10,22 +10,34 @@ class vaultLoader(BaseLoader):
 
     Use to read configuration settings from Hashicorp Vault.
     """
+
     def __init__(
-            self, env_path: PurePath, override: bool = False, create: bool = True, **kwargs) -> None:
+        self,
+        env_path: PurePath,
+        override: bool = False,
+        create: bool = True,
+        **kwargs
+    ) -> None:
         super().__init__(env_path, override, create=create, **kwargs)
         try:
-            env = kwargs['env']
+            env = kwargs["env"]
         except KeyError:
             env = None
         self._vault = VaultReader()
-        self.secret_path = os.getenv('VAULT_HVAC_SECRETS_PATH', 'env_vars')
         if env is not None:
-            self.secret_path = f'{env}/{self.secret_path}'
-
+            # Append the environment to the secret path
+            self.secret_path = f"{env}"
+        else:
+            self.secret_path = os.getenv(
+                "VAULT_HVAC_SECRETS_PATH",
+                "navigator"
+            )
 
     def load_environment(self):
         # Retrieve the entire secret at the specified path
-        secret_data = self._vault.get(f'{self.secret_path}/*')
+        secret_data = self._vault.get(f"{self.secret_path}/*")
+        if not secret_data:
+            return None
 
         # Load the secret data as environment variables
         for key, value in secret_data.items():
@@ -34,7 +46,7 @@ class vaultLoader(BaseLoader):
                     os.environ[key] = str(value)
                 except (AttributeError, KeyError):
                     logging.warning(
-                        f'Vault: Could not set ENV variable {key} with value {value}'
+                        f"Vault: Could not set ENV variable {key}"
                     )
 
     def save_environment(self):

@@ -31,7 +31,7 @@ async def test_conf(event_loop):
 
 async def test_environment(event_loop):
     from navconfig import config
-    config.configure(env='dev', override=True) # re-configure the environment
+    config.configure(env='dev', override=True)  # re-configure the environment
     cnf = config.get('CONFIG_FILE')
     assert cnf == 'etc/navigator.ini'
 

@@ -7,6 +7,7 @@ class AbstractReader(ABC):
 
     Description: Abstract class for External Readers.
     """
+
     enabled: bool = True
 
     @abstractmethod

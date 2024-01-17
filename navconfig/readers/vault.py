@@ -13,25 +13,27 @@ class VaultReader(AbstractReader):
     """
 
     def __init__(self):
-        url = os.getenv('VAULT_HVAC_URL', 'http://localhost:8200')
-        token = os.getenv('VAULT_HVAC_TOKEN')
-        self._mount = os.getenv('VAULT_HVAC_MOUNT_POINT', 'secret')
+        url = os.getenv(
+            "VAULT_HVAC_URL",
+            "http://localhost:8200"
+        )
+        token = os.getenv("VAULT_HVAC_TOKEN")
+        self.version = os.getenv("VAULT_HVAC_VERSION", 1)
+        self._mount = os.getenv("VAULT_HVAC_MOUNT_POINT", "navigator")
+        self._env = os.getenv("ENV", "")
         if not token:
-            raise ValueError(
-                'VAULT_HVAC_TOKEN is not set'
-            )
+            raise ValueError("VAULT_HVAC_TOKEN is not set")
         try:
             self.client = hvac.Client(url=url, token=token)
             self.open()
+            os.environ["USE_VAULT"] = 'True'
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
-            raise ReaderNotSet(
-                f"Vault Error: {err}"
-            )
+            raise ReaderNotSet(f"Vault Error: {err}")
 
     def open(self) -> bool:
         if self.client.is_authenticated():
-            logging.debug('Hashicorp Vault Connected')
+            logging.debug("Hashicorp Vault Connected")
             return True
         return False
 
@@ -42,9 +44,9 @@ class VaultReader(AbstractReader):
         self,
         key: str,
         default: Any = None,
-        version: int = None,
-        path: str = 'secrets',
-        sub_key: str = None
+        version: int = 1,
+        path: str = "secrets",
+        sub_key: str = None,
     ) -> Any:
         if self.enabled is False:
             raise ReaderNotSet()
@@ -56,15 +58,23 @@ class VaultReader(AbstractReader):
             secret_path = path
             secret_key = key
         try:
-            response = self.client.secrets.kv.read_secret_version(
-                path=secret_path, version=version, mount_point=self._mount
-            )
+            if version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]
+            elif version == 2:
+                response = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]["data"]
         except hvac.exceptions.InvalidPath:
             return default
-        if secret_key == "*":
-            return response['data']['data']
 
-        secret_data = response['data']['data'].get(secret_key, default)
+        if secret_key == "*":
+            return data
+
+        secret_data = data.get(secret_key, default)
         if sub_key is not None:
             return secret_data.get(sub_key, default)
         return secret_data
@@ -72,8 +82,7 @@ class VaultReader(AbstractReader):
     def exists(
         self,
         key: str,
-        path: str = 'secrets',
-        version: int = None
+        version: int = 1
     ) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
@@ -81,29 +90,35 @@ class VaultReader(AbstractReader):
             secret_parts = key.split("/")
             secret_key = secret_parts.pop()
             secret_path = "/".join(secret_parts)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
         try:
-            response = self.client.secrets.kv.read_secret_version(
-                path=secret_path, version=version, mount_point=self._mount
-            )
-        except hvac.exceptions.InvalidPath as exc:
-            # logging.error(
-            #     f"Vault Error over key {key}: {exc}"
-            # )
+            if version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]
+            elif version == 2:
+                response = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path, mount_point=self._mount
+                )
+                data = response["data"]["data"]
+        except hvac.exceptions.InvalidPath:
             return False
         if secret_key == "*":
             return True
-        return secret_key in response['data']['data']
+        return secret_key in data
 
     def set(
         self,
         key: str,
         value: Any,
-        path: str = 'secrets',
+        path: str = "secrets",
         timeout: int = None,
-        version: int = None
+        version: int = 1,
     ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
@@ -117,14 +132,14 @@ class VaultReader(AbstractReader):
             path=secret_path,
             version=version,
             secret=secret_data,
-            mount_point=self._mount
+            mount_point=self._mount,
         )
 
     def delete(
         self,
         key: str,
-        path: str = 'secrets',
-        version: int = None
+        path: str = "secrets",
+        version: int = 1
     ) -> bool:
         try:
             secret_path, secret_key = key.split("/", 1)
@@ -134,12 +149,12 @@ class VaultReader(AbstractReader):
         response = self.client.secrets.kv.read_secret_version(
             path=secret_path, version=version, mount_point=self._mount
         )
-        if secret_key in response['data']['data']:
-            del response['data']['data'][secret_key]
+        if secret_key in response["data"]["data"]:
+            del response["data"]["data"][secret_key]
             self.client.secrets.kv.v2.create_or_update_secret(
                 path=secret_path,
-                secret=response['data']['data'],
-                mount_point=self._mount
+                secret=response["data"]["data"],
+                mount_point=self._mount,
             )
             return True
         return False

@@ -7,17 +7,16 @@ from dotenv import dotenv_values, load_dotenv
 
 
 class BaseLoader(ABC):
-
     def __init__(
-            self,
-            env_path: PurePath = None,
-            override: bool = False,
-            create: bool = True,
-            **kwargs
+        self,
+        env_path: PurePath = None,
+        override: bool = False,
+        create: bool = True,
+        **kwargs,
     ) -> None:
         self.override: bool = override
         self.env_path = env_path
-        self.env_file = '.env'
+        self.env_file = ".env"
         self._kwargs = kwargs
         self.downloadable: bool = False
         self._content: Any = None
@@ -28,10 +27,10 @@ class BaseLoader(ABC):
                         env_path.mkdir(parents=True, exist_ok=True)
                     except IOError as ex:
                         raise RuntimeError(
-                            f'{type(self).__name__}: Error creating directory {env_path}: {ex}'
+                            f"{type(self).__name__}: Error creating directory {env_path}: {ex}"
                         ) from ex
                 raise FileExistsError(
-                    f'{type(self).__name__}: No Directory Path: {env_path}'
+                    f"{type(self).__name__}: No Directory Path: {env_path}"
                 )
 
     @abstractmethod
@@ -43,16 +42,10 @@ class BaseLoader(ABC):
         pass
 
     def load_from_file(self, path):
-        load_dotenv(
-            dotenv_path=path,
-            override=self.override
-        )
+        load_dotenv(dotenv_path=path, override=self.override)
 
     def load_from_stream(self, content: str):
-        load_dotenv(
-            stream=content,
-            override=self.override
-        )
+        load_dotenv(stream=content, override=self.override)
 
     def load_from_string(self, content: Union[str, dict]):
         if isinstance(content, str):

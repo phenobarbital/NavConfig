@@ -1,3 +1,3 @@
 from .fernet import FileCypher
 
-__all__ = ('FileCypher', )
+__all__ = ("FileCypher",)
