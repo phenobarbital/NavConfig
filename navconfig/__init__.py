@@ -18,7 +18,9 @@ if not BASE_DIR:
 else:
     BASE_DIR = Path(BASE_DIR).resolve()
 
+# Directory Dir:
 SETTINGS_DIR = BASE_DIR.joinpath("settings")
+
 # configuration of the environment type:
 # environment type can be a file (.env) an encrypted file (crypt)
 ENV_TYPE = os.getenv("ENV_TYPE", "file")

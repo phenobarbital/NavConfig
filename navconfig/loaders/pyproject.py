@@ -1,7 +1,6 @@
 import asyncio
 from pathlib import PurePath
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 from .parsers.toml import TOMLParser
 from .abstract import BaseLoader
 
