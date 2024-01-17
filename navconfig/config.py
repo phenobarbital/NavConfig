@@ -106,7 +106,7 @@ class Kardex(metaclass=Singleton):
                 "NavConfig Error: Environment (.env) File is Missing."
             )
         # Get External Readers:
-        self._use_redis: bool = os.environ.get("USE_REDIS", False)
+        self._use_redis: bool = strtobool(os.environ.get("USE_REDIS", False))
         if self._use_redis:
             if REDIS_LOADER:
                 try:
@@ -116,7 +116,7 @@ class Kardex(metaclass=Singleton):
                 except Exception as err:
                     logging.warning(f"Redis error: {err}")
                     raise ConfigError(str(err)) from err
-        self._use_memcache: bool = os.environ.get("USE_MEMCACHED", False)
+        self._use_memcache: bool = strtobool(os.environ.get("USE_MEMCACHED", False))
         if self._use_memcache:
             if MEMCACHE_LOADER:
                 try:
@@ -126,7 +126,7 @@ class Kardex(metaclass=Singleton):
                 except Exception as err:
                     raise ConfigError(str(err)) from err
         ## Hashicorp Vault:
-        self._use_vault: bool = os.environ.get("USE_VAULT", False)
+        self._use_vault: bool = strtobool(os.environ.get("USE_VAULT", False))
         if self._use_vault:
             if HVAULT_LOADER:
                 try:
@@ -504,17 +504,21 @@ class Kardex(metaclass=Singleton):
                 f"Config Error: has not attribute {key}"
             )
 
-    def set(self, key: str, value: Any, vault: bool = False) -> None:
+    def set(self, key: str, value: Any) -> None:
         """
         set.
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        if vault is True:
+        if self._use_vault is True:
             try:
                 return self._readers["vault"].set(key, value)
             except KeyError:
-                logging.warning(f"Unable to Set key {key} in Vault")
+                logging.warning(
+                    f"Unable to Set key {key} in Vault"
+                )
+            except Exception:
+                raise
         if self._use_redis:
             try:
                 return self._readers["redis"].set(key, value)

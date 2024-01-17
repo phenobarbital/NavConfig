@@ -119,43 +119,106 @@ class VaultReader(AbstractReader):
         self,
         key: str,
         value: Any,
-        path: str = "secrets",
-        timeout: int = None
+        **kwargs
     ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
         try:
             secret_path, secret_key = key.split("/", 1)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
-        secret_data = {secret_key: value}
-        self.client.secrets.kv.v2.create_or_update_secret(
-            path=secret_path,
-            version=self.version,
-            secret=secret_data,
-            mount_point=self._mount,
-        )
+        try:
+            if self.version == 1:
+                # Read the existing secret data
+                existing_data = {}
+                try:
+                    read_response = self.client.secrets.kv.v1.read_secret(
+                        path=secret_path, mount_point=self._mount
+                    )
+                    existing_data = read_response['data']
+                except hvac.exceptions.InvalidPath:
+                    # If the path doesn't exist yet, it's fine
+                    pass
 
-    def delete(
-        self,
-        key: str,
-        path: str = "secrets"
-    ) -> bool:
+                # Update the existing data with the new key-value pair
+                existing_data[secret_key] = value
+
+                # Write the updated data back to the path
+                self.client.secrets.kv.v1.create_or_update_secret(
+                    path=secret_path,
+                    secret=existing_data,
+                    mount_point=self._mount,
+                )
+            elif self.version == 2:
+                # For KV v2, you need to provide the full data for the path
+                # Fetch existing data if you want to preserve other keys
+                existing_data = {}
+                try:
+                    read_response = self.client.secrets.kv.v2.read_secret_version(
+                        path=secret_path, mount_point=self._mount
+                    )
+                    existing_data = read_response['data']['data']
+                except hvac.exceptions.InvalidPath:
+                    # If the path doesn't exist yet, it's fine
+                    pass
+
+                # Update the existing data with the new key-value pair
+                existing_data[secret_key] = value
+
+                # Write the updated data back to the path
+                self.client.secrets.kv.v2.create_or_update_secret(
+                    path=secret_path,
+                    secret=existing_data,
+                    mount_point=self._mount
+                )
+        except Exception as ex:
+            raise ValueError(
+                f"Error writing to Vault: {ex}"
+            )
+
+    def delete(self, key: str, secret_path: str = None) -> bool:
+        if self.enabled is False:
+            raise ReaderNotSet()  # Or some appropriate exception
+
         try:
             secret_path, secret_key = key.split("/", 1)
+            if not secret_path:
+                secret_path = self._env
         except ValueError:
-            secret_path = path
+            secret_path = self._env
             secret_key = key
-        response = self.client.secrets.kv.read_secret_version(
-            path=secret_path, version=self.version, mount_point=self._mount
-        )
-        if secret_key in response["data"]["data"]:
-            del response["data"]["data"][secret_key]
-            self.client.secrets.kv.v2.create_or_update_secret(
-                path=secret_path,
-                secret=response["data"]["data"],
-                mount_point=self._mount,
-            )
+
+        try:
+            if self.version == 1:
+                current_secret = self.client.secrets.kv.v1.read_secret(
+                    path=secret_path,
+                    mount_point=self._mount
+                )['data']
+                if secret_key in current_secret:
+                    del current_secret[secret_key]
+                    self.client.secrets.kv.v1.create_or_update_secret(
+                        path=secret_path,
+                        secret=current_secret,
+                        mount_point=self._mount
+                    )
+            elif self.version == 2:
+                current_secret = self.client.secrets.kv.v2.read_secret_version(
+                    path=secret_path,
+                    mount_point=self._mount
+                )['data']['data']
+                if secret_key in current_secret:
+                    del current_secret[secret_key]
+                    self.client.secrets.kv.v2.create_or_update_secret(
+                        path=secret_path,
+                        secret=current_secret,
+                        mount_point=self._mount
+                    )
             return True
-        return False
+        except Exception as e:
+            logging.warning(
+                f"Error deleting key '{key}' from '{secret_path}': {e}"
+            )
+            return False
