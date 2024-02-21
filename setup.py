@@ -136,7 +136,7 @@ setup(
         'pycparser==2.21',
         "orjson==3.9.10",
         'pycryptodomex==3.19.0',
-        "cryptography==41.0.7",
+        "cryptography==42.0.4",
         "aiofiles==23.2.1",
         'aiofile==3.8.8',
     ],
