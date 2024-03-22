@@ -157,7 +157,7 @@ setup(
             'aioredis==2.0.1',
         ],
         "toml": [
-            'pytomlpp==1.0.11'
+            'pytomlpp==1.0.13'
         ],
         "yaml": [
             'PyYAML>=6.0',
@@ -166,7 +166,7 @@ setup(
             "hvac==2.0.0"
         ],
         "default": [
-            'pytomlpp==1.0.11',
+            'pytomlpp==1.0.13',
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
@@ -174,7 +174,7 @@ setup(
             "hvac==2.0.0"
         ],
         "all": [
-            'pytomlpp==1.0.11',
+            'pytomlpp==1.0.13',
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
