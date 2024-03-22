@@ -24,6 +24,8 @@ dist/*
 env/
 .venv/
 .venv/*
+..venv12/
+.venv12/*
 .troc/
 develop-eggs/
 #dist/
