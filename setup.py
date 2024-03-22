@@ -134,7 +134,7 @@ setup(
         'objectpath==0.6.1',
         'iso8601==2.1.0',
         'pycparser==2.21',
-        "orjson==3.9.10",
+        "orjson==3.9.15",
         'pycryptodomex==3.19.0',
         "cryptography==42.0.4",
         "aiofiles==23.2.1",
@@ -157,30 +157,30 @@ setup(
             'aioredis==2.0.1',
         ],
         "toml": [
-            'pytomlpp==1.0.11'
+            'pytomlpp==1.0.13'
         ],
         "yaml": [
             'PyYAML>=6.0',
         ],
         "hvac": [
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ],
         "default": [
-            'pytomlpp==1.0.11',
+            'pytomlpp==1.0.13',
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ],
         "all": [
-            'pytomlpp==1.0.11',
+            'pytomlpp==1.0.13',
             'redis==5.0.1',
             'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
-            "hvac==2.0.0"
+            "hvac==2.1.0"
         ]
     },
     ext_modules=cythonize(extensions),
