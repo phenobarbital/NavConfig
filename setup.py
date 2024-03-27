@@ -126,6 +126,7 @@ setup(
         'Cython==3.0.9'
     ],
     install_requires=[
+        'Cython==3.0.9',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
         'python-dotenv==1.0.1',
