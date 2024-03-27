@@ -128,14 +128,14 @@ setup(
     install_requires=[
         'asyncio==3.4.3',
         'uvloop==0.19.0',
-        'python-dotenv==1.0.0',
+        'python-dotenv==1.0.1',
         'configparser==6.0.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
         'iso8601==2.1.0',
         'pycparser==2.21',
         "orjson==3.9.15",
-        'pycryptodomex==3.19.1',
+        'pycryptodomex==3.20.0',
         "cryptography==42.0.4",
         "aiofiles==23.2.1",
         'aiofile==3.8.8',
@@ -154,7 +154,6 @@ setup(
         ],
         "redis": [
             'redis==5.0.1',
-            'aioredis==2.0.1',
         ],
         "toml": [
             'pytomlpp==1.0.13'
@@ -168,7 +167,6 @@ setup(
         "default": [
             'pytomlpp==1.0.13',
             'redis==5.0.1',
-            'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "hvac==2.1.0"
@@ -176,7 +174,6 @@ setup(
         "all": [
             'pytomlpp==1.0.13',
             'redis==5.0.1',
-            'aioredis==2.0.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
