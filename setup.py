@@ -122,7 +122,7 @@ setup(
         exclude=["docs", "tests", "settings", "examples", "dist", "etc"]
     ),
     setup_requires=[
-        'wheel==0.42.0',
+        'wheel==0.43.0',
         'Cython==3.0.9'
     ],
     install_requires=[
