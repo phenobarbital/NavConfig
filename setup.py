@@ -154,7 +154,7 @@ setup(
             'elasticsearch==8.11.0'
         ],
         "redis": [
-            'redis==5.0.1',
+            'redis==5.0.3',
         ],
         "toml": [
             'pytomlpp==1.0.13'
@@ -167,14 +167,14 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.13',
-            'redis==5.0.1',
+            'redis==5.0.3',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "hvac==2.1.0"
         ],
         "all": [
             'pytomlpp==1.0.13',
-            'redis==5.0.1',
+            'redis==5.0.3',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",
