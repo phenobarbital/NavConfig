@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [metadata]
 name = "navconfig"
-description = "Universal Configuration Management."
+description = "Universal Configuration Management for Python Projects."
 author = "Jesus Lara Gimenez"
 author_email = "jesuslarag@gmail.com"
 url = "https://github.com/phenobarbital/navconfig"

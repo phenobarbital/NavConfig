@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from .utils.functions import strtobool
 from .utils.types import Singleton
 from .loaders import import_loader, pyProjectLoader
-from .exceptions import ConfigError, NavConfigError, ReaderNotSet
+from .exceptions import ConfigError, KardexError, ReaderNotSet
 
 ## memcache:
 try:
@@ -57,14 +57,16 @@ class Kardex(metaclass=Singleton):
         self,
         site_root: str = None,
         env: str = None,
-        create: bool = True,
         **kwargs
     ):
         if self.__initialized__ is True:
             return
-        self.__initialized__ = True
-        self._create: bool = create
+
+        # check if create is True (default: false)
+        # create the required directories:
+        self._create: bool = strtobool(os.getenv("CONFIG_CREATE", False))
         self._ini: Callable = None
+        lazy_load = strtobool(os.getenv('LAZY_LOAD', 'False'))
         # asyncio loop
         try:
             self._loop = asyncio.get_running_loop()
@@ -81,7 +83,8 @@ class Kardex(metaclass=Singleton):
             else:
                 self._site_path = site_root
         # then: configure the instance:
-        self.configure(env, **kwargs)
+        if lazy_load is False:
+            self.configure(env, **kwargs)
 
     def configure(
         self,
@@ -89,6 +92,19 @@ class Kardex(metaclass=Singleton):
         env_type: str = "file",
         override: bool = False
     ):
+        """_summary_
+
+        Args:
+            env (str, optional): Environment name (dev, prod).
+              Defaults to None.
+            env_type (str, optional): type of enviroment.
+              Defaults to "file".
+            override (bool, optional): override current .env variables.
+              Defaults to False.
+
+        Raises:
+            ConfigError: Error on Configuration.
+        """
         # Environment Configuration:
         if env is not None:
             self.ENV = env
@@ -116,7 +132,9 @@ class Kardex(metaclass=Singleton):
                 except Exception as err:
                     logging.warning(f"Redis error: {err}")
                     raise ConfigError(str(err)) from err
-        self._use_memcache: bool = strtobool(os.environ.get("USE_MEMCACHED", False))
+        self._use_memcache: bool = strtobool(
+            os.environ.get("USE_MEMCACHED", False)
+        )
         if self._use_memcache:
             if MEMCACHE_LOADER:
                 try:
@@ -143,7 +161,9 @@ class Kardex(metaclass=Singleton):
         # and get the config file declared in the environment file
         config_file = self.get("CONFIG_FILE", fallback=self._conffile)
         self._ini = ConfigParser()
-        cf = Path(config_file).resolve()
+        cf = Path(config_file)
+        if not cf.is_absolute():
+            cf = self._site_path.joinpath(config_file)
         if not cf.exists():
             # try ini file from etc/ directory.
             cf = self._site_path.joinpath(self._conffile)
@@ -170,6 +190,12 @@ class Kardex(metaclass=Singleton):
                     pass
         # Running Load PyProject:
         self.load_pyproject()
+        # Defined as initialized:
+        self.__initialized__ = True
+
+    @property
+    def initialized(self) -> bool:
+        return self.__initialized__
 
     def __del__(self):
         try:
@@ -219,7 +245,6 @@ class Kardex(metaclass=Singleton):
         """
         env_path = self.site_root.joinpath("env", self.ENV, ".env")
         # pluggable types
-        print("ENV ", env_type)
         if self._env_loader.downloadable is True:
             self._env_loader.save_enviroment(env_path)
 
@@ -304,9 +329,11 @@ class Kardex(metaclass=Singleton):
             try:
                 load_dotenv(dotenv_path=file, override=override)
             except Exception as err:
-                raise NavConfigError(str(err)) from err
+                raise KardexError(str(err)) from err
         else:
-            raise NavConfigError(f"Failed to load a new ENV file from {file}")
+            raise ConfigError(
+                f"Failed to load a new ENV file from {file}"
+            )
 
     def _get_external(self, key: str) -> Any:
         """Get value fron an External Reader."""
@@ -317,6 +344,16 @@ class Kardex(metaclass=Singleton):
             except RuntimeError:
                 continue
         return None
+
+    def section(self, section: str) -> dict:
+        """
+        section.
+            Return a section from the INI parser
+        """
+        try:
+            return dict(self._ini[section])
+        except KeyError:
+            return {}
 
     def getboolean(self, key: str, section: str = None, fallback: Any = None):
         """
