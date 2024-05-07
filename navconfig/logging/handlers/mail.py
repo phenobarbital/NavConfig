@@ -2,8 +2,8 @@ from .abstract import AbstractLog
 
 
 class MailerHandler(AbstractLog):
-    def __init__(self, config, loglevel) -> None:
-        super().__init__(config, loglevel)
+    def __init__(self, config, loglevel, application) -> None:
+        super().__init__(config, loglevel, application)
         self._admin = config.get(
             "logging_admin", section="logging", fallback="dev@domain.com"
         )

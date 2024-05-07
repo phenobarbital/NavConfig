@@ -2,6 +2,7 @@ import os
 import logging
 from navconfig import BASE_DIR
 
+
 os.chdir(str(BASE_DIR))
 
 ### Global-Settings.

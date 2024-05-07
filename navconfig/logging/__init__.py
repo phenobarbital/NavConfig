@@ -33,7 +33,11 @@ logging_disable_other = config.getboolean(
 )
 
 ### Logging Echo (standard output)
-logging_echo = config.getboolean("logging_echo", section="logging", fallback=False)
+logging_echo = config.getboolean(
+    "logging_echo",
+    section="logging",
+    fallback=False
+)
 
 ## Mail Alerts:
 logging_enable_mailer = config.getboolean(
@@ -136,27 +140,45 @@ if logging_enable_filehandler is True:
 if logging_enable_mailer is True:
     from .handlers.mail import MailerHandler
 
-    lm = MailerHandler(config=config, loglevel=logging.CRITICAL, application=APP_NAME)
+    lm = MailerHandler(
+        config=config,
+        loglevel=logging.CRITICAL,
+        application=APP_NAME
+    )
     logging_config["handlers"]["CriticalMailHandler"] = lm.handler()
     logging_config["root"]["handlers"].append("CriticalMailHandler")
 
 
 if logging_enable_logstash is True:
     logging.debug("Logstash configuration Enabled.")
-    logstash_logging = config.get(
-        "logstash_logging", section="logging", fallback="INFO"
-    )
     ### Importing Logstash Handler and returning Logging Config:
     from .handlers.logstash import LogstashHandler
 
-    lh = LogstashHandler(config=config, loglevel=logstash_logging, application=APP_NAME)
-    logging_config["formatters"]["logstash"] = lh.formatter(path=BASE_DIR)
-    logging_config["handlers"]["LogstashHandler"] = lh.handler(
-        enable_localdb=config.getboolean("LOGSTASH_ENABLE_DB", fallback=True),
-        logdir=LOG_DIR,
+    logstash_logging = config.get(
+        "logstash_logging", section="logging", fallback="INFO"
     )
-    logging_config["root"]["handlers"].append("LogstashHandler")
-    logging_config[APP_NAME]["handlers"].append("LogstashHandler")
+
+    lh = LogstashHandler(
+        config=config,
+        loglevel=logstash_logging,
+        application=APP_NAME
+    )
+
+    if lh.logstash_available():
+        logging_config["formatters"]["logstash"] = lh.formatter(path=BASE_DIR)
+        logging_config["handlers"]["LogstashHandler"] = lh.handler(
+            enable_localdb=config.getboolean("LOGSTASH_ENABLE_DB", fallback=True),
+            logdir=LOG_DIR,
+        )
+        logging_config["root"]["handlers"].append("LogstashHandler")
+        logging_config[APP_NAME]["handlers"].append("LogstashHandler")
+    else:
+        logging.error(
+            (
+                "Logstash Logging is enabled but Logstash server "
+                "is Unavailable, please start Logstash Server."
+            )
+        )
 
 
 ### Load Logging Configuration:

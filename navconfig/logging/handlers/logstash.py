@@ -1,4 +1,5 @@
 # basic configuration of Logstash
+import socket
 try:
     import logstash_async  # pylint: disable=W0611
 except ImportError as ex:
@@ -23,6 +24,13 @@ class LogstashHandler(AbstractLog):
         )
         self.host = config.get("LOGSTASH_HOST", fallback=self.host)
         self.port = config.get("LOGSTASH_PORT", fallback=self.port)
+
+    def logstash_available(self, timeout=5):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((self.host, self.port))
+        sock.close()
+        return result == 0
 
     def formatter(self, path: str, fqdn: bool = False, **kwargs):
         return {

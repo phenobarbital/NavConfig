@@ -1,8 +1,8 @@
 # cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=True, initializedcheck=False
 # Copyright (C) 2018-present Jesus Lara
 #
-cdef class NavConfigError(Exception):
-    """Base Exception for NavConfig, inherit by other exceptions"""
+cdef class KardexError(Exception):
+    """Base Exception for Kardex, inherit by other exceptions"""
 
     code: int = 0
 
@@ -24,13 +24,13 @@ cdef class NavConfigError(Exception):
     def __str__(self):
         return f"{self.message}"
 
-cdef class ReaderError(NavConfigError):
+cdef class ReaderError(KardexError):
     """An error Triggered by Reader."""
 
-cdef class LoaderError(NavConfigError):
+cdef class LoaderError(KardexError):
     """A Feature is not supported"""
 
-cdef class ConfigError(NavConfigError):
+cdef class ConfigError(KardexError):
     """Runtime Error for bad configuration"""
 
 cdef class ReaderNotSet(Exception):

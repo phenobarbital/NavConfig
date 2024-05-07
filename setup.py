@@ -135,7 +135,7 @@ setup(
         'objectpath==0.6.1',
         'iso8601==2.1.0',
         'pycparser==2.21',
-        "orjson==3.9.15",
+        "orjson==3.10.3",
         'pycryptodomex==3.20.0',
         "cryptography==42.0.4",
         "aiofiles==23.2.1",
@@ -154,7 +154,7 @@ setup(
             'elasticsearch==8.11.0'
         ],
         "redis": [
-            'redis==5.0.1',
+            'redis==5.0.4',
         ],
         "toml": [
             'pytomlpp==1.0.13'
@@ -167,14 +167,14 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.13',
-            'redis==5.0.1',
+            'redis==5.0.4',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "hvac==2.1.0"
         ],
         "all": [
             'pytomlpp==1.0.13',
-            'redis==5.0.1',
+            'redis==5.0.4',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "aiomcache==0.8.1",

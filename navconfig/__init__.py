@@ -1,46 +1,36 @@
 """
 NavConfig.
 
-Main object for Configuration of several Navigator-related Tools.
+Configuration management for Python projects.
 """
-import os
 import sys
-from pathlib import Path
-from .config import Kardex  # noqa
-from .utils import project_root
+from .project import (
+    project_root,
+    get_env_type,
+    get_environment
+)
+from .kardex import Kardex  # noqa
 from .version import __version__
 
 # PROJECT PATH IS DEFINED?
-SITE_ROOT = project_root(__file__)
-BASE_DIR = os.getenv("BASE_DIR", None)
-if not BASE_DIR:
-    BASE_DIR = SITE_ROOT
-else:
-    BASE_DIR = Path(BASE_DIR).resolve()
+SITE_ROOT, BASE_DIR = project_root(__file__)
 
 # configuration of the environment type:
-# environment type can be a file (.env) an encrypted file (crypt)
-ENV_TYPE = os.getenv("ENV_TYPE", "file")
+ENV_TYPE = get_env_type()
 
-# check if create is True (default: false), create the required directories:
-CREATE = os.getenv("CONFIG_CREATE", None)
+# ENV version (dev, prod, staging)
+ENV = get_environment()
 
 """
 Loading main Configuration Object.
 """
-config = Kardex(SITE_ROOT, env_type=ENV_TYPE, create=CREATE)
-
-# ENV version (dev, prod, staging)
-ENV = config.ENV
+config = Kardex(SITE_ROOT, env=ENV, env_type=ENV_TYPE)
 
 # DEBUG VERSION
 DEBUG = config.debug
 
-# Settings Directory
+## Settings Directory
 SETTINGS_DIR = BASE_DIR.joinpath("settings")
-
-# SECURITY WARNING: keep the secret keys used in production secret!
-PRODUCTION = config.getboolean("PRODUCTION", fallback=bool(not DEBUG))
 
 # Add Path Navigator to Sys path
 sys.path.append(str(BASE_DIR))
