@@ -23,12 +23,15 @@ class LogstashHandler(AbstractLog):
             "logstash_flush_timeout", section="logging", fallback=10
         )
         self.host = config.get("LOGSTASH_HOST", fallback=self.host)
-        self.port = config.get("LOGSTASH_PORT", fallback=self.port)
+        self.port = config.getint("LOGSTASH_PORT", fallback=self.port)
 
     def logstash_available(self, timeout=5):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
-        result = sock.connect_ex((self.host, self.port))
+        try:
+            result = sock.connect_ex((self.host, int(self.port)))
+        except TypeError:
+            return False
         sock.close()
         return result == 0
 
