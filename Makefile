@@ -1,9 +1,11 @@
 venv:
-	python3.10 -m venv .venv
+	python3.12 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop NavConfig'
 
+install:
+	pip install -e .[default]
+
 develop:
-	pip install wheel==0.42.0
 	pip install -e .[default]
 	python -m pip install -Ur docs/requirements-dev.txt
 

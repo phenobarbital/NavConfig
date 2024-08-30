@@ -122,20 +122,21 @@ setup(
         exclude=["docs", "tests", "settings", "examples", "dist", "etc"]
     ),
     setup_requires=[
-        'wheel==0.42.0',
-        'Cython==3.0.9'
+        'setuptools==74.0.0',
+        'Cython==3.0.11',
+        'wheel==0.44.0'
     ],
     install_requires=[
-        'Cython==3.0.9',
+        'Cython==3.0.11',
         'asyncio==3.4.3',
-        'uvloop==0.19.0',
+        'uvloop>=0.19.0',
         'python-dotenv==1.0.1',
         'configparser==6.0.0',
         'python-dateutil==2.8.2',
         'objectpath==0.6.1',
         'iso8601==2.1.0',
         'pycparser==2.21',
-        "orjson==3.10.3",
+        "orjson>=3.10.3",
         'pycryptodomex==3.20.0',
         "cryptography==42.0.4",
         "aiofiles==23.2.1"
