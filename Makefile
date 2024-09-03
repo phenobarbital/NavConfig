@@ -1,5 +1,5 @@
 venv:
-	python3.12 -m venv .venv
+	python3.11 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop NavConfig'
 
 install:
