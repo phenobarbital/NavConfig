@@ -144,7 +144,7 @@ setup(
     extras_require={
         "memcache": [
             "pylibmc==1.6.3",
-            "aiomcache==0.8.1",
+            "aiomcache==0.8.2",
         ],
         "gdrive": [
             'PyDrive==1.3.1',
@@ -154,7 +154,7 @@ setup(
             'elasticsearch==8.11.0'
         ],
         "redis": [
-            'redis==5.0.4',
+            'redis==5.0.8',
         ],
         "toml": [
             'pytomlpp==1.0.13'
@@ -167,17 +167,17 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.13',
-            'redis==5.0.4',
+            'redis==5.0.8',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "hvac==2.3.0"
         ],
         "all": [
             'pytomlpp==1.0.13',
-            'redis==5.0.4',
+            'redis==5.0.8',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
-            "aiomcache==0.8.1",
+            "aiomcache==0.8.2",
             "hvac==2.3.0"
         ]
     },
