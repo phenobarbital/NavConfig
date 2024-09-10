@@ -1,9 +1,10 @@
+import pytest
 import os
 import logging
 from logging.config import dictConfig
 import asyncio
 from pathlib import Path
-import pytest
+import pytest_asyncio
 from navconfig.logging import logging_config
 
 
