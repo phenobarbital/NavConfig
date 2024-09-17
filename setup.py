@@ -139,7 +139,7 @@ setup(
         "orjson>=3.10.3",
         'pycryptodomex==3.20.0',
         "cryptography>=43.0.1",
-        "aiofiles==23.2.1"
+        "aiofiles>=23.2.1,<=24.1.0"
     ],
     extras_require={
         "memcache": [
@@ -150,7 +150,7 @@ setup(
             'PyDrive==1.3.1',
         ],
         "logstash": [
-            'python-logstash-async==2.7.2',
+            'python-logstash-async>=2.7.2,<=3.0.0',
         ],
         "redis": [
             'redis==5.0.8',
