@@ -150,7 +150,7 @@ setup(
             'PyDrive==1.3.1',
         ],
         "logstash": [
-            'python-logstash-async==2.7.2'
+            'python-logstash-async>=2.7.2,<=3.0.0',
         ],
         "redis": [
             'redis==5.0.8',
