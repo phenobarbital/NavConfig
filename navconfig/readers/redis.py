@@ -33,10 +33,12 @@ class mredis(AbstractReader):
             self.enabled = False
             raise ReaderNotSet(
                 f"Unable to Connecto to Redis: {err} :: Redis Disabled ::"
-            )
+            ) from err
         except TimeoutError as err:
             self.enabled = False
-            raise Exception(f"Redis Config: Redis Timeout: {err}") from err
+            raise Exception(
+                f"Redis Config: Redis Timeout: {err}"
+            ) from err
         except Exception as err:
             self.enabled = False
             logging.exception(err)

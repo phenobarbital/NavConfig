@@ -25,7 +25,9 @@ class mcache(AbstractReader):
             self._memcached.set("ping", "pong", time=1)
         except pylibmc.ConnectionError as err:
             self.enabled = False
-            raise ReaderNotSet(f"Unable to Connect: {err} :: Memcached Disabled ::")
+            raise ReaderNotSet(
+                f"Unable to Connect: {err} :: Memcached Disabled ::"
+            ) from err
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
             logging.exception(err, stack_info=True)
@@ -63,13 +65,18 @@ class mcache(AbstractReader):
                     bytes(key, "utf-8"), bytes(value, "utf-8"), time=timeout
                 )
             else:
-                return self._memcached.set(bytes(key, "utf-8"), bytes(value, "utf-8"))
+                return self._memcached.set(
+                    bytes(key, "utf-8"),
+                    bytes(value, "utf-8")
+                )
         except Exception as err:
             raise Exception(f"Memcache Set Error: {err!s}") from err
 
     def multi_get(self, *keys):
         try:
-            return self._memcached.multi_get(*[bytes(v, "utf-8") for v in keys])
+            return self._memcached.multi_get(
+                *[bytes(v, "utf-8") for v in keys]
+            )
         except Exception as err:
             raise Exception(f"Memcache Multi Error: {err!s}") from err
 

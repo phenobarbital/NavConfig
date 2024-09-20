@@ -13,6 +13,7 @@ from configparser import (
 )
 from pathlib import Path
 from dotenv import load_dotenv
+import jsonpickle
 from .utils.functions import strtobool
 from .utils.types import Singleton
 from .loaders import import_loader, pyProjectLoader
@@ -129,6 +130,7 @@ class Kardex(metaclass=Singleton):
                     self._readers["redis"] = REDIS_LOADER()
                 except ReaderNotSet as err:
                     logging.error(f"{err}")
+                    self._use_redis = False
                 except Exception as err:
                     logging.warning(f"Redis error: {err}")
                     raise ConfigError(str(err)) from err
@@ -141,6 +143,7 @@ class Kardex(metaclass=Singleton):
                     self._readers["memcache"] = MEMCACHE_LOADER()
                 except ReaderNotSet as err:
                     logging.error(f"{err}")
+                    self._use_memcache = False
                 except Exception as err:
                     raise ConfigError(str(err)) from err
         ## Hashicorp Vault:
@@ -233,11 +236,14 @@ class Kardex(metaclass=Singleton):
                 )
                 data = self._pyproject.load_environment()
                 self._mapping_ = {**self._mapping_, **data}
-            except FileNotFoundError as err:
-                logging.warning(err)
+            except FileNotFoundError:
+                # don't raise an error if file doesn't exist
+                pass
         except Exception as err:
             logging.exception(err)
-            raise ConfigError(str(err)) from err
+            raise ConfigError(
+                f"PyProject: {err}"
+            ) from err
 
     def save_environment(self, env_type: str = "drive"):
         """
@@ -383,8 +389,10 @@ class Kardex(metaclass=Singleton):
             val = self._mapping_[key]
         elif key in os.environ:
             val = os.getenv(key, fallback)
+            val = self._unserialize(val)
         else:
             val = self._get_external(key)
+            val = self._unserialize(val)
         if val:
             return strtobool(val)
         else:
@@ -433,6 +441,7 @@ class Kardex(metaclass=Singleton):
                     pass
         if key in os.environ:
             val = os.getenv(key, fallback)
+            val = self._unserialize(val)
         elif key in self._mapping_:
             val = self._mapping_[key]
             if isinstance(val, (list, tuple)):
@@ -470,9 +479,11 @@ class Kardex(metaclass=Singleton):
         # get ENV value
         if key in os.environ:
             val = os.getenv(key, fallback)
+            val = self._unserialize(val)
             return val
         # get data from external readers:
         if val := self._get_external(key):
+            val = self._unserialize(val)
             return val
         return fallback
 
@@ -480,6 +491,7 @@ class Kardex(metaclass=Singleton):
     def __setitem__(self, key: str, value: Any) -> None:
         if key in os.environ:
             # override an environment variable
+            value = self._serialize(value)
             os.environ[key] = value
         elif key in self._mapping_:
             return self._mapping_[key]
@@ -529,6 +541,7 @@ class Kardex(metaclass=Singleton):
             # get data from external readers:
             val = self._get_external(key)
         if val:
+            val = self._unserialize(val)
             try:
                 if val.lower() in self._ini.BOOLEAN_STATES:
                     return self._ini.BOOLEAN_STATES[val.lower()]
@@ -541,13 +554,35 @@ class Kardex(metaclass=Singleton):
                 f"Config Error: has not attribute {key}"
             )
 
+    def _serialize(self, value: Any) -> Any:
+        # Check if serialization is needed
+        if not isinstance(value, (str, int, float, bool)):
+            val = jsonpickle.encode(value)
+            value = 'NAVCONFIG_JSONDATA:' + val
+        return value
+
+    def _unserialize(self, value: Any) -> str:
+        if value and str(value).startswith("NAVCONFIG_JSONDATA"):
+            try:
+                return jsonpickle.decode(
+                    value[len("NAVCONFIG_JSONDATA:"):]
+                )
+            except jsonpickle.UnpicklingError:
+                # Fallback to the original string if deserialization fails
+                pass
+        return value
+
     def set(self, key: str, value: Any) -> None:
         """
         set.
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        if self._use_vault is True:
+        if key in self._mapping_:
+            self._mapping_[key] = value
+        elif key in os.environ:
+            os.environ[key] = value
+        elif self._use_vault is True:
             try:
                 return self._readers["vault"].set(key, value)
             except KeyError:
@@ -556,11 +591,20 @@ class Kardex(metaclass=Singleton):
                 )
             except Exception:
                 raise
-        if self._use_redis:
+        elif self._use_redis:
+            value = self._serialize(value)
             try:
                 return self._readers["redis"].set(key, value)
             except KeyError:
-                logging.warning(f"Unable to Set key {key} in Redis")
+                logging.warning(
+                    f"Unable to Set key {key} in Redis"
+                )
+        else:
+            # set the mapping:
+            self._mapping_[key] = value
+            value = self._serialize(value)
+            # Fallback: set in the environment:
+            os.environ[key] = value
         return False
 
     def setext(
