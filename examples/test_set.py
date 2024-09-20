@@ -7,6 +7,10 @@ def test_set():
     config.set('MYSQL_DRIVER', 'mysqlclient')
     mysql_driver = config.get('MYSQL_DRIVER')
     print('Driver:', mysql_driver)
+    # set a new complex variable:
+    a = {"user": 1, "username": "test"}
+    config.set('TEST', a)
+    print(config.get('TEST'))
 
 
 if __name__ == '__main__':
