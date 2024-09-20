@@ -4,6 +4,7 @@ NavConfig.
 Configuration management for Python projects.
 """
 import sys
+import logging
 from .project import (
     project_root,
     get_env_type,
@@ -11,6 +12,9 @@ from .project import (
 )
 from .kardex import Kardex  # noqa
 from .version import __version__
+
+# Reduce asyncio log level:
+logging.getLogger('asyncio').setLevel(logging.INFO)
 
 # PROJECT PATH IS DEFINED?
 SITE_ROOT, BASE_DIR = project_root(__file__)

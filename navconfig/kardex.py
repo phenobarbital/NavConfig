@@ -129,6 +129,7 @@ class Kardex(metaclass=Singleton):
                     self._readers["redis"] = REDIS_LOADER()
                 except ReaderNotSet as err:
                     logging.error(f"{err}")
+                    self._use_redis = False
                 except Exception as err:
                     logging.warning(f"Redis error: {err}")
                     raise ConfigError(str(err)) from err
@@ -141,6 +142,7 @@ class Kardex(metaclass=Singleton):
                     self._readers["memcache"] = MEMCACHE_LOADER()
                 except ReaderNotSet as err:
                     logging.error(f"{err}")
+                    self._use_memcache = False
                 except Exception as err:
                     raise ConfigError(str(err)) from err
         ## Hashicorp Vault:
@@ -233,11 +235,14 @@ class Kardex(metaclass=Singleton):
                 )
                 data = self._pyproject.load_environment()
                 self._mapping_ = {**self._mapping_, **data}
-            except FileNotFoundError as err:
-                logging.warning(err)
+            except FileNotFoundError:
+                # don't raise an error if file doesn't exist
+                pass
         except Exception as err:
             logging.exception(err)
-            raise ConfigError(str(err)) from err
+            raise ConfigError(
+                f"PyProject: {err}"
+            ) from err
 
     def save_environment(self, env_type: str = "drive"):
         """
@@ -547,7 +552,11 @@ class Kardex(metaclass=Singleton):
          Set an enviroment variable on REDIS, based on Strategy
          TODO: add cloudpickle to serialize and unserialize data first.
         """
-        if self._use_vault is True:
+        if key in self._mapping_:
+            self._mapping_[key] = value
+        elif key in os.environ:
+            os.environ[key] = value
+        elif self._use_vault is True:
             try:
                 return self._readers["vault"].set(key, value)
             except KeyError:
@@ -556,11 +565,16 @@ class Kardex(metaclass=Singleton):
                 )
             except Exception:
                 raise
-        if self._use_redis:
+        elif self._use_redis:
             try:
                 return self._readers["redis"].set(key, value)
             except KeyError:
-                logging.warning(f"Unable to Set key {key} in Redis")
+                logging.warning(
+                    f"Unable to Set key {key} in Redis"
+                )
+        else:
+            # Fallback: set in the environment:
+            os.environ[key] = value
         return False
 
     def setext(
