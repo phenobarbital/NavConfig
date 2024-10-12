@@ -1,6 +1,7 @@
 import os
+import sys
 import logging
-from navconfig import BASE_DIR
+from navconfig import BASE_DIR, DEBUG
 
 
 os.chdir(str(BASE_DIR))
@@ -8,6 +9,9 @@ os.chdir(str(BASE_DIR))
 # Reduce asyncio log level:
 logging.getLogger('asyncio').setLevel(logging.INFO)
 
+
+# Debug
+LOCAL_DEVELOPMENT = DEBUG is True and sys.argv[0] == "run.py"
 
 ### Global-Settings.
 try:

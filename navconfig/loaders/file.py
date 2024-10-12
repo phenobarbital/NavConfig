@@ -1,3 +1,4 @@
+import logging
 from .abstract import BaseLoader
 
 
@@ -11,7 +12,9 @@ class fileLoader(BaseLoader):
         file_path = self.env_path.joinpath(self.env_file)
         if file_path.exists():
             if file_path.stat().st_size == 0:
-                raise FileExistsError(f"Empty Environment File: {file_path}")
+                logging.warning(
+                    f"Empty Environment File: {file_path}"
+                )
             # load dotenv from file:
             self.load_from_file(file_path)
         else:
