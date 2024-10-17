@@ -3,7 +3,7 @@ black==24.3.0
 build==1.0.3
 coverage[toml]==7.4.0
 flit==3.9.0
-hypothesis==6.91.0
+hypothesis==6.115.3
 ipython==8.19.0
 lint==1.2.1
 mypy==1.7.1
