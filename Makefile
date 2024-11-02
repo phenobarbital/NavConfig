@@ -3,10 +3,10 @@ venv:
 	echo 'run `source .venv/bin/activate` to start develop NavConfig'
 
 install:
-	pip install -e .[default]
+	pip install -e .[uvloop,default]
 
 develop:
-	pip install -e .[default]
+	pip install -e .[uvloop,default]
 	python -m pip install -Ur docs/requirements-dev.txt
 
 dev:

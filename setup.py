@@ -129,10 +129,9 @@ setup(
     install_requires=[
         'Cython==3.0.11',
         'asyncio==3.4.3',
-        'uvloop>=0.19.0',
         'python-dotenv==1.0.1',
         'configparser==6.0.0',
-        'python-dateutil==2.8.2',
+        'python-dateutil>=2.8.2',
         'objectpath==0.6.1',
         'iso8601==2.1.0',
         'pycparser==2.21',
@@ -143,6 +142,9 @@ setup(
         "jsonpickle>=3.0.2",
     ],
     extras_require={
+        "uvloop": [
+            "uvloop==0.21.0"
+        ],
         "memcache": [
             "pylibmc==1.6.3",
             "aiomcache==0.8.2",
