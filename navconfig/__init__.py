@@ -10,9 +10,11 @@ from .project import (
     get_env_type,
     get_environment
 )
+from .utils import install_uvloop
 from .kardex import Kardex  # noqa
 from .version import __version__
 
+install_uvloop()
 # Reduce asyncio log level:
 logging.getLogger('asyncio').setLevel(logging.INFO)
 
