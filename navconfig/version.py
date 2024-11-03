@@ -5,7 +5,7 @@ __description__ = (
     "Configuration tool for all Navigator Services "
     "Tool for accessing Config info from different sources."
 )
-__version__ = "1.7.9"
+__version__ = "1.7.10"
 __author__ = "Jesus Lara"
 __author_email__ = "jesuslarag@gmail.com"
 __license__ = "MIT"
