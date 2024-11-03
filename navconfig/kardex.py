@@ -19,6 +19,7 @@ from .utils.types import Singleton
 from .loaders import import_loader, pyProjectLoader
 from .exceptions import ConfigError, KardexError, ReaderNotSet
 
+
 ## memcache:
 try:
     from .readers.memcache import mcache

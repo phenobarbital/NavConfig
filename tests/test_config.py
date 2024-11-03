@@ -36,5 +36,10 @@ async def test_environment(event_loop):
     cnf = config.get('CONFIG_FILE')
     assert cnf == 'etc/navigator.ini'
 
+async def test_settings(event_loop):
+    from navconfig import config
+    from settings.settings import SEND_NOTIFICATIONS
+    assert SEND_NOTIFICATIONS is True
+
 def pytest_sessionfinish(session, exitstatus):
     asyncio.get_event_loop().close()
