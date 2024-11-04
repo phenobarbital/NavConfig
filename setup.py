@@ -134,7 +134,7 @@ setup(
         'python-dateutil>=2.8.2',
         'objectpath==0.6.1',
         'iso8601==2.1.0',
-        'pycparser==2.21',
+        'pycparser==2.22',
         "orjson>=3.10.3",
         'pycryptodomex==3.20.0',
         "cryptography>=43.0.1",
