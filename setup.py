@@ -122,7 +122,7 @@ setup(
         exclude=["docs", "tests", "settings", "examples", "dist", "etc"]
     ),
     setup_requires=[
-        'setuptools==74.0.0',
+        'setuptools==75.6.0',
         'Cython==3.0.11',
         'wheel==0.44.0'
     ],
