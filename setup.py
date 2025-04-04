@@ -139,7 +139,7 @@ setup(
         'pycryptodomex==3.20.0',
         "cryptography>=43.0.1",
         "aiofiles>=23.2.1,<=24.1.0",
-        "jsonpickle>=3.0.2",
+        "jsonpickle>=1.2,<=3.0.2",
     ],
     extras_require={
         "uvloop": [
