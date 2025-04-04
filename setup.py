@@ -49,7 +49,7 @@ with open(version, 'r', encoding='utf-8') as meta:
                 if name.id == '__author_email__':
                     __author_email__ = v.s
 
-COMPILE_ARGS = ["-O3"]
+COMPILE_ARGS = ["-O2"]
 
 extensions = [
     Extension(
