@@ -35,7 +35,7 @@ classifiers = [
 long_description = "file:README.md"
 long_description_content_type = "text/markdown"
 keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
-python_requires = ">=3.9.13"
+python_requires = ">=3.10.1"
 
 
 [tool.pytest.ini_options]

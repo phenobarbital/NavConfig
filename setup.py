@@ -49,7 +49,7 @@ with open(version, 'r', encoding='utf-8') as meta:
                 if name.id == '__author_email__':
                     __author_email__ = v.s
 
-COMPILE_ARGS = ["-O2"]
+COMPILE_ARGS = ["-O3"]
 
 extensions = [
     Extension(
@@ -99,7 +99,7 @@ extensions = [
 setup(
     name=__title__,
     version=__version__,
-    python_requires=">=3.9.13",
+    python_requires=">=3.10.1",
     url='https://github.com/phenobarbital/NavConfig',
     description=__description__,
     long_description=readme(),
