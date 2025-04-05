@@ -56,7 +56,8 @@ extensions = [
         name='navconfig.exceptions',
         sources=['navconfig/exceptions.pyx'],
         extra_compile_args=COMPILE_ARGS,
-        language="c"
+        language="c",
+        define_macros=[('CYTHON_COMPILING_IN_PYPY', '1')]
     ),
     Extension(
         name='navconfig.utils.functions',
