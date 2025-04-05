@@ -37,6 +37,9 @@ jobs:
           pip install cibuildwheel
           cibuildwheel --output-dir dist
           # You may need to adjust the above command based on your package's specific requirements
+        env:
+          # Skip PyPy builds
+          CIBW_SKIP: "pp*"
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
