@@ -157,7 +157,7 @@ setup(
             'python-logstash-async>=2.7.2,<=3.0.0',
         ],
         "redis": [
-            'redis==5.0.8',
+            'redis>=5.0.8,<=5.2.1',
         ],
         "toml": [
             'pytomlpp==1.0.13'
@@ -170,7 +170,7 @@ setup(
         ],
         "default": [
             'pytomlpp==1.0.13',
-            'redis==5.0.8',
+            'redis>=5.0.8,<=5.2.1',
             'python-logstash-async==2.7.2',
             'PyYAML>=6.0',
             "hvac==2.3.0"
