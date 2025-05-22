@@ -38,15 +38,15 @@ with open(version, 'r', encoding='utf-8') as meta:
                 v = node.value
                 if name.id == '__version__':
                     __version__ = v.s
-                if name.id == '__title__':
+                elif name.id == '__title__':
                     __title__ = v.s
-                if name.id == '__description__':
+                elif name.id == '__description__':
                     __description__ = v.s
-                if name.id == '__license__':
+                elif name.id == '__license__':
                     __license__ = v.s
-                if name.id == '__author__':
+                elif name.id == '__author__':
                     __author__ = v.s
-                if name.id == '__author_email__':
+                elif name.id == '__author_email__':
                     __author_email__ = v.s
 
 COMPILE_ARGS = ["-O2"]

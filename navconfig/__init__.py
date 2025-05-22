@@ -11,6 +11,7 @@ from .project import (
     get_environment
 )
 from .utils import install_uvloop
+from .utils.settings import ensure_settings_priority
 from .kardex import Kardex  # noqa
 from .version import __version__
 
@@ -38,7 +39,7 @@ config = Kardex(SITE_ROOT, env=ENV, env_type=ENV_TYPE)
 
 # DEBUG VERSION
 DEBUG = config.debug
-PRODUCTION = config.getboolean('PRODUCTION', fallback=bool(not DEBUG))
+PRODUCTION = config.getboolean('PRODUCTION', fallback=not DEBUG)
 # Environment
 ENVIRONMENT = config.get('ENVIRONMENT', fallback='development')
 ENV = config.get('ENV', fallback='dev')
@@ -47,5 +48,6 @@ ENV = config.get('ENV', fallback='dev')
 sys.path.append(str(BASE_DIR))
 
 # Add Path settings to Sys path if exists.
-if SETTINGS_DIR.exists():
-    sys.path.append(str(SETTINGS_DIR))
+ensure_settings_priority(SETTINGS_DIR)
+# if SETTINGS_DIR.exists():
+#     sys.path.append(str(SETTINGS_DIR))
