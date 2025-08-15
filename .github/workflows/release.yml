@@ -158,55 +158,21 @@ jobs:
           echo ""
           echo "File count: $(ls -1 dist/ | wc -l)"
 
-      - name: Verify wheel contents (optional)
-        run: |
-          echo "Verifying wheel contents..."
-          for wheel in dist/*.whl; do
-            if [ -f "$wheel" ]; then
-              echo "Contents of $wheel:"
-              uv tool install wheel
-              uv tool run python -m wheel unpack "$wheel" --dest temp_unpack/
-              ls -la temp_unpack/
-              rm -rf temp_unpack/
-              echo "---"
-            fi
-          done
-
-      # Option 1: Use UV for publishing (recommended)
-      - name: Publish to PyPI with UV
+      - name: Publish manylinux wheels to PyPI
         run: |
           uv tool install twine
-          uv tool run twine upload dist/* --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }} --verbose
+          uv tool run twine upload dist/*-manylinux*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
 
-      # Option 2: Traditional approach (commented out, use if UV approach fails)
-      # - name: Set up Python for twine
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: '3.11'
-      #
-      # - name: Install twine traditionally
-      #   run: pip install twine
-      #
-      # - name: Publish manylinux wheels to PyPI
-      #   if: env.HAS_MANYLINUX_WHEELS == 'true'
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-      #   run: twine upload dist/*-manylinux*.whl --verbose
-      #
-      # - name: Publish Windows wheels to PyPI
-      #   if: env.HAS_WINDOWS_WHEELS == 'true'
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-      #   run: twine upload dist/*-win_*.whl --verbose
-      #
-      # - name: Publish source distribution to PyPI
-      #   if: env.HAS_SOURCE_DIST == 'true'
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-      #   run: twine upload dist/*.tar.gz --verbose
+      - name: Publish Windows wheels to PyPI
+        run: |
+          uv tool install twine
+          uv tool run twine upload dist/*-win_*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+
+      - name: Publish source distribution to PyPI
+        run: |
+          uv tool install twine
+          uv tool run twine upload dist/*.tar.gz --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+
 
   # Optional: Test installation job
   test-install:
