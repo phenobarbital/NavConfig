@@ -119,17 +119,20 @@ all = [
 ]
 
 [tool.setuptools]
-packages = ["navconfig"]
 zip-safe = false
 include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "navconfig.version.__version__"}
 
+[tool.setuptools.packages.find]
+include = ["navconfig*"]
+exclude = ["tests*", "docs*", "examples*"]
+
 [tool.setuptools.package-data]
 navconfig = [
-    "py.typed",
-    "*.pyi",
+    "py.typed", 
+    "*.pyi", 
     "**/*.pyi",
     "*.py",
     "**/*.py",
@@ -137,10 +140,6 @@ navconfig = [
     "*.yml",
     "*.toml"
 ]
-
-[tool.setuptools.packages.find]
-include = ["navconfig*"]
-exclude = ["tests*", "docs*", "examples*"]
 
 # Testing configuration
 [tool.pytest.ini_options]
