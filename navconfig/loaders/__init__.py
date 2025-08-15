@@ -7,7 +7,6 @@ def import_loader(loader: str = "file"):
     cls = f"{loader}Loader"
     try:
         module = import_module(classpath, package="loaders")
-        obj = getattr(module, cls)
-        return obj
+        return getattr(module, cls)
     except ImportError as err:
         raise RuntimeError(f"Navconfig Error: Cannot load {cls}: {err}") from err

@@ -49,5 +49,3 @@ sys.path.append(str(BASE_DIR))
 
 # Add Path settings to Sys path if exists.
 ensure_settings_priority(SETTINGS_DIR)
-# if SETTINGS_DIR.exists():
-#     sys.path.append(str(SETTINGS_DIR))

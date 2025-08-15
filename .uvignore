@@ -1,0 +1,12 @@
+# Similar to .gitignore but for uv
+__pycache__/
+*.pyc
+*.pyo
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+build/
+dist/
+*.egg-info/

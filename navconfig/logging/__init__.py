@@ -4,11 +4,11 @@ Log Configuration.
 Logging configuration.
 
 Supports:
- - Mail Critical Handler
- - Rotating File handler
- - Console (debug) Handler
- - Error File Handler
- TODO: add a Telegram Critical Handler.
+    - Mail Critical Handler
+    - Rotating File handler
+    - Console (debug) Handler with Colors
+    - Error File Handler
+    TODO: add a Telegram Critical Handler.
 
 """
 from pathlib import Path
@@ -32,11 +32,11 @@ logging_disable_other = config.getboolean(
     "logging_disable_other", section="logging", fallback=False
 )
 
-### Logging Echo (standard output)
+### Logging Echo (standard output) - FIXED: Default to True for colored output
 logging_echo = config.getboolean(
     "logging_echo",
     section="logging",
-    fallback=False
+    fallback=True  # Changed from False to True
 )
 
 ## Mail Alerts:
@@ -62,26 +62,30 @@ if not logdir.exists():
     except OSError:
         logging.exception("Error Creating Logging Directory", exc_info=True)
 
-HANDLERS = config.get("handlers", section="logging", fallback=["StreamHandler"])
+HANDLERS = config.get("handlers", section="logging", fallback=["console"])
 if isinstance(HANDLERS, str):
     HANDLERS = HANDLERS.split(",")
 
+# FIXED: Improved logging configuration to avoid duplicates
 logging_config = dict(
     version=1,
     disable_existing_loggers=logging_disable_other,
     formatters={
-        "console": {"()": ColoredFormatter, "datefmt": "%Y-%m-%d %H:%M:%S"},
+        "console": {
+            "()": ColoredFormatter,
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        },
         "default": {
-            "format": "[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: \
-                %(message)s"
+            "format": "[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s",  # noqa
+            "datefmt": "%Y-%m-%d %H:%M:%S"
         },
         "error": {
-            "format": "%(asctime)s-%(levelname)s-%(name)s-%(process)d::\
-                %(module)s|%(lineno)s:: %(message)s"
+            "format": "%(asctime)s-%(levelname)s-%(name)s-%(process)d::"
+                      "%(module)s|%(lineno)s:: %(message)s"
         },
         "file": {
-            "format": "%(asctime)s: [%(levelname)s]: %(pathname)s: %(lineno)d:\
-                \n%(message)s\n"
+            "format": "%(asctime)s: [%(levelname)s]: %(pathname)s: %(lineno)d:"
+                      "\n%(message)s\n"
         },
     },
     handlers={
@@ -97,45 +101,64 @@ logging_config = dict(
             "stream": "ext://sys.stdout",
             "level": loglevel,
         },
+        "null": {
+            "class": "logging.NullHandler",
+        },
     },
     loggers={
-        APP_NAME: {"handlers": HANDLERS, "level": loglevel, "propagate": False},
+        APP_NAME: {
+            "handlers": ["console"] if logging_echo else ["null"],
+            "level": loglevel,
+            "propagate": False
+        },
         "__main__": {  # if __name__ == "__main__"
-            "handlers": ["StreamHandler"],
+            "handlers": ["console"] if logging_echo else ["null"],
             "level": "INFO",
             "propagate": False,
         },
-        "": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "": {  # root logger
+            "handlers": ["console"] if logging_echo else ["null"],
+            "level": "INFO",
+            "propagate": False
+        },
     },
     root={
-        "handlers": ["StreamHandler"],
+        "handlers": ["console"] if logging_echo else ["null"],
         "level": loglevel,
-        "propagate": True,
+        "propagate": False,  # IMPORTANT: Set to False to avoid duplicates
     },
 )
 
-logging_config[APP_NAME] = {
-    "handlers": ["StreamHandler"],
-    "level": loglevel,
-    "propagate": True,
-}
+# FIXED: Don't add console handler to root if already using console
+# This was causing the duplicate messages
+# Remove the problematic line:
+# if logging_echo is True:
+#     logging_config["root"]["handlers"].append("console")
 
-if logging_echo is True:
-    logging_config["root"]["handlers"].append("console")
-
-
+# Instead, handle file logging separately
 if logging_enable_filehandler is True:
     from .handlers.file import FileHandler
 
     lf = FileHandler(config=config, loglevel=loglevel, application=APP_NAME)
-    logging_config["handlers"]["RotatingFileHandler"] = lf.handler(path=LOG_DIR)
+    logging_config["handlers"]["RotatingFileHandler"] = lf.handler(
+        path=LOG_DIR
+    )
     ## Also Error Handler:
     logging_config["handlers"]["ErrorFileHandler"] = lf.handler(
         path=LOG_DIR, loglevel=logging.ERROR
     )
-    logging_config["root"]["handlers"].append("RotatingFileHandler")
-    logging_config["root"]["handlers"].append("ErrorFileHandler")
 
+    # Add file handlers to all relevant loggers
+    for logger_name in [APP_NAME, "__main__", ""]:
+        if logger_name in logging_config["loggers"]:
+            logging_config["loggers"][logger_name]["handlers"].extend([
+                "RotatingFileHandler", "ErrorFileHandler"
+            ])
+
+    # Add to root as well
+    logging_config["root"]["handlers"].extend([
+        "RotatingFileHandler", "ErrorFileHandler"
+    ])
 
 if logging_enable_mailer is True:
     from .handlers.mail import MailerHandler
@@ -146,8 +169,15 @@ if logging_enable_mailer is True:
         application=APP_NAME
     )
     logging_config["handlers"]["CriticalMailHandler"] = lm.handler()
-    logging_config["root"]["handlers"].append("CriticalMailHandler")
 
+    # Add mail handler to all relevant loggers
+    for logger_name in [APP_NAME, "__main__", ""]:
+        if logger_name in logging_config["loggers"]:
+            logging_config["loggers"][logger_name]["handlers"].append(
+                "CriticalMailHandler"
+            )
+
+    logging_config["root"]["handlers"].append("CriticalMailHandler")
 
 if logging_enable_logstash is True:
     logging.debug("Logstash configuration Enabled.")
@@ -167,11 +197,21 @@ if logging_enable_logstash is True:
     if lh.logstash_available():
         logging_config["formatters"]["logstash"] = lh.formatter(path=BASE_DIR)
         logging_config["handlers"]["LogstashHandler"] = lh.handler(
-            enable_localdb=config.getboolean("LOGSTASH_ENABLE_DB", fallback=True),
+            enable_localdb=config.getboolean(
+                "LOGSTASH_ENABLE_DB",
+                fallback=True
+            ),
             logdir=LOG_DIR,
         )
+
+        # Add logstash handler to all relevant loggers
+        for logger_name in [APP_NAME, "__main__", ""]:
+            if logger_name in logging_config["loggers"]:
+                logging_config["loggers"][logger_name]["handlers"].append(
+                    "LogstashHandler"
+                )
+
         logging_config["root"]["handlers"].append("LogstashHandler")
-        logging_config[APP_NAME]["handlers"].append("LogstashHandler")
     else:
         logging.error(
             (
@@ -179,7 +219,6 @@ if logging_enable_logstash is True:
                 "is Unavailable, please start Logstash Server."
             )
         )
-
 
 ### Load Logging Configuration:
 dictConfig(logging_config)
