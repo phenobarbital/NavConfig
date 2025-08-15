@@ -41,5 +41,14 @@ async def test_settings(event_loop):
     from settings.settings import SEND_NOTIFICATIONS
     assert SEND_NOTIFICATIONS is True
 
+async def test_local_settings(event_loop):
+    from navconfig import config
+    from navconfig.conf import CONFIG_TEST
+    from settings.settings import CONFIG_TEST as CT
+    ct = config.get('CONFIG_TEST', fallback='NAVCONFIG')
+    assert ct == CT
+    assert CONFIG_TEST == CT
+
+
 def pytest_sessionfinish(session, exitstatus):
     asyncio.get_event_loop().close()

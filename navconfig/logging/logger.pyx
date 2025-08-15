@@ -20,11 +20,12 @@ else:
     LOGLEVEL = logging.INFO
 
 
-cdef class Logger(object):
-    __slots__ = ['name', '_debug', '_logger', 'logger']
+cdef class Logger:
+    __slots__ = ['name', '_debug', '_logger', 'logger', '_console_added']
     cdef bool_t _debug
     cdef str name
     cdef object _logger
+    cdef bool_t _console_added
 
     def __init__(self, name: str = '', config: dict = None, **kwargs) -> None:
         ### Logging handler:
@@ -34,6 +35,8 @@ cdef class Logger(object):
         else:
             self.name = name
         self._debug = kwargs.get('debug', DEBUG)
+        self._console_added = False
+
         if config:
             dictConfig(config)
         setLoggerClass(VerboseLogger)
@@ -41,13 +44,43 @@ cdef class Logger(object):
         self._logger.setLevel(LOGLEVEL)
 
     def addConsole(self) -> None:
-        # create a stream handler with sys.stdout as the stream
+        """Add console handler with colors if not already added."""
+        if self._console_added:
+            return
+
+        # Check if console handler already exists
+        for handler in self._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and handler.stream == sys.stdout:
+                # Console handler already exists, just update formatter if needed
+                if not isinstance(handler.formatter, ColoredFormatter):
+                    handler.setFormatter(ColoredFormatter())
+                self._console_added = True
+                return
+
+        # No console handler found, add one
         ch = logging.StreamHandler(stream=sys.stdout)
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(ColoredFormatter())
         self._logger.addHandler(ch)
+
+        # Prevent propagation to avoid duplicates
+        self._logger.propagate = False
+
         ## also, changing the logLevel of root logger
         self._logger.setLevel(logging.DEBUG)
+        self._console_added = True
+
+    def removeConsole(self) -> None:
+        """Remove console handlers."""
+        handlers_to_remove = []
+        for handler in self._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and handler.stream == sys.stdout:
+                handlers_to_remove.append(handler)
+
+        for handler in handlers_to_remove:
+            self._logger.removeHandler(handler)
+
+        self._console_added = False
 
     @property
     def logger(self):

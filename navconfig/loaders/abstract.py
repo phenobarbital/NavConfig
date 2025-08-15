@@ -1,9 +1,10 @@
-from typing import Any
-from typing import Union
+from typing import Any, Union
 from abc import ABC, abstractmethod
+import logging
 from pathlib import PurePath
 from io import StringIO
 from dotenv import dotenv_values, load_dotenv
+from ..project import validate_project_environment
 
 
 class BaseLoader(ABC):
@@ -20,18 +21,21 @@ class BaseLoader(ABC):
         self._kwargs = kwargs
         self.downloadable: bool = False
         self._content: Any = None
-        if isinstance(self.env_path, PurePath):
-            if not env_path.exists():
-                if create:
-                    try:
-                        env_path.mkdir(parents=True, exist_ok=True)
-                    except IOError as ex:
-                        raise RuntimeError(
-                            f"{type(self).__name__}: Error creating directory {env_path}: {ex}"
-                        ) from ex
-                raise FileExistsError(
-                    f"{type(self).__name__}: No Directory Path: {env_path}"
-                )
+        if isinstance(self.env_path, PurePath) and not env_path.exists():
+            if create:
+                try:
+                    env_path.mkdir(parents=True, exist_ok=True)
+                except IOError as ex:
+                    raise RuntimeError(
+                        f"{type(self).__name__}: Error creating directory {env_path}: {ex}"  # noqa
+                    ) from ex
+            env_status, warnings = validate_project_environment()
+            if env_status != 'ok':
+                for warning in warnings:
+                    logging.warning(f"NavConfig: {warning}")
+            raise FileExistsError(
+                f"{type(self).__name__}: No Directory Path: {env_path}"
+            )
 
     @abstractmethod
     def load_environment(self):
@@ -48,12 +52,11 @@ class BaseLoader(ABC):
         load_dotenv(stream=content, override=self.override)
 
     def load_from_string(self, content: Union[str, dict]):
-        if isinstance(content, str):
-            filelike = StringIO(content)
-            filelike.seek(0)
-            dotenv_values(stream=filelike)
-        else:
+        if not isinstance(content, str):
             return content
+        filelike = StringIO(content)
+        filelike.seek(0)
+        dotenv_values(stream=filelike)
 
     def load(self):
         # TODO: making some validation of content

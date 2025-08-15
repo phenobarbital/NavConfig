@@ -1,4 +1,5 @@
 import os
+import contextlib
 import logging
 from navconfig import BASE_DIR
 
@@ -8,6 +9,9 @@ os.chdir(str(BASE_DIR))
 logging.getLogger('asyncio').setLevel(logging.INFO)
 
 ### Example how to use Global-Settings.
+with contextlib.suppress(ImportError):
+    from settings import * # pylint: disable=W0401,W0614 # noqa
+
 try:
     from settings.settings import *  # pylint: disable=W0401,W0614 # noqa
 except ImportError as err:
@@ -21,9 +25,3 @@ except ImportError as err:
             " or settings/__init__.py module to customize your "
             " Configuration."
         )
-
-### User Local Settings
-try:
-    from settings.local_settings import *  # pylint: disable=W0401,W0614 # noqa
-except ImportError as err:
-    pass

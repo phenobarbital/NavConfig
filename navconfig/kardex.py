@@ -1,8 +1,9 @@
-import os
-import asyncio
 from typing import (
     Any,
 )
+import os
+import contextlib
+import asyncio
 from collections.abc import Callable
 import logging
 from configparser import (
@@ -67,6 +68,9 @@ class Kardex(metaclass=Singleton):
         # check if create is True (default: false)
         # create the required directories:
         self._create: bool = strtobool(os.getenv("CONFIG_CREATE", False))
+        self._auto_env: bool = strtobool(os.getenv("AUTO_DISCOVERY", "True"))
+        self._site_path: Path = None
+        self._env_loader: Callable = None
         self._ini: Callable = None
         lazy_load = strtobool(os.getenv('LAZY_LOAD', 'False'))
         # asyncio loop
@@ -98,11 +102,11 @@ class Kardex(metaclass=Singleton):
 
         Args:
             env (str, optional): Environment name (dev, prod).
-              Defaults to None.
+            Defaults to None.
             env_type (str, optional): type of enviroment.
-              Defaults to "file".
+            Defaults to "file".
             override (bool, optional): override current .env variables.
-              Defaults to False.
+            Defaults to False.
 
         Raises:
             ConfigError: Error on Configuration.
@@ -113,9 +117,9 @@ class Kardex(metaclass=Singleton):
         else:
             environment = os.getenv("ENV", "")
             self.ENV = environment
-        # getting type of enviroment consumer:
+        # getting type of environment consumer:
         try:
-            self.load_enviroment(
+            self.load_environment(
                 env_type,
                 override=override
             )
@@ -125,41 +129,38 @@ class Kardex(metaclass=Singleton):
             )
         # Get External Readers:
         self._use_redis: bool = strtobool(os.environ.get("USE_REDIS", False))
-        if self._use_redis:
-            if REDIS_LOADER:
-                try:
-                    self._readers["redis"] = REDIS_LOADER()
-                except ReaderNotSet as err:
-                    logging.error(f"{err}")
-                    self._use_redis = False
-                except Exception as err:
-                    logging.warning(f"Redis error: {err}")
-                    raise ConfigError(str(err)) from err
+        if self._use_redis and REDIS_LOADER:
+            try:
+                self._readers["redis"] = REDIS_LOADER()
+            except ReaderNotSet as err:
+                logging.error(f"{err}")
+                self._use_redis = False
+            except Exception as err:
+                logging.warning(f"Redis error: {err}")
+                raise ConfigError(str(err)) from err
         self._use_memcache: bool = strtobool(
             os.environ.get("USE_MEMCACHED", False)
         )
-        if self._use_memcache:
-            if MEMCACHE_LOADER:
-                try:
-                    self._readers["memcache"] = MEMCACHE_LOADER()
-                except ReaderNotSet as err:
-                    logging.error(f"{err}")
-                    self._use_memcache = False
-                except Exception as err:
-                    raise ConfigError(str(err)) from err
+        if self._use_memcache and MEMCACHE_LOADER:
+            try:
+                self._readers["memcache"] = MEMCACHE_LOADER()
+            except ReaderNotSet as err:
+                logging.error(f"{err}")
+                self._use_memcache = False
+            except Exception as err:
+                raise ConfigError(str(err)) from err
         ## Hashicorp Vault:
         self._use_vault: bool = strtobool(os.environ.get("USE_VAULT", False))
-        if self._use_vault:
-            if HVAULT_LOADER:
-                try:
-                    self._readers["vault"] = HVAULT_LOADER(
-                        env=self.ENV
-                    )
-                except ReaderNotSet as err:
-                    logging.error(f"{err}")
-                except Exception as err:
-                    logging.warning(f"Vault error: {err}")
-                    raise ConfigError(str(err)) from err
+        if self._use_vault and HVAULT_LOADER:
+            try:
+                self._readers["vault"] = HVAULT_LOADER(
+                    env=self.ENV
+                )
+            except ReaderNotSet as err:
+                logging.error(f"{err}")
+            except Exception as err:
+                logging.warning(f"Vault error: {err}")
+                raise ConfigError(str(err)) from err
         # define debug
         self._debug = bool(self.getboolean("DEBUG", fallback=False))
         # and get the config file declared in the environment file
@@ -188,10 +189,8 @@ class Kardex(metaclass=Singleton):
                 f"Navconfig: INI file doesn't exists on path: {cf!s}"
             )
             if self._create is True:
-                try:
+                with contextlib.suppress(IOError):
                     cf.mkdir(parents=True, exist_ok=True)
-                except IOError:
-                    pass
         # Running Load PyProject:
         self.load_pyproject()
         # Defined as initialized:
@@ -228,7 +227,7 @@ class Kardex(metaclass=Singleton):
             project_file = os.getenv("PROJECT_FILE", "pyproject.toml")
             if isinstance(project_path, str):
                 project_path = Path(project_path).resolve()
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 self._pyproject = pyProjectLoader(
                     env_path=project_path,
                     project_name=project_name,
@@ -237,9 +236,6 @@ class Kardex(metaclass=Singleton):
                 )
                 data = self._pyproject.load_environment()
                 self._mapping_ = {**self._mapping_, **data}
-            except FileNotFoundError:
-                # don't raise an error if file doesn't exist
-                pass
         except Exception as err:
             logging.exception(err)
             raise ConfigError(
@@ -255,7 +251,7 @@ class Kardex(metaclass=Singleton):
         if self._env_loader.downloadable is True:
             self._env_loader.save_enviroment(env_path)
 
-    def load_enviroment(self, env_type: str = "file", override: bool = False):
+    def load_environment(self, env_type: str = "file", override: bool = False):
         """load_environment.
         Load an environment from a File or any pluggable Origin.
         """
@@ -271,6 +267,7 @@ class Kardex(metaclass=Singleton):
                 override=override,
                 create=self._create,
                 env=self.ENV,
+                auto=self._auto_env
             )
             self._mapping_ = self._env_loader.load_environment()
             if self._mapping_ is None:
@@ -330,17 +327,16 @@ class Kardex(metaclass=Singleton):
         Args:
             file (Path): File to be loaded on ENV
             override (bool, optional): Override current ENV variables.
-              Defaults to False.
+            Defaults to False.
         """
-        if file.exists() and file.is_file():
-            try:
-                load_dotenv(dotenv_path=file, override=override)
-            except Exception as err:
-                raise KardexError(str(err)) from err
-        else:
+        if not file.exists() or not file.is_file():
             raise ConfigError(
                 f"Failed to load a new ENV file from {file}"
             )
+        try:
+            load_dotenv(dotenv_path=file, override=override)
+        except Exception as err:
+            raise KardexError(str(err)) from err
 
     def _get_external(self, key: str) -> Any:
         """Get value fron an External Reader."""
@@ -375,14 +371,10 @@ class Kardex(metaclass=Singleton):
                 return strtobool(val)
             elif self._ini:
                 try:
-                    val = self._ini.getboolean(section, key)
-                    return val
+                    return self._ini.getboolean(section, key)
                 except ValueError:
                     val = self._ini.get(section, key)
-                    if not val:
-                        return fallback
-                    else:
-                        return self._ini.BOOLEAN_STATES[val.lower()]
+                    return self._ini.BOOLEAN_STATES[val.lower()] if val else fallback  # noqa
                 except (NoOptionError, NoSectionError):
                     return fallback
         # get ENV value
@@ -394,10 +386,7 @@ class Kardex(metaclass=Singleton):
         else:
             val = self._get_external(key)
             val = self._unserialize(val)
-        if val:
-            return strtobool(val)
-        else:
-            return fallback
+        return strtobool(val) if val else fallback
 
     def getint(self, key: str, section: str = None, fallback: Any = None):
         """
@@ -409,10 +398,8 @@ class Kardex(metaclass=Singleton):
             if section in self._mapping_:
                 val = self._mapping_[section]
             else:
-                try:
+                with contextlib.suppress(NoOptionError, NoSectionError):
                     val = self._ini.getint(section, key)
-                except (NoOptionError, NoSectionError):
-                    pass
         elif key in os.environ:
             val = os.getenv(key, fallback)
         else:
@@ -422,9 +409,7 @@ class Kardex(metaclass=Singleton):
         try:
             return int(val)
         except (TypeError, ValueError):
-            if val.isdigit():
-                return int(val)
-            return fallback
+            return int(val) if val.isdigit() else fallback
 
     def getlist(self, key: str, section: str = None, fallback: Any = None):
         """
@@ -436,10 +421,8 @@ class Kardex(metaclass=Singleton):
             if section in self._mapping_:
                 val = self._mapping_[section]
             else:
-                try:
+                with contextlib.suppress(NoOptionError, NoSectionError):
                     val = self._ini.get(section, key)
-                except (NoOptionError, NoSectionError):
-                    pass
         if key in os.environ:
             val = os.getenv(key, fallback)
             val = self._unserialize(val)
@@ -447,10 +430,7 @@ class Kardex(metaclass=Singleton):
             val = self._mapping_[key]
             if isinstance(val, (list, tuple)):
                 return val
-        if val:
-            return val.split(",")
-        else:
-            return []
+        return val.split(",") if val else []
 
     def getdict(self, key: str) -> dict:
         if key in self._mapping_:
@@ -467,14 +447,10 @@ class Kardex(metaclass=Singleton):
         # if not val and if section, get from INI
         if section is not None:
             if section in self._mapping_:
-                val = self._mapping_[section]
-                return val
+                return self._mapping_[section]
             elif self._ini:
-                try:
-                    val = self._ini.get(section, key)
-                    return val
-                except (NoOptionError, NoSectionError):
-                    pass
+                with contextlib.suppress(NoOptionError, NoSectionError):
+                    return self._ini.get(section, key)
         if key in self._mapping_:
             return self._mapping_[key]
         # get ENV value
@@ -496,8 +472,7 @@ class Kardex(metaclass=Singleton):
             os.environ[key] = value
         elif key in self._mapping_:
             return self._mapping_[key]
-        else:
-            pass  # Adding to Mutable Mapping
+        # Adding to Mutable Mapping
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -506,17 +481,12 @@ class Kardex(metaclass=Singleton):
         return self.get(key)
 
     def __contains__(self, key: str) -> bool:
-        if key in os.environ:
-            return True
-        elif key in self._mapping_:
+        if key in os.environ or key in self._mapping_:
             return True
         else:
             for _, reader in self._readers.items():
                 val = reader.exists(key)
-                if val is True:
-                    return True
-                else:
-                    return False
+                return val is True
             return False
 
     def exists(self, key: str) -> bool:
@@ -616,19 +586,13 @@ class Kardex(metaclass=Singleton):
             set a variable in redis with expiration
         """
         if self._use_redis:
-            if not isinstance(timeout, int):
-                time = 3600
-            else:
-                time = timeout
+            time = timeout if isinstance(timeout, int) else 3600
             try:
                 return self._readers["redis"].set(key, value, time)
             except KeyError:
                 logging.warning(f"Unable to Set key {key} in Redis")
-        elif vault is True:
-            if not isinstance(timeout, int):
-                time = 3600
-            else:
-                time = timeout
+        elif vault:
+            time = timeout if isinstance(timeout, int) else 3600
             try:
                 return self._readers["vault"].set(key, value, timeout=timeout)
             except (ValueError, AttributeError):

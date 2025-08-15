@@ -1,52 +1,246 @@
 [build-system]
 requires = [
-  'setuptools==74.0.0',
-  'Cython==3.0.11',
-  'wheel==0.44.0',
+    "setuptools>=74.0.0",
+    "Cython>=3.0.11",
+    "wheel>=0.44.0",
 ]
-
 build-backend = "setuptools.build_meta"
 
-[metadata]
+[project]
 name = "navconfig"
 description = "Universal Configuration Management for Python Projects."
-author = "Jesus Lara Gimenez"
-author_email = "jesuslarag@gmail.com"
-url = "https://github.com/phenobarbital/navconfig"
-license = "MIT"
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: Developers",
-  "Intended Audience :: System Administrators",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python",
-  "Typing :: Typed",
-  "Environment :: Web Environment",
-  "Framework :: AsyncIO",
-  "Topic :: Software Development :: Libraries :: Application Frameworks",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Software Development :: Build Tools",
-  "License :: OSI Approved :: MIT License",
+authors = [
+    {name = "Jesus Lara Gimenez", email = "jesuslarag@gmail.com"},
 ]
-long_description = "file:README.md"
-long_description_content_type = "text/markdown"
+maintainers = [
+    {name = "Jesus Lara", email = "jesuslara@phenobarbital.info"},
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10.1"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python",
+    "Typing :: Typed",
+    "Environment :: Web Environment",
+    "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: MIT License",
+]
 keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
-python_requires = ">=3.10.1"
+dependencies = [
+    "Cython>=3.0.11",
+    "asyncio>=3.4.3",
+    "python-dotenv>=1.0.1",
+    "configparser>=6.0.0",
+    "python-dateutil>=2.8.2",
+    "objectpath>=0.6.1",
+    "iso8601>=2.1.0",
+    "pycparser>=2.21",
+    "orjson>=3.10.3",
+    "pycryptodomex>=3.20.0",
+    "cryptography>=43.0.1",
+    "aiofiles>=23.2.1,<=24.1.0",
+    "jsonpickle>=1.2,<=3.0.2",
+    "pytomlpp>=1.0.13",
+    "PyYAML>=6.0",
+]
+dynamic = ["version"]
 
+[project.urls]
+Homepage = "https://github.com/phenobarbital/navconfig"
+Repository = "https://github.com/phenobarbital/navconfig"
+Documentation = "https://github.com/phenobarbital/navconfig"
+"Bug Tracker" = "https://github.com/phenobarbital/navconfig/issues"
+Funding = "https://paypal.me/phenobarbital"
+"Say Thanks!" = "https://saythanks.io/to/phenobarbital"
 
+[project.optional-dependencies]
+uvloop = [
+    "uvloop>=0.21.0"
+]
+memcache = [
+    "pylibmc>=1.6.3",
+    "aiomcache>=0.8.2",
+]
+gdrive = [
+    "PyDrive>=1.3.1",
+]
+logstash = [
+    "python-logstash-async>=2.7.2,<=3.0.0",
+]
+redis = [
+    "redis>=5.0.8,<=5.2.1",
+]
+hvac = [
+    "hvac>=2.3.0"
+]
+# Convenience groups
+default = [
+    "pytomlpp>=1.0.13",
+    "redis>=5.0.8,<=5.2.1",
+    "python-logstash-async>=2.7.2",
+    "PyYAML>=6.0",
+    "hvac>=2.3.0"
+]
+all = [
+    "pytomlpp>=1.0.13",
+    "redis>=5.0.8,<=5.2.1",
+    "python-logstash-async>=2.7.2",
+    "PyYAML>=6.0",
+    "aiomcache>=0.8.2",
+    "hvac>=2.3.0",
+    "uvloop>=0.21.0"
+]
+# Build dependencies (needed for Cython compilation)
+build = [
+    "setuptools>=74.0.0",
+    "Cython>=3.0.11",
+    "wheel>=0.44.0",
+]
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+[tool.setuptools]
+packages = ["navconfig"]
+zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {attr = "navconfig.version.__version__"}
+
+[tool.setuptools.package-data]
+navconfig = ["py.typed", "*.pyi", "**/*.pyi"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["tests*", "docs*", "settings*", "examples*", "dist*", "etc*"]
+
+# Testing configuration
 [tool.pytest.ini_options]
 addopts = [
-  "--strict-config",
-  "--strict-markers",
+    "--strict-config",
+    "--strict-markers",
+    "--tb=short",
+    "-v"
 ]
 filterwarnings = [
     "error",
-    'ignore:The loop argument is deprecated since Python 3\.8, and scheduled for removal in Python 3\.10:DeprecationWarning:asyncio',
+    "ignore:The loop argument is deprecated since Python 3\\.8, and scheduled for removal in Python 3\\.10:DeprecationWarning:asyncio",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["navconfig"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "setup.py",
+    "*/venv/*",
+    "*/.venv/*",
 ]
 
-[navconfig]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+# Linting and formatting
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by formatter
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.ruff.isort]
+known-first-party = ["navconfig"]
+
+# Black formatting (if you want to use it alongside ruff)
+[tool.black]
+target-version = ["py310", "py311", "py312"]
+line-length = 88
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# MyPy type checking
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "Cython.*",
+    "uvloop.*",
+    "redis.*",
+    "pylibmc.*",
+    "hvac.*",
+    "pytomlpp.*",
+]
+ignore_missing_imports = true
+
+# NavConfig specific configuration (your own tool config)
+[tool.navconfig]
 keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
+# You can add other navconfig-specific settings here
