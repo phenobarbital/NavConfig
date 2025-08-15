@@ -84,6 +84,22 @@ redis = [
 hvac = [
     "hvac>=2.3.0"
 ]
+# Build dependencies (needed for Cython compilation)
+build = [
+    "setuptools>=74.0.0",
+    "Cython>=3.0.11",
+    "wheel>=0.44.0",
+]
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
 # Convenience groups
 default = [
     "pytomlpp>=1.0.13",
@@ -101,35 +117,30 @@ all = [
     "hvac>=2.3.0",
     "uvloop>=0.21.0"
 ]
-# Build dependencies (needed for Cython compilation)
-build = [
-    "setuptools>=74.0.0",
-    "Cython>=3.0.11",
-    "wheel>=0.44.0",
-]
-# Development dependencies
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.21.0",
-    "ruff>=0.1.0",
-    "black>=23.0.0",
-    "mypy>=1.0.0",
-    "pre-commit>=3.0.0",
-]
 
 [tool.setuptools]
 packages = ["navconfig"]
 zip-safe = false
+include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "navconfig.version.__version__"}
 
 [tool.setuptools.package-data]
-navconfig = ["py.typed", "*.pyi", "**/*.pyi"]
+navconfig = [
+    "py.typed",
+    "*.pyi",
+    "**/*.pyi",
+    "*.py",
+    "**/*.py",
+    "*.yaml",
+    "*.yml",
+    "*.toml"
+]
 
-[tool.setuptools.exclude-package-data]
-"*" = ["tests*", "docs*", "settings*", "examples*", "dist*", "etc*"]
+[tool.setuptools.packages.find]
+include = ["navconfig*"]
+exclude = ["tests*", "docs*", "examples*"]
 
 # Testing configuration
 [tool.pytest.ini_options]
@@ -243,4 +254,3 @@ ignore_missing_imports = true
 # NavConfig specific configuration (your own tool config)
 [tool.navconfig]
 keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
-# You can add other navconfig-specific settings here
