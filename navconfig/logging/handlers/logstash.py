@@ -6,7 +6,7 @@ except ImportError as ex:
     raise RuntimeError(
         "NavConfig: Logstash Logging is enabled but Logstash async \
             dependency is not installed.\
-        Hint: run 'pip install logstash_async'."
+        Hint: run 'pip install python-logstash-async'."
     ) from ex
 from .abstract import AbstractLog
 

@@ -14,7 +14,7 @@ def get_environment() -> str:
 
 def get_env_type() -> str:
     # environment type can be a file (.env) an encrypted file (crypt)
-    return os.getenv("ENV_TYPE", "file")
+    return os.getenv("ENV_TYPE", "vault")
 
 
 def is_virtualenv() -> bool:
