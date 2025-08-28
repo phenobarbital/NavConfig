@@ -19,23 +19,22 @@ class VaultReader(AbstractReader):
 
     def __init__(self, env: str = None) -> None:
         url = os.getenv(
-            "VAULT_HVAC_URL",
+            "VAULT_URL",
             "http://localhost:8200"
         )
-        token = os.getenv("VAULT_HVAC_TOKEN")
-        self.version = int(os.getenv("VAULT_HVAC_VERSION", 1))
-        self._mount = os.getenv("VAULT_HVAC_MOUNT_POINT", "navigator")
-        self._env = env
-        if not self._env:
-            self._env = os.getenv("ENV", "")
+        token = os.getenv("VAULT_TOKEN")
+        self.version = int(os.getenv("VAULT_VERSION", 2))
+        self._mount = os.getenv("VAULT_MOUNT_POINT", "navigator")
+        self._env = env or os.getenv("ENV", "")
         if not token:
-            raise ValueError("VAULT_HVAC_TOKEN is not set")
+            raise ValueError("VAULT_TOKEN is not set")
         try:
             self.client = hvac.Client(url=url, token=token)
             self.open()
         except Exception as err:  # pylint: disable=W0703
             self.enabled = False
-            raise ReaderNotSet(f"Vault Error: {err}")
+            raise ReaderNotSet(f"Vault Error: {err}") from err
+        self.enabled = True
 
     def open(self) -> bool:
         if self.client.is_authenticated():
@@ -67,7 +66,6 @@ class VaultReader(AbstractReader):
             secret_key = key
         try:
             if self.version == 1:
-                print('GET > ', secret_path, self._mount)
                 response = self.client.secrets.kv.v1.read_secret(
                     path=secret_path, mount_point=self._mount
                 )
@@ -78,6 +76,9 @@ class VaultReader(AbstractReader):
                 )
                 data = response["data"]["data"]
         except hvac.exceptions.InvalidPath:
+            return default
+        except Exception as e:
+            logging.debug(f"Vault get error for {key}: {e}")
             return default
 
         if secret_key == "*":
@@ -117,6 +118,10 @@ class VaultReader(AbstractReader):
                 data = response["data"]["data"]
         except hvac.exceptions.InvalidPath:
             return False
+        except Exception as e:
+            logging.debug(f"Vault exists error for {key}: {e}")
+            return False
+
         if secret_key == "*":
             return True
         return secret_key in data
@@ -229,34 +234,81 @@ class VaultReader(AbstractReader):
             )
             return False
 
-    def list(self, path: str = None, filter: str = None) -> list:
+    def list(self, path: str = None, filter: str = None) -> dict:
+        """
+        List and return all secrets from the specified path.
+
+        This method now returns the actual secret data (key-value pairs)
+        instead of just listing secret names, making it compatible with
+        the unified vault loader.
+        """
         if self.enabled is False:
             raise ReaderNotSet()
-        data = {}
-        secret_path = path if path else self._env
+
+        secret_path = path or self._env
+
         try:
             if self.version == 1:
+                # For KV v1, read the secret directly
                 response = self.client.secrets.kv.v1.read_secret(
                     path=secret_path, mount_point=self._mount
                 )
                 data = response["data"]
+
             elif self.version == 2:
-                response = self.client.secrets.kv.v2.list_secrets(
+                # For KV v2, read the secret version
+                response = self.client.secrets.kv.v2.read_secret_version(
                     path=secret_path, mount_point=self._mount
                 )
                 data = response["data"]["data"]
             else:
                 raise ValueError("Invalid KV version specified")
 
-            result = data
+            # Apply filter if specified
             if filter:
-                result = {
-                    k: v for k, v in data.items() if k.startswith(filter)
+                data = {
+                    k: v for k, v in data.items()
+                    if k.startswith(filter)
                 }
-            return result
 
-        except hvac.exceptions.InvalidPath as ex:
+            logging.debug(f"Retrieved {len(data)} secrets from vault path '{secret_path}'")
+            return data
+
+        except hvac.exceptions.InvalidPath:
+            logging.debug(f"No secrets found at vault path '{secret_path}'")
             return {}
         except Exception as e:
-            print(f"Error listing keys at path '{secret_path}': {e}")
+            logging.warning(f"Error listing secrets at path '{secret_path}': {e}")
             return {}
+
+    def list_paths(self, path: str = None) -> list:
+        """
+        List secret paths (directories/keys) at the specified path.
+
+        This is separate from list() which returns actual secret data.
+        Useful for discovering what secret paths are available.
+        """
+        if self.enabled is False:
+            raise ReaderNotSet()
+
+        secret_path = path or ""
+
+        try:
+            if self.version == 1:
+                # KV v1 doesn't have a list operation, return empty list
+                logging.debug("KV v1 doesn't support path listing")
+                return []
+
+            elif self.version == 2:
+                # For KV v2, use list_secrets to get paths
+                response = self.client.secrets.kv.v2.list_secrets(
+                    path=secret_path, mount_point=self._mount
+                )
+                return response["data"]["keys"]
+
+        except hvac.exceptions.InvalidPath:
+            logging.debug(f"No paths found at '{secret_path}'")
+            return []
+        except Exception as e:
+            logging.debug(f"Error listing paths at '{secret_path}': {e}")
+            return []
