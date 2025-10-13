@@ -34,7 +34,11 @@ class BaseLoader(ABC):
                 for warning in warnings:
                     logging.warning(f"NavConfig: {warning}")
             raise FileExistsError(
-                f"{type(self).__name__}: No Directory Path: {env_path}"
+                "NavConfig could not find the expected environment directory. "
+                f"Looked for: {env_path}.\n"
+                "NavConfig projects require an 'env/<environment>/.env' file. "
+                "Run `kardex create` to scaffold the default structure (env folder, "
+                "base .env file, and etc/config.ini)."
             )
 
     @abstractmethod
