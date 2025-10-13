@@ -58,6 +58,9 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.scripts]
+kardex = "navconfig.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/phenobarbital/navconfig"
 Repository = "https://github.com/phenobarbital/navconfig"

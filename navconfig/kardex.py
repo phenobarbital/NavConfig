@@ -290,8 +290,16 @@ class Kardex(metaclass=Singleton):
             if self._mapping_ is None:
                 self._mapping_ = {}  # empty dict
         except (FileExistsError, FileNotFoundError) as ex:
-            logging.warning(str(ex))
-            raise
+            error_message = (
+                "NavConfig initialization failed: environment assets are missing.\n"
+                f"Original error: {ex}\n"
+                "Ensure your project contains an 'env' directory with the selected "
+                "environment subfolder and a '.env' file (e.g. env/"
+                f"{self.ENV or 'dev'}/.env).\n"
+                "You can scaffold the required files by running `kardex create`."
+            )
+            logging.warning(error_message)
+            raise type(ex)(error_message) from ex
         except RuntimeError as ex:
             raise RuntimeError(str(ex)) from ex
         except Exception as ex:
