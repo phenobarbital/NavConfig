@@ -108,12 +108,22 @@ class vaultLoader(BaseLoader):
         # Step 3: Load additional .env.* files (excluding base .env)
         file_data = self._load_additional_env_files()
 
-        # Step 4: Merge data with precedence: vault > additional files > base .env
+        # Step 4: Merge file data
         for key, value in file_data.items():
-            if key not in all_data:  # Only add if not in vault or base .env
+            if key not in all_data:
                 all_data[key] = value
 
         self.file_data = file_data
+        override_files = os.getenv("NAVCONFIG_FILE_OVERRIDE_ENABLED", "")
+        file_wins = override_files.lower() in ("true", "1", "yes")
+        if file_wins:
+            # File wins: base .env and .env.* override vault values
+            for key, value in {**base_env_data, **file_data}.items():
+                all_data[key] = value
+        elif self.vault_data:
+            # Vault wins: vault overrides any file values
+            for key, value in self.vault_data.items():
+                all_data[key] = value
 
         # Step 5: Update environment variables
         self._update_environment_variables(all_data)
