@@ -13,8 +13,10 @@ Supports:
 """
 from pathlib import Path
 from logging.config import dictConfig
+from logging import setLoggerClass
 from navconfig import config, BASE_DIR
 from .logger import logging, Logger, LOGLEVEL, ColoredFormatter
+from .formatter import VerboseLogger
 
 ### Logging
 loglevel = LOGLEVEL
@@ -221,6 +223,7 @@ if logging_enable_logstash is True:
         )
 
 ### Load Logging Configuration:
+setLoggerClass(VerboseLogger)
 dictConfig(logging_config)
 
 ### configure basic logger for navconfig
