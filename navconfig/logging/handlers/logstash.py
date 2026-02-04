@@ -1,13 +1,14 @@
 # basic configuration of Logstash
 import socket
+
+# Check if logstash_async is available
+LOGSTASH_AVAILABLE = False
 try:
     import logstash_async  # pylint: disable=W0611
-except ImportError as ex:
-    raise RuntimeError(
-        "NavConfig: Logstash Logging is enabled but Logstash async \
-            dependency is not installed.\
-        Hint: run 'pip install python-logstash-async'."
-    ) from ex
+    LOGSTASH_AVAILABLE = True
+except ImportError:
+    pass
+
 from .abstract import AbstractLog
 
 
