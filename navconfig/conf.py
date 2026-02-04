@@ -8,20 +8,10 @@ os.chdir(str(BASE_DIR))
 # Reduce asyncio log level:
 logging.getLogger('asyncio').setLevel(logging.INFO)
 
-### Example how to use Global-Settings.
+### Load Global-Settings if available (optional).
+### The settings package is not mandatory for navconfig to work.
 with contextlib.suppress(ImportError):
-    from settings import * # pylint: disable=W0401,W0614 # noqa
-
-try:
-    from settings.settings import *  # pylint: disable=W0401,W0614 # noqa
-except ImportError as err:
     try:
+        from settings.settings import *  # pylint: disable=W0401,W0614 # noqa
+    except ImportError:
         from settings import *  # pylint: disable=W0401,W0614 # noqa
-    except ImportError as err:
-        logging.error("There is no *settings/* module in project.")
-        print(
-            "Settings.py File is missing."
-            "Hint: Its recommended to use a settings/settings.py"
-            " or settings/__init__.py module to customize your "
-            " Configuration."
-        )
