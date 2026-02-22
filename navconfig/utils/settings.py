@@ -1,5 +1,4 @@
 import sys
-import logging
 from pathlib import Path
 
 
@@ -23,26 +22,22 @@ def ensure_settings_priority(settings_dir: Path) -> bool:
     # Add project settings Path
     sys.path.append(settings_path)
 
-    # Also, warns for any conflicts with other settings modules:
-    # Check for conflicts
-    has_conflict, conflict_path = check_settings_conflicts(settings_dir)
+    # Also check for conflicts and silently adjust sys.path:
+    has_conflict, _conflict_path = check_settings_conflicts(settings_dir)
     if has_conflict:
-        logging.warning(
-            f"WARNING: Found a settings package/module in the virtualenv at {conflict_path} "
-            f"that might be imported instead of the project's settings. "
-            f"NavConfig is adjusting sys.path to prioritize the project's settings."
-        )
+        # Silently adjust sys.path to prioritize the project's settings.
+        # Insert at position 0 so the project settings take precedence.
+        if settings_path in sys.path:
+            sys.path.remove(settings_path)
+        sys.path.insert(0, settings_path)
 
     return True
 
 def check_settings_conflicts(settings_dir: Path) -> tuple:
-    """
-    Check for conflicts with other settings modules in the
-    virtualenv and return a tuple indicating if a conflict exists
-    and the path of the conflicting module.
+    """Check for conflicts with other settings modules in sys.path.
 
     Args:
-        project_settings_path (Path): Path to the project's settings directory
+        settings_dir (Path): Path to the project's settings directory.
 
     Returns:
         tuple: (has_conflict, conflicting_path)
