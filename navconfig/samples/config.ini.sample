@@ -1,0 +1,27 @@
+[general]
+# General application settings.
+DEBUG = true
+APP_NAME = MyApp
+
+[logging]
+# Logging configuration.
+# Log directory (relative or absolute path).
+logdir = logs
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+loglevel = DEBUG
+# Echo log output to the console (true/false).
+logging_echo = true
+# Enable rotating file handler (true/false).
+filehandler_enabled = false
+# Enable Logstash handler (true/false).
+logstash_enabled = false
+# Enable email alerts on CRITICAL errors (true/false).
+mailer_enabled = false
+# Disable loggers from third-party libraries (true/false).
+logging_disable_other = false
+# Comma-separated list of handlers to use.
+handlers = console
+
+[temp]
+# Temporary file directory.
+temp_path = /tmp

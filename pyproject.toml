@@ -143,7 +143,10 @@ navconfig = [
     "**/*.py",
     "*.yaml",
     "*.yml",
-    "*.toml"
+    "*.toml",
+    "*.ini",
+    "*.sample",
+    "**/*.sample",
 ]
 
 # Testing configuration

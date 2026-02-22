@@ -1,239 +1,280 @@
-# Navigator NavConfig #
+# NavConfig
 
-NavConfig is a configuration tool for getting variables from environment and other sources.
-Is used by Navigator Framework, but is possible to use in other applications as well.
+NavConfig is a configuration management library for Python projects. It is
+the default configuration layer of the Navigator Framework, but it works
+perfectly as a stand-alone tool for any Python application.
 
-NavConfig can load Configuration directives from different sources (can be mixed):
+NavConfig can load configuration directives from multiple sources (and
+combine them):
 
-- Environment files (.env)
-- pyproject.toml files
-- INI files (using configParser)
-- TOML/YAML files
-- REDIS variables
-- Memcached Variables
-- Python files (using settings.py)
+- Environment files (`.env`)
+- INI files (via `configparser`)
+- TOML and YAML files
+- `pyproject.toml`
+- Redis
+- Memcached
+- HashiCorp Vault
+- Python settings modules (`settings/settings.py`)
 
-The main goal of NavConfig is centralize configuration access in a single and
-immutable unique point of truth.
+The main goal of NavConfig is to centralize configuration access through a
+single, immutable point of truth that can be shared across modules.
 
-NavConfig can be shared across several modules.
 
-## Motivation ##
+## Motivation
 
-Any Application requires too many configuration options, some configuration options need to be secrets, credentials, etc, and also, can depend on the environment where the application runs (development, testing, production, etc.).
+Applications require many configuration options. Some of those options hold
+secrets or credentials and must be kept separate from general settings.
+Configuration also varies between environments (development, staging,
+production).
 
-Instead of creating Python files, we are using python-dotenv + INI files to separate concerns (secrets vs configuration options), NavConfig also supports getting data instead of INI files from YAML or TOML files (for complex types), pyproject.toml files or REDIS variables.
+NavConfig addresses this by loading secrets from `.env` files and structured
+settings from INI/TOML/YAML files, keeping concerns separated. It also
+supports retrieving configuration from external stores such as Redis,
+Memcached, or HashiCorp Vault.
+
 
 ## Installation
+
 ```bash
 pip install navconfig
 ```
 
-if you're looking for supporting memcache,redis:
+To include optional backends:
 
 ```bash
-pip install navconfig[memcache,redis]
-```
+# Redis and Memcached support
+pip install navconfig[redis,memcache]
 
-or adding all features, including logging facility with Logstash Support:
-
-```bash
+# All features, including Logstash logging
 pip install navconfig[all]
 ```
 
-## Quickstart ##
 
-First of all, let's create a simple configuration environment.
+## Quickstart
 
-Creates a directory for an .INI file and the environment (.env) file.
+### Bootstrapping a new project with `kardex`
+
+NavConfig ships a small CLI called `kardex` that creates the directory layout
+your project needs.
 
 ```bash
-mkdir {env,etc}
+kardex create --env dev
 ```
 
-put a .env file inside of the "env" folder, the first line is the directive to know where the "INI" file lives (even if we can put the . INI file outside of the current dir).
-
-the directory tree is very simple:
+This command generates the following structure in the current directory:
 
 ```text
-|- myapp/
-|  |- __init__.py
-|  |- pyproject.toml
-|  |- env/
-|  |  |- .env
-|  |  |- dev/
-|  |  |- .env
-|  |  |- prod/
-|  |  |- .env
-|  |- etc/
-|  |  |- myconfig.ini
-|  | ...
-```
-
-```text
-# file: .env
-CONFIG_FILE=etc/myconfig.ini # CONFIG FILE reference to INI location.
-APP_NAME=My App
-```
-
-Navconfig exposes a "config" object to retrieve your environment variables inside your application.
-
-```python
-from navconfig import config
-
-APP_NAME = config.get('APP_NAME')
-# the result is "My App".
-
-```
-
-but also you can use config as a object:
-
-```python
-from navconfig import config
-
-APP_NAME = config.APP_NAME
-# the result is "My App".
-
-```
-
-## Retrieving values ##
-
-Once an instance of `NavConfig` has been installed, values can be retrieved through:
-
-```python
->>> config.get("APP_NAME")
-'My App'
-```
-
-there are options available for retrieving values as strings (`get`), integer (`getint()`), booleans (`getboolean()`), but also lists (`getlist()`) and dictionaries (`getdict()`).
-
-An optional second argument can be provided to any `get*` which will be returned as default if
-the given config key isn't found:
-
-```python
->>> config.get("APP_NAME", "My App")
-'My App'
-```
-
-## Configuration directories ##
-
-By default, `NavConfig` will look for configuration files the base path of project, based on the file type:
-
- * .env files will be searched on a `env/` directory.
- * .yml/.toml files will be searched on `env/` directory.
- * pyproject.toml file will be searched on root of project.
- * .ini files will be searched on `etc/` directory.
-
-## Working with Environments ##
-
-NavConfig can load all environment variables (and the .INI files associated within the .env file) from different directories,
-every directory works as a new Environment and you can split your configuration for different environments, like this:
-
-```
-env/
 .
-├── dev
-|  |- .env
-├── prod
-|  |- .env
-├── staging
-|  |- .env
-└── experimental
-|  |- .env
+|-- env/
+|   +-- dev/
+|       +-- .env
+|-- etc/
+|   +-- config.ini
++-- logs/
 ```
 
-Then, you can load your application using the "ENV" environment variable:
+- `env/dev/.env` -- environment variables (secrets, feature flags, paths).
+- `etc/config.ini` -- INI-based settings consumed by NavConfig, including a
+  `[logging]` section.
+- `logs/` -- default directory where rotating log files are written.
+
+The generated files come from the bundled samples in
+`navconfig/samples/`. You can inspect or customize those samples before
+running `kardex create`.
+
+Use `--path` to point to a different project root:
 
 ```bash
-ENV=dev python app.py
+kardex create --env dev --path /srv/myapp
+```
+
+### Creating additional environments
+
+Once the base structure exists you can add more environments:
+
+```bash
+kardex new-env prod
+```
+
+This copies `env/.env` (or the bundled sample if no base file exists) into
+`env/prod/.env`, adjusting the `ENV` variable automatically.
+
+To include HashiCorp Vault connection variables in the new environment, pass
+`--vault`:
+
+```bash
+kardex new-env staging --vault
+```
+
+The generated `.env` will contain extra variables such as `VAULT_ADDR`,
+`VAULT_TOKEN`, `VAULT_MOUNT_POINT`, and others that NavConfig can use when
+`ENV_TYPE=vault`.
+
+### Directory layout
+
+A typical project looks like this:
+
+```text
+myapp/
+|-- __init__.py
+|-- pyproject.toml
+|-- env/
+|   |-- .env          (optional base file)
+|   |-- dev/
+|   |   +-- .env
+|   |-- staging/
+|   |   +-- .env
+|   +-- prod/
+|       +-- .env
+|-- etc/
+|   +-- config.ini
+|-- logs/
++-- settings/
+    |-- __init__.py
+    +-- settings.py   (optional)
+```
+
+### Selecting an environment
+
+Set the `ENV` variable before starting your application:
+
+```bash
+ENV=prod python app.py
+```
+
+NavConfig will load `env/prod/.env` and any INI file referenced by its
+`CONFIG_FILE` directive.
+
+### Accessing configuration
+
+```python
+from navconfig import config
+
+APP_NAME = config.get("APP_NAME")
+# "MyApp"
+```
+
+Attribute-style access also works:
+
+```python
+APP_NAME = config.APP_NAME
+```
+
+### Typed accessors
+
+```python
+config.get("APP_NAME")                  # str
+config.getint("PORT", fallback=8080)    # int
+config.getboolean("DEBUG")             # bool
+config.getlist("ALLOWED_HOSTS")        # list (comma-separated)
+config.getdict("EXTRA")               # dict
+```
+
+An optional `fallback` argument is returned when the key is not found:
+
+```python
+config.get("MISSING_KEY", "default_value")
 ```
 
 
-## Configure Logging ##
+## Configuration directories
 
-NavConfig has owns logging facility, if you load logging_config from Navconfig, you will get
-a logging configuration using the Python dictConfig format.
+By default NavConfig looks for files relative to the project root:
 
-also, if you put an environment variable called "logstash_enabled = True", there is a ready to use Logging facility using Logstash.
+| File type            | Default location            |
+| -------------------- | --------------------------- |
+| `.env`               | `env/` (plus ENV subdirectory) |
+| `.yml` / `.toml`     | `env/`                      |
+| `pyproject.toml`     | project root                |
+| `.ini`               | `etc/`                      |
+
+
+## Configure logging
+
+NavConfig provides a ready-to-use logging facility. Import `logging_config`
+and apply it with `dictConfig`:
 
 ```python
 import logging
-from navconfig.logging import (
-    logdir,
-    loglevel,
-    logging_config
-)
+from navconfig.logging import logdir, loglevel, logging_config
 from logging.config import dictConfig
+
 dictConfig(logging_config)
 ```
 
-To use just the logger as expected with logging.getLogger(), e.g.
+Then use `logging.getLogger()` as usual:
 
 ```python
-logger = logging.getLogger('MY_APP_NAME')
-logger.info('Hello World')
+logger = logging.getLogger("MY_APP")
+logger.info("Hello World")
 ```
-By default, the current logging configuration make echo to the standard output:
 
-```bash
-[INFO] 2022-03-11 19:31:39,408 navigator: Hello World
+Console output uses colored formatting by default:
+
 ```
-## Custom Settings ##
+[INFO] 2024-03-11 19:31:39,408 MY_APP: Hello World
+```
 
-with Navconfig, users can create a python module called "settings.py" on package "settings" to create new configuration options and fine-tune their configuration.
+Logging behaviour is controlled by the `[logging]` section in your INI file.
+The bundled `config.ini.sample` includes all available options.
+
+
+## Custom settings module
+
+You can create a Python package called `settings` in your project to define
+additional configuration derived from NavConfig values:
 
 ```text
-|- myapp/
-|  |- settings/
-|  |- __init__.py
-|  |- settings.py
+myapp/
++-- settings/
+    |-- __init__.py
+    +-- settings.py
 ```
 
-on "settings.py", we can create new variables using python code:
+Inside `settings/settings.py`:
 
 ```python
+import sys
 from navconfig import config, DEBUG
 
-print('::: LOADING SETTINGS ::: ')
-
-# we are in local aiohttp development?
-LOCAL_DEVELOPMENT = (DEBUG is True and sys.argv[0] == 'run.py')
-SEND_NOTIFICATIONS = config.get('SEND_NOTIFICATIONS', fallback=True)
+LOCAL_DEVELOPMENT = DEBUG is True and sys.argv[0] == "run.py"
+SEND_NOTIFICATIONS = config.get("SEND_NOTIFICATIONS", fallback=True)
 ```
 
-And those variables are reachable using "navconfig.conf" module:
+Variables defined there are accessible through `navconfig.conf`:
 
 ```python
 from navconfig.conf import LOCAL_DEVELOPMENT
 
-if LOCAL_DEVELOPMENT is True:
-    print('We are in a Local instance.')
-
+if LOCAL_DEVELOPMENT:
+    print("Running in local development mode.")
 ```
 
-## Dependencies ##
 
- * Python >= 3.9
- * ConfigParser
- * Python-Dotenv
- * pytomlpp
- * PyYAML
- * redis
- * pylibmc
+## Dependencies
 
-### Contribution guidelines ###
+- Python >= 3.10
+- python-dotenv
+- configparser
+- PyYAML
+- pytomlpp
+- orjson
+- cryptography / pycryptodomex
+- hvac (HashiCorp Vault client)
 
-Please have a look at the Contribution Guide
+Optional: `redis`, `pylibmc` / `aiomcache`, `python-logstash-async`,
+`uvloop`.
 
-* Writing tests
-* Code review
-* Other guidelines
 
-### Who do I talk to? ###
+## Contribution guidelines
 
-* Repo owner or admin
-* Other community or team contact
+Please see the Contribution Guide for details on:
 
-### License ###
+- Writing tests
+- Code review process
+- Other guidelines
 
-NavConfig is released under MIT license.
+
+## License
+
+NavConfig is released under the MIT License.

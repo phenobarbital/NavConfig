@@ -10,6 +10,7 @@ include navconfig/py.typed
 recursive-include navconfig *.yaml
 recursive-include navconfig *.yml
 recursive-include navconfig *.toml
+recursive-include navconfig *.sample
 
 # Include documentation
 include README.md
