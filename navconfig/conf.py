@@ -14,4 +14,7 @@ with contextlib.suppress(ImportError):
     try:
         from settings.settings import *  # pylint: disable=W0401,W0614 # noqa
     except ImportError:
-        from settings import *  # pylint: disable=W0401,W0614 # noqa
+        try:
+            from settings import *  # pylint: disable=W0401,W0614 # noqa
+        except ImportError:
+            pass
