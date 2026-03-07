@@ -6,10 +6,9 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +21,7 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Build wheels on Ubuntu (manylinux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build wheels (manylinux)
         uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_x86_64
         with:
           python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312'
@@ -32,31 +30,10 @@ jobs:
           pre-build-command: 'uv sync --extra build --no-dev'
           package-path: '.'
 
-      - name: Build wheels on Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          # Install build dependencies
-          uv sync --extra build --no-dev
-
-          # Install cibuildwheel with uv
-          uv tool install cibuildwheel
-
-          # Build wheels
-          uv tool run cibuildwheel --output-dir dist
-        env:
-          # Configure cibuildwheel
-          CIBW_SKIP: "pp* *-musllinux*"  # Skip PyPy and musl builds
-          CIBW_BUILD: "cp310-* cp311-* cp312-*"
-          CIBW_ARCHS_WINDOWS: "AMD64"
-          # Install build dependencies in the wheel building environment
-          CIBW_BEFORE_BUILD: "pip install setuptools>=74.0.0 Cython>=3.0.11 wheel>=0.44.0"
-          # Build Cython extensions
-          CIBW_BUILD_VERBOSITY: 1
-
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: wheels-linux-py${{ matrix.python-version }}
           path: dist/*.whl
 
   build-source:
@@ -116,10 +93,10 @@ jobs:
           # Move source distribution to dist directory
           find dist-artifacts -name '*.tar.gz' -exec mv {} dist/ \;
 
-      - name: Check for wheel types
-        id: check_wheels
+      - name: Check for distribution files
+        id: check_dist
         run: |
-          echo "Checking for wheel types..."
+          echo "Checking for distribution files..."
 
           # Check for manylinux wheels
           if ls dist/*-manylinux*.whl 1> /dev/null 2>&1; then
@@ -129,16 +106,6 @@ jobs:
           else
             echo "No manylinux wheels found."
             echo "HAS_MANYLINUX_WHEELS=false" >> $GITHUB_ENV
-          fi
-
-          # Check for Windows wheels
-          if ls dist/*-win_*.whl 1> /dev/null 2>&1; then
-            echo "Found Windows wheels:"
-            ls -la dist/*-win_*.whl
-            echo "HAS_WINDOWS_WHEELS=true" >> $GITHUB_ENV
-          else
-            echo "No Windows wheels found."
-            echo "HAS_WINDOWS_WHEELS=false" >> $GITHUB_ENV
           fi
 
           # Check for source distribution
@@ -163,11 +130,6 @@ jobs:
           uv tool install twine
           uv tool run twine upload dist/*-manylinux*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
 
-      - name: Publish Windows wheels to PyPI
-        run: |
-          uv tool install twine
-          uv tool run twine upload dist/*-win_*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-
       - name: Publish source distribution to PyPI
         run: |
           uv tool install twine
@@ -177,10 +139,9 @@ jobs:
   # Optional: Test installation job
   test-install:
     needs: deploy
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - name: Install uv
@@ -198,7 +159,7 @@ jobs:
         run: |
           # Create a temporary environment and test installation
           uv venv test-env
-          source test-env/bin/activate || test-env\Scripts\activate
+          source test-env/bin/activate
 
           # Install from PyPI
           uv pip install navconfig
