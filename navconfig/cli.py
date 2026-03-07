@@ -68,11 +68,16 @@ def create_project_structure(env_name: str, project_root: Path) -> dict[str, Pat
     logs_directory = project_root / "logs"
     logs_directory.mkdir(parents=True, exist_ok=True)
 
+    # templates/ directory
+    templates_directory = project_root / "templates"
+    templates_directory.mkdir(parents=True, exist_ok=True)
+
     return {
         "env_directory": env_directory,
         "env_file": env_file,
         "etc_directory": etc_directory,
         "config_file": config_file,
+        "templates_directory": templates_directory,
     }
 
 

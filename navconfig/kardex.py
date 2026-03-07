@@ -159,10 +159,10 @@ class Kardex(metaclass=Singleton):
             try:
                 self._readers["redis"] = REDIS_LOADER()
             except ReaderNotSet as err:
-                logging.error(f"{err}")
+                logging.debug(f"{err}")
                 self._use_redis = False
             except Exception as err:
-                logging.warning(f"Redis error: {err}")
+                logging.debug(f"Redis error: {err}")
                 raise ConfigError(str(err)) from err
 
         # Memcache reader
