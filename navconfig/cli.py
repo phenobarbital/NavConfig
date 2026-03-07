@@ -44,8 +44,8 @@ def _msg(text: str) -> None:
 
 def create_project_structure(env_name: str, project_root: Path) -> dict[str, Path]:
     """Create the default NavConfig project structure from sample files."""
-    # env/<env_name>/.env
-    env_directory = project_root / "env" / env_name
+    # env/.env
+    env_directory = project_root / "env"
     env_directory.mkdir(parents=True, exist_ok=True)
 
     env_file = env_directory / ".env"
