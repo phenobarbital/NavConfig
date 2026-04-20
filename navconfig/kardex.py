@@ -2,10 +2,12 @@ from typing import (
     Any,
     Dict,
     List,
+    Optional,
 )
 import os
 import contextlib
 import asyncio
+import warnings
 from collections.abc import Callable
 import logging
 from configparser import (
@@ -150,33 +152,95 @@ class Kardex(metaclass=Singleton):
         # Defined as initialized:
         self.__initialized__ = True
 
-    def _init_external_readers(self):
-        """Initialize external readers (redis, memcache, vault as reader)."""
+    def _resolve_cache_backend(self) -> Optional[str]:
+        """Resolve which cache backend to use.
 
-        # Redis reader
-        self._use_redis: bool = strtobool(os.environ.get("USE_REDIS", False))
-        if self._use_redis and REDIS_LOADER:
+        Priority:
+            1. CACHE_BACKEND env var (explicit: 'redis' or 'memcached')
+            2. Legacy USE_REDIS / USE_MEMCACHED flags (backward compat)
+
+        Returns:
+            'redis', 'memcached', or None if no cache backend is configured.
+        """
+        backend = os.environ.get("CACHE_BACKEND", "").strip().lower()
+        if backend in ("redis", "memcached"):
+            return backend
+
+        # Legacy support: infer from USE_REDIS / USE_MEMCACHED
+        use_redis = strtobool(os.environ.get("USE_REDIS", False))
+        use_memcached = strtobool(os.environ.get("USE_MEMCACHED", False))
+
+        if use_redis and use_memcached:
+            warnings.warn(
+                "Both USE_REDIS and USE_MEMCACHED are enabled. "
+                "Only one cache backend is supported at a time; Redis will be used. "
+                "Please migrate to CACHE_BACKEND='redis' or CACHE_BACKEND='memcached'.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return "redis"
+        if use_redis:
+            warnings.warn(
+                "USE_REDIS is deprecated. Use CACHE_BACKEND='redis' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return "redis"
+        if use_memcached:
+            warnings.warn(
+                "USE_MEMCACHED is deprecated. Use CACHE_BACKEND='memcached' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return "memcached"
+
+        return None
+
+    def _init_external_readers(self):
+        """Initialize external readers (cache backend, vault as reader).
+
+        Only one key-value cache backend (Redis **or** Memcached) is active at
+        a time, determined by ``CACHE_BACKEND`` (preferred) or the legacy
+        ``USE_REDIS`` / ``USE_MEMCACHED`` flags.
+        """
+        # --- Cache backend (redis *or* memcached) ---
+        self._cache_backend: Optional[str] = self._resolve_cache_backend()
+        self._use_cache: bool = False
+
+        if self._cache_backend == "redis" and REDIS_LOADER:
             try:
-                self._readers["redis"] = REDIS_LOADER()
+                reader = REDIS_LOADER()
+                self._readers["cache"] = reader
+                self._use_cache = True
             except ReaderNotSet as err:
                 logging.debug(f"{err}")
-                self._use_redis = False
             except Exception as err:
                 logging.debug(f"Redis error: {err}")
                 raise ConfigError(str(err)) from err
-
-        # Memcache reader
-        self._use_memcache: bool = strtobool(os.environ.get("USE_MEMCACHED", False))
-        if self._use_memcache and MEMCACHE_LOADER:
+        elif self._cache_backend == "memcached" and MEMCACHE_LOADER:
             try:
-                self._readers["memcache"] = MEMCACHE_LOADER()
+                reader = MEMCACHE_LOADER()
+                self._readers["cache"] = reader
+                self._use_cache = True
             except ReaderNotSet as err:
                 logging.error(f"{err}")
-                self._use_memcache = False
             except Exception as err:
                 raise ConfigError(str(err)) from err
+        elif self._cache_backend is not None:
+            loader_name = "REDIS_LOADER" if self._cache_backend == "redis" else "MEMCACHE_LOADER"
+            logging.warning(
+                f"CACHE_BACKEND='{self._cache_backend}' but {loader_name} "
+                f"is not available (missing dependency)."
+            )
 
-        # Vault as external reader (different from vault loader)
+        # Backward-compat aliases so source("redis")/source("memcache") still work
+        if self._use_cache:
+            if self._cache_backend == "redis":
+                self._readers["redis"] = self._readers["cache"]
+            else:
+                self._readers["memcache"] = self._readers["cache"]
+
+        # --- Vault as external reader (different from vault loader) ---
         self._use_vault: bool = strtobool(os.environ.get("VAULT_ENABLED", False))
         if self._use_vault and HVAULT_LOADER:
             try:
@@ -216,6 +280,11 @@ class Kardex(metaclass=Singleton):
     @property
     def initialized(self) -> bool:
         return self.__initialized__
+
+    @property
+    def cache_backend(self) -> Optional[str]:
+        """Return the active cache backend name ('redis', 'memcached') or None."""
+        return self._cache_backend if self._use_cache else None
 
     def __del__(self):
         try:
@@ -587,13 +656,13 @@ class Kardex(metaclass=Singleton):
                 )
             except Exception:
                 raise
-        elif self._use_redis:
+        elif self._use_cache:
             value = self._serialize(value)
             try:
-                return self._readers["redis"].set(key, value)
+                return self._readers["cache"].set(key, value)
             except KeyError:
                 logging.warning(
-                    f"Unable to Set key {key} in Redis"
+                    f"Unable to Set key {key} in cache ({self._cache_backend})"
                 )
         else:
             # set the mapping:
@@ -610,12 +679,14 @@ class Kardex(metaclass=Singleton):
         set
             set a variable in redis with expiration
         """
-        if self._use_redis:
+        if self._use_cache:
             time = timeout if isinstance(timeout, int) else 3600
             try:
-                return self._readers["redis"].set(key, value, time)
+                return self._readers["cache"].set(key, value, time)
             except KeyError:
-                logging.warning(f"Unable to Set key {key} in Redis")
+                logging.warning(
+                    f"Unable to Set key {key} in cache ({self._cache_backend})"
+                )
         elif vault:
             time = timeout if isinstance(timeout, int) else 3600
             try:
@@ -703,6 +774,7 @@ class Kardex(metaclass=Singleton):
             'cached_envs': list(self._env_cache.keys()),
             'site_root': str(self.site_root),
             'total_variables': len(self._mapping_),
+            'cache_backend': self.cache_backend,
         }
 
         # Add vault-specific information if available
