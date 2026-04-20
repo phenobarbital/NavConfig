@@ -54,7 +54,7 @@ dependencies = [
     "pytomlpp>=1.0.13",
     "PyYAML>=6.0",
     "requests>=2.32.4",
-    "hvac==2.3.0",
+    "hvac==2.4.0",
 ]
 dynamic = ["version"]
 
