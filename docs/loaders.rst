@@ -7,12 +7,6 @@ Loaders
 .. autofunction:: navconfig.loaders.base.BaseLoader
 
 
-``drive``
--------------
-
-.. autofunction:: navconfig.loaders.drive.driveLoader
-
-
 ``toml``
 -------------
 

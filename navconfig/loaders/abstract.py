@@ -19,7 +19,6 @@ class BaseLoader(ABC):
         self.env_path = env_path
         self.env_file = ".env"
         self._kwargs = kwargs
-        self.downloadable: bool = False
         self._content: Any = None
         if isinstance(self.env_path, PurePath) and not env_path.exists():
             if create:
