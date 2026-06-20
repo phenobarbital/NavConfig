@@ -73,9 +73,6 @@ Funding = "https://paypal.me/phenobarbital"
 uvloop = [
     "uvloop>=0.21.0"
 ]
-gdrive = [
-    "PyDrive>=1.3.1",
-]
 logstash = [
     "python-logstash-async>=2.7.2,<=3.0.0",
 ]

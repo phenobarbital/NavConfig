@@ -298,15 +298,6 @@ class Kardex(metaclass=Singleton):
                 f"PyProject: {err}"
             ) from err
 
-    def save_environment(self, env_type: str = "drive"):
-        """
-        Saving a remote Environment into a local File.
-        """
-        env_path = self.site_root.joinpath("env", self.ENV, ".env")
-        # pluggable types
-        if self._env_loader.downloadable is True:
-            self._env_loader.save_enviroment(env_path)
-
     def load_environment(self, env_type: str = "vault", override: bool = False):
         """load_environment.
         Load an environment from a File or any pluggable Origin.
