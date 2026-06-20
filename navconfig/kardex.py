@@ -25,12 +25,6 @@ from .loaders import import_loader, pyProjectLoader
 from .exceptions import ConfigError, KardexError, ReaderNotSet
 
 
-## memcache:
-try:
-    from .readers.memcache import mcache
-    MEMCACHE_LOADER = mcache
-except ModuleNotFoundError:
-    MEMCACHE_LOADER = None
 ## redis:
 try:
     from .readers.redis import mredis
@@ -143,7 +137,7 @@ class Kardex(metaclass=Singleton):
                     raise ConfigError(
                         "NavConfig Error: Unable to load environment configuration"
                     ) from err
-        # Initialize external readers (redis, memcache, vault as reader)
+        # Initialize external readers (redis cache, vault as reader)
         self._init_external_readers()
         # Load INI configuration
         self._load_ini_config()
@@ -156,29 +150,26 @@ class Kardex(metaclass=Singleton):
         """Resolve which cache backend to use.
 
         Priority:
-            1. CACHE_BACKEND env var (explicit: 'redis' or 'memcached')
-            2. Legacy USE_REDIS / USE_MEMCACHED flags (backward compat)
+            1. CACHE_BACKEND env var (explicit: 'redis')
+            2. Legacy USE_REDIS flag (backward compat)
 
         Returns:
-            'redis', 'memcached', or None if no cache backend is configured.
+            'redis', or None if no cache backend is configured.
         """
         backend = os.environ.get("CACHE_BACKEND", "").strip().lower()
-        if backend in ("redis", "memcached"):
+        if backend == "redis":
             return backend
-
-        # Legacy support: infer from USE_REDIS / USE_MEMCACHED
-        use_redis = strtobool(os.environ.get("USE_REDIS", False))
-        use_memcached = strtobool(os.environ.get("USE_MEMCACHED", False))
-
-        if use_redis and use_memcached:
+        if backend == "memcached":
             warnings.warn(
-                "Both USE_REDIS and USE_MEMCACHED are enabled. "
-                "Only one cache backend is supported at a time; Redis will be used. "
-                "Please migrate to CACHE_BACKEND='redis' or CACHE_BACKEND='memcached'.",
+                "Memcached support has been removed from NavConfig. "
+                "Please use CACHE_BACKEND='redis' instead.",
                 DeprecationWarning,
                 stacklevel=3,
             )
-            return "redis"
+            return None
+
+        # Legacy support: infer from USE_REDIS
+        use_redis = strtobool(os.environ.get("USE_REDIS", False))
         if use_redis:
             warnings.warn(
                 "USE_REDIS is deprecated. Use CACHE_BACKEND='redis' instead.",
@@ -186,24 +177,16 @@ class Kardex(metaclass=Singleton):
                 stacklevel=3,
             )
             return "redis"
-        if use_memcached:
-            warnings.warn(
-                "USE_MEMCACHED is deprecated. Use CACHE_BACKEND='memcached' instead.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            return "memcached"
 
         return None
 
     def _init_external_readers(self):
         """Initialize external readers (cache backend, vault as reader).
 
-        Only one key-value cache backend (Redis **or** Memcached) is active at
-        a time, determined by ``CACHE_BACKEND`` (preferred) or the legacy
-        ``USE_REDIS`` / ``USE_MEMCACHED`` flags.
+        A single key-value cache backend (Redis) is active when enabled via
+        ``CACHE_BACKEND`` (preferred) or the legacy ``USE_REDIS`` flag.
         """
-        # --- Cache backend (redis *or* memcached) ---
+        # --- Cache backend (redis) ---
         self._cache_backend: Optional[str] = self._resolve_cache_backend()
         self._use_cache: bool = False
 
@@ -217,28 +200,15 @@ class Kardex(metaclass=Singleton):
             except Exception as err:
                 logging.debug(f"Redis error: {err}")
                 raise ConfigError(str(err)) from err
-        elif self._cache_backend == "memcached" and MEMCACHE_LOADER:
-            try:
-                reader = MEMCACHE_LOADER()
-                self._readers["cache"] = reader
-                self._use_cache = True
-            except ReaderNotSet as err:
-                logging.error(f"{err}")
-            except Exception as err:
-                raise ConfigError(str(err)) from err
         elif self._cache_backend is not None:
-            loader_name = "REDIS_LOADER" if self._cache_backend == "redis" else "MEMCACHE_LOADER"
             logging.warning(
-                f"CACHE_BACKEND='{self._cache_backend}' but {loader_name} "
+                f"CACHE_BACKEND='{self._cache_backend}' but REDIS_LOADER "
                 f"is not available (missing dependency)."
             )
 
-        # Backward-compat aliases so source("redis")/source("memcache") still work
+        # Backward-compat alias so source("redis") still works
         if self._use_cache:
-            if self._cache_backend == "redis":
-                self._readers["redis"] = self._readers["cache"]
-            else:
-                self._readers["memcache"] = self._readers["cache"]
+            self._readers["redis"] = self._readers["cache"]
 
         # --- Vault as external reader (different from vault loader) ---
         self._use_vault: bool = strtobool(os.environ.get("VAULT_ENABLED", False))
@@ -283,7 +253,7 @@ class Kardex(metaclass=Singleton):
 
     @property
     def cache_backend(self) -> Optional[str]:
-        """Return the active cache backend name ('redis', 'memcached') or None."""
+        """Return the active cache backend name ('redis') or None."""
         return self._cache_backend if self._use_cache else None
 
     def __del__(self):

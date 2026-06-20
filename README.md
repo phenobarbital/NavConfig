@@ -12,7 +12,6 @@ combine them):
 - TOML and YAML files
 - `pyproject.toml`
 - Redis
-- Memcached
 - HashiCorp Vault
 - Python settings modules (`settings/settings.py`)
 
@@ -29,8 +28,8 @@ production).
 
 NavConfig addresses this by loading secrets from `.env` files and structured
 settings from INI/TOML/YAML files, keeping concerns separated. It also
-supports retrieving configuration from external stores such as Redis,
-Memcached, or HashiCorp Vault.
+supports retrieving configuration from external stores such as Redis
+or HashiCorp Vault.
 
 
 ## Installation
@@ -42,8 +41,8 @@ pip install navconfig
 To include optional backends:
 
 ```bash
-# Redis and Memcached support
-pip install navconfig[redis,memcache]
+# Redis support
+pip install navconfig[redis]
 
 # All features, including Logstash logging
 pip install navconfig[all]
@@ -262,8 +261,7 @@ if LOCAL_DEVELOPMENT:
 - cryptography / pycryptodomex
 - hvac (HashiCorp Vault client)
 
-Optional: `redis`, `pylibmc` / `aiomcache`, `python-logstash-async`,
-`uvloop`.
+Optional: `redis`, `python-logstash-async`, `uvloop`.
 
 
 ## Contribution guidelines
