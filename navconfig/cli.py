@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 from .samples import get_sample_path
+
+logger = logging.getLogger("navconfig.cli")
 
 # ---------------------------------------------------------------------------
 # Vault-related variables appended when --vault is used with new-env
@@ -43,16 +46,36 @@ def _msg(text: str) -> None:
 # ---------------------------------------------------------------------------
 
 def create_project_structure(env_name: str, project_root: Path) -> dict[str, Path]:
-    """Create the default NavConfig project structure from sample files."""
-    # env/.env
-    env_directory = project_root / "env"
+    """Create the default NavConfig project structure from sample files.
+
+    Two complementary environment layouts are scaffolded so the project works
+    with either resolution strategy:
+
+    * ``env/.env`` -- shared base file, **without** an ``ENV=`` pin.
+    * ``env/<env_name>/.env`` -- environment-specific file pinned to
+      ``ENV=<env_name>``.
+    """
+    sample = _read_sample(".env.sample")
+
+    env_root = project_root / "env"
+    env_root.mkdir(parents=True, exist_ok=True)
+
+    # Base env/.env -- shared across environments, no ENV= assignment.
+    base_env_file = env_root / ".env"
+    if not base_env_file.exists():
+        base_content = "\n".join(
+            line for line in sample.splitlines()
+            if not line.strip().startswith("ENV=")
+        ) + "\n"
+        base_env_file.write_text(base_content, encoding="utf-8")
+
+    # Environment-specific env/<env_name>/.env -- pinned to ENV=<env_name>.
+    env_directory = env_root / env_name
     env_directory.mkdir(parents=True, exist_ok=True)
 
     env_file = env_directory / ".env"
     if not env_file.exists():
-        content = _read_sample(".env.sample")
-        # Replace the placeholder environment name
-        content = content.replace("ENV=dev", f"ENV={env_name}")
+        content = sample.replace("ENV=dev", f"ENV={env_name}")
         env_file.write_text(content, encoding="utf-8")
 
     # etc/config.ini
@@ -74,6 +97,7 @@ def create_project_structure(env_name: str, project_root: Path) -> dict[str, Pat
 
     return {
         "env_directory": env_directory,
+        "base_env_file": base_env_file,
         "env_file": env_file,
         "etc_directory": etc_directory,
         "config_file": config_file,
@@ -192,7 +216,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "create":
         project_root = Path(args.path).resolve()
         created = create_project_structure(args.env, project_root)
-        _msg(f"Created NavConfig project structure at {project_root} (environment: {args.env})")
+        headline = (
+            f"Created NavConfig project structure at {project_root} "
+            f"(environment: {args.env})"
+        )
+        logger.info(headline)
+        _msg(headline)
         for label, path in created.items():
             _msg(f"  {label} -> {path}")
         return 0

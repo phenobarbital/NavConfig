@@ -1,3 +1,10 @@
+[navconfig]
+# NavConfig core settings.
+# Application/project name used by NavConfig.
+APP_NAME = MyApp
+# Default environment used when ENV is not set.
+ENV = dev
+
 [general]
 # General application settings.
 DEBUG = true
