@@ -380,7 +380,7 @@ async def test_environment_reload():
 
 
 # Fixture for cleanup
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def cleanup_test_environment():
     """Ensure we end up in a clean state after tests."""
     from navconfig import config
