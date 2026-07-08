@@ -15,6 +15,11 @@ class VaultReader(AbstractReader):
     """VaultReader.
 
     Description: Class for HashiCorp Vault Reader.
+
+    The secret path segment under the mount point is resolved as:
+    ``VAULT_ENV`` (if set and non-empty) > ``env`` argument > ``ENV``.
+    This allows pointing to a custom vault environment without
+    changing the ``ENV`` used by the rest of the application.
     """
 
     def __init__(self, env: str = None) -> None:
@@ -25,7 +30,7 @@ class VaultReader(AbstractReader):
         token = os.getenv("VAULT_TOKEN")
         self.version = int(os.getenv("VAULT_VERSION", 2))
         self._mount = os.getenv("VAULT_MOUNT_POINT", "navigator")
-        self._env = env or os.getenv("ENV", "")
+        self._env = os.getenv("VAULT_ENV") or env or os.getenv("ENV", "")
         if not token:
             raise ValueError("VAULT_TOKEN is not set")
         try:

@@ -24,6 +24,8 @@ VAULT_SECRET_ID=
 VAULT_MOUNT_POINT=secret
 VAULT_SECRET_PATH=apps/{app_name}
 VAULT_NAMESPACE=
+# Optional: custom vault path segment, overrides ENV for vault lookups only
+# VAULT_ENV=
 """
 
 
