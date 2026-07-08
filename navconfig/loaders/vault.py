@@ -41,6 +41,11 @@ class vaultLoader(BaseLoader):
     Environment Structure:
     - Vault: {mount_point}/{env}/* (e.g., navapi/dev/DATABASE_URL)
     - Files: env/{env}/.env, env/{env}/.env.*, etc.
+
+    The vault path segment can be overridden independently of ENV by
+    setting VAULT_ENV (env var or base .env file). When VAULT_ENV is
+    set and non-empty, vault secrets are read from
+    {mount_point}/{VAULT_ENV}/* while file loading keeps using ENV.
     """
 
     # Default file patterns for multi-file loading
@@ -67,6 +72,9 @@ class vaultLoader(BaseLoader):
 
         # Environment determination
         self.env = env or os.getenv('ENV', 'dev')
+        # Vault path segment: VAULT_ENV overrides ENV for vault lookups only
+        self._vault_env_override = bool(os.getenv('VAULT_ENV'))
+        self.vault_env = os.getenv('VAULT_ENV') or self.env
 
         # File loading configuration
         if auto:
@@ -173,6 +181,13 @@ class vaultLoader(BaseLoader):
         vault_enabled = env_data.get('VAULT_ENABLED', os.getenv('VAULT_ENABLED', ''))
         self.vault_enabled = vault_enabled.lower() in ('true', '1', 'yes')
 
+        # VAULT_ENV (from the env-specific .env file, or the process
+        # environment) overrides ENV for the vault path segment; the file
+        # value wins over the container value, falling back to ENV.
+        vault_env = env_data.get('VAULT_ENV') or os.getenv('VAULT_ENV')
+        self._vault_env_override = bool(vault_env)
+        self.vault_env = vault_env or self.env
+
         if self.vault_enabled:
             self.vault_config = {
                 'url': env_data.get('VAULT_URL', os.getenv('VAULT_URL')),
@@ -204,13 +219,13 @@ class vaultLoader(BaseLoader):
                 return {}
 
             # Load secrets for current environment
-            vault_data = self.vault_reader.list(path=self.env)
+            vault_data = self.vault_reader.list(path=self.vault_env)
 
             if isinstance(vault_data, dict):
-                logging.debug(f"Retrieved {len(vault_data)} secrets from vault path: {self.env}")
+                logging.debug(f"Retrieved {len(vault_data)} secrets from vault path: {self.vault_env}")
                 return vault_data
             else:
-                logging.debug(f"No secrets found in vault path: {self.env}")
+                logging.debug(f"No secrets found in vault path: {self.vault_env}")
                 return {}
 
         except Exception as e:
@@ -229,9 +244,13 @@ class vaultLoader(BaseLoader):
             os.environ['VAULT_TOKEN'] = self.vault_config['token']
             os.environ['VAULT_MOUNT_POINT'] = self.vault_config['mount_point']
             os.environ['VAULT_VERSION'] = str(self.vault_config['version'])
+            if self._vault_env_override:
+                # Push the resolved vault env so VaultReader (and any other
+                # consumer reading os.environ) sees the file-level override.
+                os.environ['VAULT_ENV'] = self.vault_env
 
-            self.vault_reader = VaultReader(env=self.env)
-            logging.debug(f"Vault reader initialized for environment: {self.env}")
+            self.vault_reader = VaultReader(env=self.vault_env)
+            logging.debug(f"Vault reader initialized for environment: {self.vault_env}")
 
         except Exception as e:
             logging.warning(
@@ -305,7 +324,9 @@ class vaultLoader(BaseLoader):
             return  # No change needed
 
         old_env = self.env
+        old_vault_env = self.vault_env
         self.env = new_env
+        self.vault_env = os.getenv('VAULT_ENV') or new_env
 
         try:
             # Update environment path
@@ -323,6 +344,7 @@ class vaultLoader(BaseLoader):
         except Exception as e:
             # Rollback on error
             self.env = old_env
+            self.vault_env = old_vault_env
             logging.error(f"Failed to switch to environment {new_env}: {e}")
             raise
 
@@ -337,7 +359,8 @@ class vaultLoader(BaseLoader):
             'connected': self.vault_reader is not None,
             'config': {k: v for k, v in self.vault_config.items() if k != 'token'},
             'secrets_loaded': len(self.vault_data),
-            'environment': self.env
+            'environment': self.env,
+            'vault_environment': self.vault_env
         }
 
     def save_environment(self):
