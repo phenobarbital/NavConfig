@@ -7,24 +7,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+    # No matrix on purpose: the manylinux action below builds *every* interpreter
+    # listed in `python-versions` inside its own container, so a matrix would just
+    # rebuild the identical set of wheels N times. Add new versions to
+    # `python-versions` instead.
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "latest"
-
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
 
       - name: Build wheels (manylinux)
         uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_x86_64
         with:
-          python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312'
+          python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314'
           build-requirements: 'uv setuptools>=74.0.0 Cython>=3.0.11 wheel>=0.44.0'
           system-packages: 'libmemcached-devel openssl-devel zlib-devel'
           pre-build-command: 'uv sync --extra build --no-dev'
@@ -33,7 +26,7 @@ jobs:
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-py${{ matrix.python-version }}
+          name: wheels-linux
           path: dist/*.whl
 
   build-source:
@@ -125,15 +118,26 @@ jobs:
           echo ""
           echo "File count: $(ls -1 dist/ | wc -l)"
 
-      - name: Publish manylinux wheels to PyPI
+      # Refuse to publish a partial release: a version that lands on PyPI with
+      # wheels but no sdist (or vice versa) cannot be corrected, only yanked.
+      - name: Verify the release is complete
         run: |
-          uv tool install twine
-          uv tool run twine upload dist/*-manylinux*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
+            echo "::error::Incomplete release - wheels: $HAS_MANYLINUX_WHEELS, sdist: $HAS_SOURCE_DIST"
+            exit 1
+          fi
 
-      - name: Publish source distribution to PyPI
+      # Wheels and sdist go up in a single twine invocation so the release is
+      # published as one unit. --skip-existing keeps a re-run idempotent instead
+      # of failing on files that already uploaded before an earlier attempt died.
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
         run: |
           uv tool install twine
-          uv tool run twine upload dist/*.tar.gz --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+          uv tool run twine upload --non-interactive --skip-existing \
+            dist/*-manylinux*.whl dist/*.tar.gz
 
 
   # Optional: Test installation job
@@ -142,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
