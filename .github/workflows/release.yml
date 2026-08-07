@@ -118,15 +118,26 @@ jobs:
           echo ""
           echo "File count: $(ls -1 dist/ | wc -l)"
 
-      - name: Publish manylinux wheels to PyPI
+      # Refuse to publish a partial release: a version that lands on PyPI with
+      # wheels but no sdist (or vice versa) cannot be corrected, only yanked.
+      - name: Verify the release is complete
         run: |
-          uv tool install twine
-          uv tool run twine upload dist/*-manylinux*.whl --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
+            echo "::error::Incomplete release - wheels: $HAS_MANYLINUX_WHEELS, sdist: $HAS_SOURCE_DIST"
+            exit 1
+          fi
 
-      - name: Publish source distribution to PyPI
+      # Wheels and sdist go up in a single twine invocation so the release is
+      # published as one unit. --skip-existing keeps a re-run idempotent instead
+      # of failing on files that already uploaded before an earlier attempt died.
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
         run: |
           uv tool install twine
-          uv tool run twine upload dist/*.tar.gz --username __token__ --password ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
+          uv tool run twine upload --non-interactive --skip-existing \
+            dist/*-manylinux*.whl dist/*.tar.gz
 
 
   # Optional: Test installation job
