@@ -7,24 +7,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+    # No matrix on purpose: the manylinux action below builds *every* interpreter
+    # listed in `python-versions` inside its own container, so a matrix would just
+    # rebuild the identical set of wheels N times. Add new versions to
+    # `python-versions` instead.
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "latest"
-
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
 
       - name: Build wheels (manylinux)
         uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_x86_64
         with:
-          python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312'
+          python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314'
           build-requirements: 'uv setuptools>=74.0.0 Cython>=3.0.11 wheel>=0.44.0'
           system-packages: 'libmemcached-devel openssl-devel zlib-devel'
           pre-build-command: 'uv sync --extra build --no-dev'
@@ -33,7 +26,7 @@ jobs:
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-py${{ matrix.python-version }}
+          name: wheels-linux
           path: dist/*.whl
 
   build-source:
@@ -142,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
