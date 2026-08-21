@@ -61,7 +61,7 @@ class BaseLoader(ABC):
                 "NavConfig could not find the expected environment directory. "
                 f"Looked for: {env_path}.\n"
                 "NavConfig projects require an 'env/<environment>/.env' file. "
-                "Run `kardex create` to scaffold the default structure (env folder, "
+                "Run `kardex env create` to scaffold the default structure (env folder, "
                 "base .env file, and etc/config.ini)."
             )
 

@@ -22,6 +22,14 @@ logging_echo = true
 filehandler_enabled = false
 # Enable Logstash handler (true/false).
 logstash_enabled = false
+# Logstash server host.
+# logging_host = localhost
+# Logstash server TCP port.
+# logging_port = 5044
+# Minimum level forwarded to Logstash.
+# logstash_logging = INFO
+# Seconds the Logstash handler waits when flushing its queue.
+# logstash_flush_timeout = 10
 # Enable email alerts on CRITICAL errors (true/false).
 mailer_enabled = false
 # Disable loggers from third-party libraries (true/false).
