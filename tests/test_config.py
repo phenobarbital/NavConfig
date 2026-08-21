@@ -209,25 +209,8 @@ async def test_environment_switching_idempotent():
     assert config.get_current_env() == current_env
 
 
-async def test_kardex_cli_create(tmp_path, caplog):
-    """Ensure the kardex CLI scaffolds the expected project structure."""
-    from navconfig.cli import main
-
-    caplog.set_level(logging.INFO)
-    exit_code = main(["create", "--env", "qa", "--path", str(tmp_path)])
-
-    assert exit_code == 0
-
-    env_file = tmp_path / "env" / "qa" / ".env"
-    config_file = tmp_path / "etc" / "config.ini"
-
-    assert env_file.exists()
-    assert config_file.exists()
-
-    assert "ENV=qa" in env_file.read_text()
-    assert "[navconfig]" in config_file.read_text()
-
-    assert any("Created NavConfig project structure" in message for message in caplog.messages)
+# The kardex CLI is covered end-to-end in tests/test_cli.py, which does
+# not need a scaffolded project.
 
 
 async def test_cross_environment_query():
