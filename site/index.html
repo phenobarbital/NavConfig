@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NavConfig &mdash; Universal Configuration Management for Python</title>
+<meta name="description" content="NavConfig is a configuration management library for Python projects: .env files, INI/TOML/YAML, Redis and HashiCorp Vault behind a single point of truth.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --bg-code: #f6f8fa;
+    --fg: #1f2328;
+    --fg-muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #0550ae;
+    --accent-soft: #ddf4ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --bg-soft: #151b23;
+      --bg-code: #151b23;
+      --fg: #e6edf3;
+      --fg-muted: #9198a1;
+      --border: #3d444d;
+      --accent: #6cb6ff;
+      --accent-soft: #121d2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header.hero {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+    padding: 3rem 1.5rem 2.5rem;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 .35rem; font-size: 2.5rem; letter-spacing: -.02em; }
+  .hero p.tagline { margin: 0 0 1.25rem; font-size: 1.15rem; color: var(--fg-muted); max-width: 46rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .badge {
+    font-size: .8rem; padding: .2rem .6rem; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg-muted);
+  }
+
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2.5rem; padding: 2.5rem 1.5rem 4rem; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; gap: 1rem; } nav.toc { position: static !important; } }
+
+  nav.toc { position: sticky; top: 1.5rem; align-self: start; font-size: .9rem; }
+  nav.toc strong { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); margin-bottom: .5rem; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: .15rem 0; }
+  nav.toc a { color: var(--fg-muted); display: block; padding: .15rem 0; }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 3rem; }
+  h2 { font-size: 1.6rem; margin: 0 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); letter-spacing: -.01em; }
+  h3 { font-size: 1.15rem; margin: 1.75rem 0 .5rem; }
+  p, ul, ol { margin: 0 0 1rem; }
+  ul, ol { padding-left: 1.35rem; }
+  li { margin: .25rem 0; }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--accent-soft); padding: .12em .35em; border-radius: 5px;
+  }
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem; overflow-x: auto; margin: 0 0 1rem; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+
+  .table-scroll { overflow-x: auto; margin-bottom: 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: .75rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 1rem;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note strong { color: var(--fg); }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
+    color: var(--fg-muted); font-size: .9rem; background: var(--bg-soft);
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>NavConfig</h1>
+    <p class="tagline">Universal configuration management for Python projects &mdash; <code>.env</code> files,
+      INI/TOML/YAML, Redis and HashiCorp Vault behind a single, shared point of truth.</p>
+    <div class="badges">
+      <span class="badge">MIT License</span>
+      <span class="badge">Python &ge; 3.10</span>
+      <span class="badge">v3.0</span>
+      <a class="badge" href="https://github.com/phenobarbital/navconfig">GitHub</a>
+      <a class="badge" href="https://pypi.org/project/navconfig/">PyPI</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc">
+    <strong>On this page</strong>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#cli">The kardex CLI</a></li>
+      <li><a href="#bootstrap">Bootstrap a project</a></li>
+      <li><a href="#split">Split configuration</a></li>
+      <li><a href="#environments">Environments</a></li>
+      <li><a href="#vault">HashiCorp Vault</a></li>
+      <li><a href="#logging">Logging</a></li>
+      <li><a href="#usage">Reading values</a></li>
+      <li><a href="#layout">Project layout</a></li>
+      <li><a href="#settings">Settings module</a></li>
+      <li><a href="#upgrade">Upgrading to 3.0</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>NavConfig is the default configuration layer of the Navigator Framework, and works equally well as a
+        stand-alone tool for any Python application. It loads configuration directives from several sources and
+        combines them into one immutable object shared across modules:</p>
+      <ul>
+        <li>Environment files (<code>.env</code>)</li>
+        <li>INI files, through <code>configparser</code></li>
+        <li>TOML and YAML files</li>
+        <li><code>pyproject.toml</code></li>
+        <li>Redis</li>
+        <li>HashiCorp Vault</li>
+        <li>Python settings modules (<code>settings/settings.py</code>)</li>
+      </ul>
+      <p>Secrets live in <code>.env</code> files or in Vault; structured settings live in INI/TOML/YAML files.
+        The separation keeps credentials out of the files you commit, and lets configuration vary per
+        environment without touching application code.</p>
+    </section>
+
+    <section id="install">
+      <h2>Installation</h2>
+<pre><code>pip install navconfig</code></pre>
+      <p>Optional backends are exposed as extras:</p>
+<pre><code>pip install navconfig[redis]      # Redis reader
+pip install navconfig[hvac]      # HashiCorp Vault
+pip install navconfig[logstash]  # Logstash logging handler
+pip install navconfig[all]       # everything</code></pre>
+    </section>
+
+    <section id="cli">
+      <h2>The <code>kardex</code> CLI</h2>
+      <p>NavConfig ships a command line tool called <code>kardex</code> that bootstraps and maintains the
+        configuration layout of a project. It is organised in command groups, each with its own actions.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>kardex env create</code></td><td>Create the default project structure.</td></tr>
+            <tr><td><code>kardex env create --split</code></td><td>Same, plus the supplementary <code>.env.*</code> files.</td></tr>
+            <tr><td><code>kardex env new &lt;name&gt;</code></td><td>Add an environment from the shared <code>env/.env</code>.</td></tr>
+            <tr><td><code>kardex vault create</code></td><td>Write the HashiCorp Vault directives into <code>env/&lt;env&gt;/.env</code>.</td></tr>
+            <tr><td><code>kardex vault migrate</code></td><td>Push the variables of an environment into Vault.</td></tr>
+            <tr><td><code>kardex vault save VAR:VALUE</code></td><td>Store one or more variables in Vault.</td></tr>
+            <tr><td><code>kardex log enable</code></td><td>Enable the <code>[logging]</code> section of <code>etc/config.ini</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Every group accepts <code>--path</code> to point at a project root other than the current directory,
+        and <code>kardex &lt;group&gt; &lt;action&gt; --help</code> lists the full set of options.</p>
+    </section>
+
+    <section id="bootstrap">
+      <h2>Bootstrap a project</h2>
+<pre><code>kardex env create --env dev</code></pre>
+      <p>This generates the following structure in the current directory:</p>
+<pre><code>.
+|-- env/
+|   |-- .env          shared across environments, no ENV= pin
+|   +-- dev/
+|       +-- .env      pinned to ENV=dev
+|-- etc/
+|   +-- config.ini
+|-- logs/
++-- templates/</code></pre>
+      <ul>
+        <li><code>env/.env</code> &mdash; values shared by every environment; <code>kardex env new</code> uses it as the template for new ones.</li>
+        <li><code>env/dev/.env</code> &mdash; environment variables: secrets, feature flags, paths.</li>
+        <li><code>etc/config.ini</code> &mdash; INI settings consumed by NavConfig, including the <code>[logging]</code> section.</li>
+        <li><code>logs/</code> &mdash; where rotating log files are written.</li>
+        <li><code>templates/</code> &mdash; default directory for template files.</li>
+      </ul>
+      <p>Existing files are never overwritten. Pass <code>--force</code> when you do want them replaced, and
+        <code>--path</code> to build the structure elsewhere:</p>
+<pre><code>kardex env create --env dev --path /srv/myapp</code></pre>
+    </section>
+
+    <section id="split">
+      <h2>Split configuration across several files</h2>
+      <p>NavConfig loads <code>.env</code> first and then a set of supplementary files, which keeps unrelated
+        concerns apart. Pass <code>--split</code> to create them all:</p>
+<pre><code>kardex env create --env dev --split</code></pre>
+<pre><code>env/dev/
+|-- .env             base configuration and Vault credentials
+|-- .env.resources   paths and resource-level directives
+|-- .env.databases   database connection settings
+|-- .env.api         HTTP layer settings
+|-- .env.cache       Redis / cache backend settings
++-- .env.local       local overrides, loaded last (keep out of git)</code></pre>
+      <p>Files are loaded in that order, so <code>.env.local</code> always wins. Everything ends up in the same
+        flat namespace, so <code>config.get("DBHOST")</code> works regardless of which file declared it.</p>
+    </section>
+
+    <section id="environments">
+      <h2>Environments</h2>
+      <p>Add as many environments as the project needs:</p>
+<pre><code>kardex env new prod
+kardex env new staging --split</code></pre>
+      <p>Each command copies <code>env/.env</code> (or the bundled sample if no shared file exists) into
+        <code>env/&lt;name&gt;/.env</code>, adjusting the <code>ENV</code> variable automatically. Select one at
+        runtime through the <code>ENV</code> variable:</p>
+<pre><code>ENV=prod python app.py</code></pre>
+      <p>NavConfig then loads <code>env/prod/.env</code> and any INI file referenced by its
+        <code>CONFIG_FILE</code> directive.</p>
+    </section>
+
+    <section id="vault">
+      <h2>HashiCorp Vault</h2>
+
+      <h3>Configure the connection</h3>
+<pre><code>kardex vault create --env dev \
+    --url http://vault.internal:8200 \
+    --token "$VAULT_TOKEN" \
+    --mount-point myapp</code></pre>
+      <p>This appends a delimited block to <code>env/dev/.env</code> &mdash; creating the file if it does not
+        exist yet &mdash; with the directives NavConfig actually reads:</p>
+<pre><code>VAULT_ENABLED=true
+VAULT_URL=http://vault.internal:8200
+VAULT_TOKEN=...
+VAULT_MOUNT_POINT=myapp
+VAULT_VERSION=2
+# VAULT_ENV=</code></pre>
+      <p>Secrets are read from <code>&lt;VAULT_MOUNT_POINT&gt;/&lt;ENV&gt;/</code> and merged on top of the
+        file-based values. Set <code>VAULT_ENV</code> to read from a path segment other than <code>ENV</code>;
+        set <code>NAVCONFIG_FILE_OVERRIDE_ENABLED=true</code> to let the <code>.env</code> files win over Vault
+        instead.</p>
+      <p>Re-running the command updates only the directives you pass on the command line, which makes token
+        rotation a one-liner. Pass <code>--force</code> to rewrite the whole block.</p>
+
+      <h3>Migrate an existing <code>.env</code> into Vault</h3>
+<pre><code>kardex vault migrate --env dev --dry-run   # inspect first
+kardex vault migrate --env dev</code></pre>
+      <p>Two families of variables are deliberately left in the <code>.env</code> file, because NavConfig needs
+        them before it can reach Vault:</p>
+      <ul>
+        <li>the Vault directives themselves (<code>VAULT_*</code>), and</li>
+        <li>the bootstrap directives (<code>ENV</code>, <code>CONFIG_FILE</code>, <code>SITE_ROOT</code>, &hellip;),
+          which can be included anyway with <code>--include-bootstrap</code>.</li>
+      </ul>
+      <p>Useful options: <code>--include-extra</code> (also migrate the <code>.env.*</code> files),
+        <code>--keep-existing</code> (never overwrite a key already stored in Vault), <code>--file</code>
+        (migrate an arbitrary file) and <code>--yes</code> (skip the confirmation prompt). Values are masked in
+        the output, and nothing is written until you confirm.</p>
+
+      <h3>Store single variables</h3>
+<pre><code>kardex vault save DB_PASSWORD:s3cr3t
+kardex vault save "DSN:postgres://user:pass@host:5432/db" API_KEY:abc123</code></pre>
+      <p>Only the first colon separates the name from the value, so values may contain colons themselves.</p>
+    </section>
+
+    <section id="logging">
+      <h2>Logging</h2>
+<pre><code>kardex log enable</code></pre>
+      <p>That writes the <code>[logging]</code> section of <code>etc/config.ini</code> &mdash; creating the file
+        from the bundled sample when missing &mdash; with console and rotating-file output enabled, and creates
+        the log directory. Comments in the INI file are preserved.</p>
+      <p>To also forward records to a Logstash server:</p>
+<pre><code>kardex log enable --logstash \
+    --logstash-host logs.internal \
+    --logstash-port 5044 \
+    --logstash-level INFO</code></pre>
+      <div class="note">
+        <p><strong>Note.</strong> The Logstash handler needs <code>pip install navconfig[logstash]</code>.
+          NavConfig warns and falls back to the remaining handlers when the dependency or the server is
+          unavailable.</p>
+      </div>
+      <p>Other options: <code>--loglevel</code>, <code>--logdir</code>, <code>--quiet</code> (no console
+        output), <code>--no-file</code> (no rotating file handler) and <code>--mailer</code> (email alerts on
+        CRITICAL records).</p>
+      <p>Apply the resulting configuration in your application:</p>
+<pre><code>import logging
+from logging.config import dictConfig
+from navconfig.logging import logging_config
+
+dictConfig(logging_config)
+
+logger = logging.getLogger("MY_APP")
+logger.info("Hello World")</code></pre>
+    </section>
+
+    <section id="usage">
+      <h2>Reading values</h2>
+<pre><code>from navconfig import config
+
+APP_NAME = config.get("APP_NAME")   # "MyApp"
+APP_NAME = config.APP_NAME          # attribute access also works</code></pre>
+
+      <h3>Typed accessors</h3>
+<pre><code>config.get("APP_NAME")                  # str
+config.getint("PORT", fallback=8080)    # int
+config.getboolean("DEBUG")              # bool
+config.getlist("ALLOWED_HOSTS")         # list (comma-separated)
+config.getdict("EXTRA")                 # dict</code></pre>
+      <p>An optional <code>fallback</code> is returned when the key is not found:</p>
+<pre><code>config.get("MISSING_KEY", "default_value")</code></pre>
+
+      <h3>Initialization</h3>
+      <p>NavConfig resolves the project layout and loads the environment the first time one of its
+        package-level names is accessed (<code>config</code>, <code>BASE_DIR</code>, <code>DEBUG</code>,
+        <code>ENV</code>, &hellip;), not while the package is being imported. Call
+        <code>navconfig.bootstrap()</code> when you need the environment loaded into <code>os.environ</code> as
+        a side effect without touching any of those names:</p>
+<pre><code>import navconfig
+
+navconfig.bootstrap()</code></pre>
+    </section>
+
+    <section id="layout">
+      <h2>Project layout</h2>
+      <p>By default NavConfig looks for files relative to the project root, based on the file type:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>File type</th><th>Default location</th></tr></thead>
+          <tbody>
+            <tr><td><code>.env</code></td><td><code>env/</code>, plus the environment subdirectory</td></tr>
+            <tr><td><code>.yml</code> / <code>.toml</code></td><td><code>env/</code></td></tr>
+            <tr><td><code>pyproject.toml</code></td><td>project root</td></tr>
+            <tr><td><code>.ini</code></td><td><code>etc/</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A typical project looks like this:</p>
+<pre><code>myapp/
+|-- __init__.py
+|-- pyproject.toml
+|-- env/
+|   |-- .env          shared base file
+|   |-- dev/
+|   |   +-- .env
+|   |-- staging/
+|   |   +-- .env
+|   +-- prod/
+|       +-- .env
+|-- etc/
+|   +-- config.ini
+|-- logs/
++-- settings/
+    |-- __init__.py
+    +-- settings.py   optional</code></pre>
+    </section>
+
+    <section id="settings">
+      <h2>Settings module</h2>
+      <p>Create a Python package called <code>settings</code> in your project to define configuration derived
+        from NavConfig values. Inside <code>settings/settings.py</code>:</p>
+<pre><code>import sys
+from navconfig import config, DEBUG
+
+LOCAL_DEVELOPMENT = DEBUG is True and sys.argv[0] == "run.py"
+SEND_NOTIFICATIONS = config.get("SEND_NOTIFICATIONS", fallback=True)</code></pre>
+      <p>Variables defined there are accessible through <code>navconfig.conf</code>:</p>
+<pre><code>from navconfig.conf import LOCAL_DEVELOPMENT
+
+if LOCAL_DEVELOPMENT:
+    print("Running in local development mode.")</code></pre>
+    </section>
+
+    <section id="upgrade">
+      <h2>Upgrading to 3.0</h2>
+      <div class="note">
+        <p><strong>Breaking changes.</strong> NavConfig 3.0 reorganises the CLI into sub-commands and defers
+          initialization; there is no compatibility shim.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>2.x</th><th>3.0</th></tr></thead>
+          <tbody>
+            <tr><td><code>kardex create --env dev</code></td><td><code>kardex env create --env dev</code></td></tr>
+            <tr><td><code>kardex new-env prod</code></td><td><code>kardex env new prod</code></td></tr>
+            <tr><td><code>kardex new-env prod --vault</code></td><td><code>kardex env new prod</code> then <code>kardex vault create --env prod</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two further changes are worth checking before you upgrade:</p>
+      <ul>
+        <li><strong>Initialization order.</strong> Importing <code>navconfig</code> no longer builds the
+          configuration by itself. Code that relied on <code>import navconfig</code> alone to populate
+          <code>os.environ</code> must call <code>navconfig.bootstrap()</code> explicitly, or read any exported
+          name. This is what makes <code>kardex env create</code> runnable on a project that has no
+          <code>env/</code> directory yet.</li>
+        <li><strong>Vault directives.</strong> The block written by <code>kardex vault create</code> uses
+          <code>VAULT_URL</code>, <code>VAULT_MOUNT_POINT</code> and <code>VAULT_VERSION</code>. The
+          <code>VAULT_ADDR</code>, <code>VAULT_ROLE_ID</code>, <code>VAULT_SECRET_ID</code>,
+          <code>VAULT_SECRET_PATH</code> and <code>VAULT_NAMESPACE</code> variables emitted by
+          <code>new-env --vault</code> in 2.x were never read by the loader.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>NavConfig is released under the MIT License &middot;
+      <a href="https://github.com/phenobarbital/navconfig">Source on GitHub</a> &middot;
+      <a href="https://github.com/phenobarbital/navconfig/blob/main/CHANGELOG.md">Changelog</a> &middot;
+      <a href="https://github.com/phenobarbital/navconfig/issues">Issue tracker</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

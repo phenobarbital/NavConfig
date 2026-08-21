@@ -1,246 +1,63 @@
-"""Command line tools for managing NavConfig projects."""
+"""``kardex`` -- the NavConfig command line interface.
+
+The CLI is organised in command groups (``env``, ``vault``, ``log``), each
+of them exposing its own actions::
+
+    kardex env create [--split]
+    kardex env new <name>
+    kardex vault create
+    kardex vault migrate
+    kardex vault save VARIABLE:VALUE
+    kardex log enable [--logstash]
+
+Importing this module must never build the global configuration: the whole
+point of ``kardex env create`` is to run on a project that does not have an
+``env/`` directory yet. That is why :mod:`navconfig` resolves ``config``
+lazily and why nothing here imports it.
+"""
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
-from pathlib import Path
 
-from .samples import get_sample_path
+from .commands import COMMANDS, CommandError
+from .version import __version__
 
-logger = logging.getLogger("navconfig.cli")
-
-# ---------------------------------------------------------------------------
-# Vault-related variables appended when --vault is used with new-env
-# ---------------------------------------------------------------------------
-VAULT_ENV_BLOCK = """\
-
-# -- HashiCorp Vault --
-VAULT_ENABLED=true
-VAULT_ADDR=https://vault.example.com:8200
-VAULT_TOKEN=
-VAULT_ROLE_ID=
-VAULT_SECRET_ID=
-VAULT_MOUNT_POINT=secret
-VAULT_SECRET_PATH=apps/{app_name}
-VAULT_NAMESPACE=
-# Optional: custom vault path segment, overrides ENV for vault lookups only
-# VAULT_ENV=
-"""
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _read_sample(name: str) -> str:
-    """Read a bundled sample file and return its text."""
-    return get_sample_path(name).read_text(encoding="utf-8")
-
-
-def _msg(text: str) -> None:
-    """Print an informational message to stdout."""
-    sys.stdout.write(text + "\n")
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: create
-# ---------------------------------------------------------------------------
-
-def create_project_structure(env_name: str, project_root: Path) -> dict[str, Path]:
-    """Create the default NavConfig project structure from sample files.
-
-    Two complementary environment layouts are scaffolded so the project works
-    with either resolution strategy:
-
-    * ``env/.env`` -- shared base file, **without** an ``ENV=`` pin.
-    * ``env/<env_name>/.env`` -- environment-specific file pinned to
-      ``ENV=<env_name>``.
-    """
-    sample = _read_sample(".env.sample")
-
-    env_root = project_root / "env"
-    env_root.mkdir(parents=True, exist_ok=True)
-
-    # Base env/.env -- shared across environments, no ENV= assignment.
-    base_env_file = env_root / ".env"
-    if not base_env_file.exists():
-        base_content = "\n".join(
-            line for line in sample.splitlines()
-            if not line.strip().startswith("ENV=")
-        ) + "\n"
-        base_env_file.write_text(base_content, encoding="utf-8")
-
-    # Environment-specific env/<env_name>/.env -- pinned to ENV=<env_name>.
-    env_directory = env_root / env_name
-    env_directory.mkdir(parents=True, exist_ok=True)
-
-    env_file = env_directory / ".env"
-    if not env_file.exists():
-        content = sample.replace("ENV=dev", f"ENV={env_name}")
-        env_file.write_text(content, encoding="utf-8")
-
-    # etc/config.ini
-    etc_directory = project_root / "etc"
-    etc_directory.mkdir(parents=True, exist_ok=True)
-
-    config_file = etc_directory / "config.ini"
-    if not config_file.exists():
-        content = _read_sample("config.ini.sample")
-        config_file.write_text(content, encoding="utf-8")
-
-    # logs/ directory (referenced by default logging config)
-    logs_directory = project_root / "logs"
-    logs_directory.mkdir(parents=True, exist_ok=True)
-
-    # templates/ directory
-    templates_directory = project_root / "templates"
-    templates_directory.mkdir(parents=True, exist_ok=True)
-
-    return {
-        "env_directory": env_directory,
-        "base_env_file": base_env_file,
-        "env_file": env_file,
-        "etc_directory": etc_directory,
-        "config_file": config_file,
-        "templates_directory": templates_directory,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: new-env
-# ---------------------------------------------------------------------------
-
-def create_new_environment(
-    name: str,
-    project_root: Path,
-    vault: bool = False,
-) -> dict[str, Path]:
-    """Create a new environment directory by copying the base env/.env.
-
-    If no base env/.env exists the bundled sample is used instead.
-    When *vault* is ``True`` the HashiCorp Vault connection variables
-    are appended to the new file.
-    """
-    base_env_file = project_root / "env" / ".env"
-    if base_env_file.exists():
-        base_content = base_env_file.read_text(encoding="utf-8")
-    else:
-        # Fall back to the bundled sample
-        base_content = _read_sample(".env.sample")
-
-    # Replace the environment token in the content
-    # Handle both quoted and unquoted forms
-    for old in ("ENV=dev", "ENV=staging", "ENV=prod", "ENV=production"):
-        base_content = base_content.replace(old, f"ENV={name}")
-
-    target_dir = project_root / "env" / name
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    target_file = target_dir / ".env"
-    if target_file.exists():
-        _msg(f"Environment file already exists: {target_file}")
-        _msg("Use --force to overwrite (not implemented yet).")
-        sys.exit(1)
-
-    if vault:
-        app_name = name  # sensible default for the vault path
-        base_content += VAULT_ENV_BLOCK.format(app_name=app_name)
-
-    target_file.write_text(base_content, encoding="utf-8")
-
-    return {
-        "env_directory": target_dir,
-        "env_file": target_file,
-    }
-
-
-# ---------------------------------------------------------------------------
-# CLI parser
-# ---------------------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the ``kardex`` argument parser with every command group."""
     parser = argparse.ArgumentParser(
         prog="kardex",
         description="Utilities for bootstrapping and managing NavConfig projects.",
     )
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=f"kardex (navconfig) {__version__}",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # -- create ---------------------------------------------------------------
-    create_parser = subparsers.add_parser(
-        "create",
-        help="Create the default NavConfig environment structure.",
-    )
-    create_parser.add_argument(
-        "--env",
-        default="dev",
-        help="Name of the environment to create (default: dev).",
-    )
-    create_parser.add_argument(
-        "--path",
-        default=".",
-        help="Project directory where the structure should be created.",
-    )
-
-    # -- new-env --------------------------------------------------------------
-    newenv_parser = subparsers.add_parser(
-        "new-env",
-        help="Create a new environment from the base env/.env file.",
-    )
-    newenv_parser.add_argument(
-        "name",
-        help="Name of the new environment (e.g. prod, staging, qa).",
-    )
-    newenv_parser.add_argument(
-        "--path",
-        default=".",
-        help="Project root directory (default: current directory).",
-    )
-    newenv_parser.add_argument(
-        "--vault",
-        action="store_true",
-        default=False,
-        help="Include HashiCorp Vault connection variables in the new .env.",
-    )
+    for command in COMMANDS:
+        command.add_parser(subparsers)
 
     return parser
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
 def main(argv: list[str] | None = None) -> int:
-    """Entry point for the kardex CLI."""
+    """Entry point for the ``kardex`` CLI."""
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command == "create":
-        project_root = Path(args.path).resolve()
-        created = create_project_structure(args.env, project_root)
-        headline = (
-            f"Created NavConfig project structure at {project_root} "
-            f"(environment: {args.env})"
-        )
-        logger.info(headline)
-        _msg(headline)
-        for label, path in created.items():
-            _msg(f"  {label} -> {path}")
-        return 0
+    handler = getattr(args, "func", None)
+    if handler is None:  # pragma: no cover - argparse enforces a subcommand
+        parser.print_help()
+        return 1
 
-    if args.command == "new-env":
-        project_root = Path(args.path).resolve()
-        created = create_new_environment(
-            name=args.name,
-            project_root=project_root,
-            vault=args.vault,
-        )
-        vault_note = " (with Vault variables)" if args.vault else ""
-        _msg(f"Created environment '{args.name}'{vault_note} at {created['env_file']}")
-        return 0
-
-    parser.print_help()
-    return 1
+    try:
+        return handler(args)
+    except CommandError as err:
+        sys.stderr.write(f"kardex: {err}\n")
+        return 1
 
 
 if __name__ == "__main__":
