@@ -20,7 +20,14 @@ jobs:
           python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314'
           build-requirements: 'uv setuptools>=74.0.0 Cython>=3.0.11 wheel>=0.44.0'
           system-packages: 'libmemcached-devel openssl-devel zlib-devel'
-          pre-build-command: 'uv sync --extra build --no-dev'
+          # No pre-build-command on purpose. The wheels only need the build
+          # requirements above (setuptools/Cython/wheel) to cythonize the .pyx
+          # sources; the runtime dependencies are never imported at build time.
+          # A `uv sync` here resolved the *whole* dependency tree against
+          # whichever interpreter uv discovered inside the manylinux image --
+          # which is now the free-threaded CPython 3.14t -- and orjson ships no
+          # free-threaded wheels, so it fell back to its Rust sdist and failed
+          # with "orjson does not support free-threaded Python".
           package-path: '.'
 
       - name: Upload wheel artifacts
@@ -44,11 +51,13 @@ jobs:
 
       - name: Build source distribution
         run: |
-          # Install build dependencies
-          uv sync --extra build --no-dev
+          # Pin the interpreter explicitly: left to its own discovery uv can pick
+          # a free-threaded build (3.13t/3.14t), and some dependencies (orjson)
+          # publish no free-threaded wheels and refuse to compile there.
+          uv sync --extra build --no-dev --python 3.11
 
           # Build source distribution
-          uv build --sdist
+          uv build --sdist --python 3.11
 
       - name: Upload source artifacts
         uses: actions/upload-artifact@v4
