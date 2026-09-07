@@ -20,6 +20,11 @@ single, immutable point of truth that can be shared across modules.
 
 Documentation: <https://phenobarbital.github.io/navconfig/>
 
+Usage guide: <https://phenobarbital.github.io/navconfig/usage.html> — a runnable
+Python application, typed accessors, INI sections and troubleshooting.
+
+For local preview and publishing instructions, see [Maintaining the documentation site](docs/github-pages.md).
+
 
 ## Motivation
 
@@ -299,7 +304,7 @@ config.getdict("EXTRA")                 # dict
 An optional `fallback` argument is returned when the key is not found:
 
 ```python
-config.get("MISSING_KEY", "default_value")
+config.get("MISSING_KEY", fallback="default_value")
 ```
 
 ### Initialization

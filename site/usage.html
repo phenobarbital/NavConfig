@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage guide — NavConfig</title>
+  <meta name="description" content="Learn NavConfig with a runnable Python quickstart, typed configuration, INI sections, environments, logging and troubleshooting.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="hero">
+  <div class="wrap">
+    <h1>NavConfig usage guide</h1>
+    <p class="tagline">From your first environment file to configuration shared across a Python application.</p>
+    <div class="badges">
+      <span class="badge">Python &ge; 3.10.1</span>
+      <span class="badge">MIT License</span>
+      <a class="badge" href="https://pypi.org/project/navconfig/">PyPI</a>
+    </div>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="index.html">Documentation</a>
+      <a href="usage.html" aria-current="page">Usage guide</a>
+      <a href="https://github.com/phenobarbital/navconfig">GitHub</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap layout">
+  <nav class="toc" aria-label="On this page">
+    <strong>On this page</strong>
+    <ol>
+      <li><a href="#quickstart">Runnable quickstart</a></li>
+      <li><a href="#typed-values">Typed values and defaults</a></li>
+      <li><a href="#ini">INI sections</a></li>
+      <li><a href="#environments">Multiple environments</a></li>
+      <li><a href="#initialization">Initialization</a></li>
+      <li><a href="#settings">Python settings</a></li>
+      <li><a href="#logging">Application logging</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ol>
+  </nav>
+  <main id="main-content">
+    <section id="quickstart">
+      <h2>Runnable quickstart</h2>
+      <p>Use a new project directory and Python 3.10.1 or newer. These shell commands use Bash on Linux or macOS.</p>
+      <h3>1. Install and create the configuration layout</h3>
+<pre><code class="language-bash">mkdir navconfig-demo
+cd navconfig-demo
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install navconfig
+kardex env create --env dev</code></pre>
+      <p>On Windows, activate with <code>.venv\Scripts\Activate.ps1</code> in PowerShell.
+        The CLI creates <code>env/dev/.env</code>, <code>etc/config.ini</code>, <code>logs/</code>
+        and <code>templates/</code>. Existing files are preserved unless you pass <code>--force</code>.</p>
+      <h3>2. Edit <code>env/dev/.env</code></h3>
+      <p>Use these values for the demo:</p>
+<pre><code class="language-ini" data-example="environment">ENV=dev
+APP_NAME=NavConfig Demo
+PORT=8080
+DEBUG=true
+ALLOWED_HOSTS=localhost,127.0.0.1
+CONFIG_FILE=etc/config.ini
+VAULT_ENABLED=false</code></pre>
+      <h3>3. Create <code>app.py</code></h3>
+<pre><code class="language-python" data-example="app">from navconfig import config
+
+app_name: str = config.get("APP_NAME", fallback="My application")
+port: int = config.getint("PORT", fallback=8000)
+debug: bool = config.getboolean("DEBUG", fallback=False)
+allowed_hosts: list[str] = config.getlist("ALLOWED_HOSTS")
+
+print(f"{app_name} on port {port}")
+print(f"Debug: {debug}")
+print(f"Allowed hosts: {', '.join(allowed_hosts)}")</code></pre>
+      <h3>4. Run the application</h3>
+      <p>Set the project root and environment before Python starts so discovery is unambiguous:</p>
+<pre><code class="language-bash">SITE_ROOT="$PWD" ENV=dev python app.py</code></pre>
+      <p>PowerShell equivalent:</p>
+<pre><code class="language-powershell">$env:SITE_ROOT = (Get-Location).Path
+$env:ENV = "dev"
+python app.py</code></pre>
+      <p>Application output:</p>
+<pre><code data-example="output">NavConfig Demo on port 8080
+Debug: True
+Allowed hosts: localhost, 127.0.0.1</code></pre>
+    </section>
+
+    <section id="typed-values">
+      <h2>Typed values and defaults</h2>
+      <p>Environment values normally arrive as strings. Select an accessor for the type your application needs.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Accessor</th><th scope="col">Example</th><th scope="col">Result with the demo</th></tr></thead>
+          <tbody>
+            <tr><td>General value</td><td><code>config.get("APP_NAME")</code></td><td><code>"NavConfig Demo"</code></td></tr>
+            <tr><td>Integer</td><td><code>config.getint("PORT", fallback=8000)</code></td><td><code>8080</code></td></tr>
+            <tr><td>Boolean</td><td><code>config.getboolean("DEBUG", fallback=False)</code></td><td><code>True</code></td></tr>
+            <tr><td>Comma-separated list</td><td><code>config.getlist("ALLOWED_HOSTS")</code></td><td><code>["localhost", "127.0.0.1"]</code></td></tr>
+            <tr><td>Missing value</td><td><code>config.get("UNSET_KEY", fallback="default")</code></td><td><code>"default"</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p>Use the <code>fallback=</code> keyword. The second positional argument of <code>get</code>,
+          <code>getint</code>, <code>getboolean</code> and <code>getlist</code> is an INI section name.</p>
+      </div>
+      <p><code>getlist</code> returns an empty list for a missing value and does not strip whitespace
+        around items. Use comma-separated values without spaces, or strip each item in your application.</p>
+      <p>For required values, check explicitly:</p>
+<pre><code class="language-python">from navconfig import config
+
+app_name: str | None = config.get("APP_NAME")
+if not app_name:
+    raise ValueError("APP_NAME must be configured")</code></pre>
+      <p>Attribute access such as <code>config.APP_NAME</code> is also available; absent or empty values
+        raise <code>AttributeError</code>. It does not convert strings into integers or booleans.</p>
+      <h3>Dictionaries</h3>
+      <p><code>getdict</code> can retrieve dictionaries already present in the configuration mapping;
+        it is not a JSON parser for <code>.env</code> strings. For JSON stored in an environment value,
+        parse it explicitly with Python's standard library:</p>
+<pre><code class="language-ini">EXTRA='{"region": "eu", "retries": 3}'</code></pre>
+<pre><code class="language-python">import json
+from typing import Any
+
+from navconfig import config
+
+extra: dict[str, Any] = json.loads(config.get("EXTRA", fallback="{}"))</code></pre>
+    </section>
+
+    <section id="ini">
+      <h2>Read an INI section</h2>
+      <p>Add this section to <code>etc/config.ini</code>. The <code>CONFIG_FILE</code> directive in
+        your environment file selects the file; relative paths resolve from <code>SITE_ROOT</code>.</p>
+<pre><code class="language-ini" data-example="ini">[service]
+host = 127.0.0.1
+port = 9000
+enabled = true</code></pre>
+<pre><code class="language-python" data-example="ini-app">from navconfig import config
+
+host: str = config.get("host", section="service", fallback="localhost")
+port: int = config.getint("port", section="service", fallback=8000)
+enabled: bool = config.getboolean("enabled", section="service", fallback=False)
+service: dict[str, str] = config.section("service")</code></pre>
+      <p><code>config.section("service")</code> returns the section as a dictionary of strings;
+        a missing section returns <code>{}</code>.</p>
+    </section>
+
+    <section id="environments">
+      <h2>Use multiple environments</h2>
+<pre><code class="language-bash">kardex env new prod
+kardex env new staging --split</code></pre>
+      <p>New environments copy the shared <code>env/.env</code> template, or the bundled sample when
+        that template is missing. Customize <code>env/prod/.env</code> for production and start a new process:</p>
+<pre><code class="language-bash">SITE_ROOT="$PWD" ENV=prod python app.py</code></pre>
+      <p><code>ENV</code> selects <code>env/&lt;name&gt;/</code> at initialization. The shared
+        <code>env/.env</code> is a scaffold template, not an automatically inherited runtime layer.</p>
+      <p>Use <code>kardex env create --env dev --split</code> for supplementary environment files.
+        See <a href="index.html#split">file discovery and precedence</a> before repeating keys across files.</p>
+      <p>For remote secrets, follow the <a href="index.html#vault">HashiCorp Vault setup and migration guide</a>.</p>
+    </section>
+
+    <section id="initialization">
+      <h2>Initialize before starting async work</h2>
+      <p><code>import navconfig</code> alone does not load configuration. Reading an exported name such as
+        <code>config</code> or <code>DEBUG</code> initializes the shared container. Select
+        <code>SITE_ROOT</code> and <code>ENV</code> before that first access.</p>
+      <p>Call <code>bootstrap()</code> when you need environment-loading side effects explicitly.
+        For async applications, initialize before starting the event loop:</p>
+<pre><code class="language-python">import asyncio
+
+import navconfig
+
+config = navconfig.bootstrap()
+
+
+async def main() -> None:
+    print(config.get("APP_NAME", fallback="My application"))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+      <p>Repeated calls return the same container. If the optional <code>navconfig[uvloop]</code>
+        extra is installed on a supported platform, bootstrap activates it. Without it, the current
+        asyncio event loop policy is preserved.</p>
+    </section>
+
+    <section id="settings">
+      <h2>Define Python settings</h2>
+      <p>Create a <code>settings/</code> directory with an empty <code>__init__.py</code> and this
+        <code>settings.py</code> file:</p>
+<pre><code class="language-python">from navconfig import config
+
+SEND_NOTIFICATIONS: bool = config.getboolean("SEND_NOTIFICATIONS", fallback=False)
+APP_TITLE: str = config.get("APP_NAME", fallback="My application")</code></pre>
+      <p>Use the derived settings elsewhere in your application:</p>
+<pre><code class="language-python">from navconfig.conf import APP_TITLE, SEND_NOTIFICATIONS
+
+print(APP_TITLE)
+if SEND_NOTIFICATIONS:
+    print("Notifications are enabled")</code></pre>
+      <p>The settings module is optional. Importing <code>navconfig.conf</code> also changes the process
+        working directory to <code>BASE_DIR</code>.</p>
+    </section>
+
+    <section id="logging">
+      <h2>Configure application logging</h2>
+      <p>Enable console and rotating-file logging in the project's INI file:</p>
+<pre><code class="language-bash">kardex log enable</code></pre>
+<pre><code class="language-python">import logging
+from logging.config import dictConfig
+
+from navconfig.logging import logging_config
+
+dictConfig(logging_config)
+logger = logging.getLogger("myapp")
+logger.info("Application started")</code></pre>
+      <p>See <a href="index.html#logging">logging options</a> for log levels, output directories and Logstash.</p>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>Troubleshooting</h2>
+      <h3>Configuration files are missing</h3>
+      <p>Run <code>kardex env create --env dev</code> from the project root. Confirm the selected
+        <code>ENV</code> directory exists and set <code>SITE_ROOT</code> explicitly when using a
+        virtual environment outside your project.</p>
+      <h3>A default value is ignored</h3>
+      <p>Use <code>config.get("KEY", fallback="default")</code>. Passing the default as the second
+        argument selects an INI section instead.</p>
+      <h3>A value differs between accessors</h3>
+      <p>The default loader builds a merged mapping and also populates <code>os.environ</code>.
+        Existing process variables are preserved by default. <code>get</code> prefers the mapping,
+        while accessors such as <code>getint</code> and attribute access can read the process
+        environment directly. Keep each key in one source when consistent values are required.</p>
+      <h3>A CLI command is unavailable</h3>
+      <p>Activate the environment where NavConfig is installed, then run <code>kardex --help</code>.
+        This guide follows the repository's grouped CLI; older installations may expose different
+        commands. See <a href="index.html#upgrade">the CLI migration notes</a>.</p>
+      <p>Report reproducible problems in the <a href="https://github.com/phenobarbital/navconfig/issues">issue tracker</a>.</p>
+    </section>
+  </main>
+</div>
+<footer>
+  <div class="wrap">
+    <p>NavConfig is released under the MIT License &middot;
+      <a href="index.html">Documentation</a> &middot;
+      <a href="https://github.com/phenobarbital/navconfig">Source on GitHub</a></p>
+  </div>
+</footer>
+</body>
+</html>
