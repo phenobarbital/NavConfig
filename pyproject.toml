@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "setuptools>=74.0.0",
-    "Cython>=3.0.11",
+    "Cython>=3.1.4",
     "wheel>=0.44.0",
 ]
 build-backend = "setuptools.build_meta"
@@ -39,7 +39,7 @@ classifiers = [
 ]
 keywords = ["aiohttp", "settings", "configuration", "conf", "configuration-management"]
 dependencies = [
-    "Cython>=3.0.11",
+    "Cython>=3.1.4",
     "asyncio>=3.4.3",
     "python-dotenv>=1.2.2",
     "configparser>=6.0.0",
@@ -72,7 +72,7 @@ Funding = "https://paypal.me/phenobarbital"
 
 [project.optional-dependencies]
 uvloop = [
-    "uvloop>=0.21.0"
+    "uvloop>=0.22.1; sys_platform != 'win32'"
 ]
 logstash = [
     "python-logstash-async>=2.7.2,<=3.0.0",
@@ -86,7 +86,7 @@ hvac = [
 # Build dependencies (needed for Cython compilation)
 build = [
     "setuptools>=74.0.0",
-    "Cython>=3.0.11",
+    "Cython>=3.1.4",
     "wheel>=0.44.0",
 ]
 # Development dependencies
@@ -113,7 +113,7 @@ all = [
     "python-logstash-async>=2.7.2",
     "PyYAML>=6.0",
     "hvac>=2.3.0",
-    "uvloop>=0.21.0"
+    "uvloop>=0.22.1; sys_platform != 'win32'"
 ]
 
 [tool.setuptools]

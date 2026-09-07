@@ -567,14 +567,7 @@ class Kardex(metaclass=Singleton):
             # get data from external readers:
             val = self._get_external(key)
         if val:
-            val = self._unserialize(val)
-            try:
-                if val.lower() in self._ini.BOOLEAN_STATES:
-                    return self._ini.BOOLEAN_STATES[val.lower()]
-                elif val.isdigit():
-                    return int(val)
-            finally:
-                return val  # pylint: disable=W0150
+            return self._unserialize(val)
         else:
             raise AttributeError(
                 f"Config Error: has not attribute {key}"

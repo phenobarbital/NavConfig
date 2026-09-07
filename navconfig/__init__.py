@@ -16,8 +16,6 @@ from .utils.settings import ensure_settings_priority
 from .kardex import Kardex  # noqa
 from .version import __version__
 
-install_uvloop()
-
 # Reduce asyncio log level:
 logging.getLogger('asyncio').setLevel(logging.INFO)
 
@@ -62,6 +60,8 @@ def bootstrap() -> "Kardex":
 
     if _bootstrapped:
         return globals()["config"]
+
+    install_uvloop()
 
     ns = globals()
 
