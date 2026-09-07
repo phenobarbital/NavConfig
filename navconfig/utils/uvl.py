@@ -1,11 +1,14 @@
-import asyncio
+import sys
 
 
-def install_uvloop():
-    """install uvloop and set as default loop for asyncio."""
+def install_uvloop() -> None:
+    """Lazily install uvloop when available on a supported platform."""
+    if sys.platform == "win32":
+        return
+
     try:
         import uvloop  # noqa # pylint: disable=import-outside-toplevel
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        uvloop.install()
     except ImportError:
-        pass
+        return
+
+    uvloop.install()

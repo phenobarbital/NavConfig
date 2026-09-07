@@ -389,6 +389,15 @@ if LOCAL_DEVELOPMENT:
 
 Optional: `redis`, `python-logstash-async`, `uvloop`.
 
+Python 3.14 is supported. Building the Cython extensions requires Cython >= 3.1.4.
+
+On supported platforms, install `navconfig[uvloop]` to enable uvloop >= 0.22.1. NavConfig
+loads and activates it automatically when configuration is first accessed (or
+`navconfig.bootstrap()` is called). Importing `navconfig` alone does not load
+uvloop. Windows skips uvloop, including when installing `navconfig[uvloop]` or
+`navconfig[all]`. When uvloop is absent, the current asyncio event loop policy
+is preserved.
+
 
 ## Contribution guidelines
 

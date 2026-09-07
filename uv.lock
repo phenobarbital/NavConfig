@@ -870,7 +870,7 @@ all = [
     { name = "pytomlpp" },
     { name = "pyyaml" },
     { name = "redis" },
-    { name = "uvloop" },
+    { name = "uvloop", marker = "sys_platform != 'win32'" },
 ]
 build = [
     { name = "cython" },
@@ -903,7 +903,7 @@ redis = [
     { name = "redis" },
 ]
 uvloop = [
-    { name = "uvloop" },
+    { name = "uvloop", marker = "sys_platform != 'win32'" },
 ]
 
 [package.metadata]
@@ -913,8 +913,8 @@ requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=26.3.1" },
     { name = "configparser", specifier = ">=6.0.0" },
     { name = "cryptography", specifier = ">=46.0.7" },
-    { name = "cython", specifier = ">=3.0.11" },
-    { name = "cython", marker = "extra == 'build'", specifier = ">=3.0.11" },
+    { name = "cython", specifier = ">=3.1.4" },
+    { name = "cython", marker = "extra == 'build'", specifier = ">=3.1.4" },
     { name = "hvac", specifier = ">=2.3.0" },
     { name = "hvac", marker = "extra == 'all'", specifier = ">=2.3.0" },
     { name = "hvac", marker = "extra == 'default'", specifier = ">=2.3.0" },
@@ -947,8 +947,8 @@ requires-dist = [
     { name = "requests", specifier = ">=2.33.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "setuptools", marker = "extra == 'build'", specifier = ">=74.0.0" },
-    { name = "uvloop", marker = "extra == 'all'", specifier = ">=0.21.0" },
-    { name = "uvloop", marker = "extra == 'uvloop'", specifier = ">=0.21.0" },
+    { name = "uvloop", marker = "sys_platform != 'win32' and extra == 'all'", specifier = ">=0.22.1" },
+    { name = "uvloop", marker = "sys_platform != 'win32' and extra == 'uvloop'", specifier = ">=0.22.1" },
     { name = "wheel", marker = "extra == 'build'", specifier = ">=0.44.0" },
 ]
 provides-extras = ["uvloop", "logstash", "redis", "hvac", "build", "dev", "default", "all"]
