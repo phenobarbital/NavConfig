@@ -36,6 +36,37 @@ jobs:
           name: wheels-linux
           path: dist/*.whl
 
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Build wheels (Windows)
+        # Build isolation installs only the requirements in [build-system].
+        run: uv build --wheel --python ${{ matrix.python-version }}
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.python-version }}
+          path: dist/*-win_amd64.whl
+          if-no-files-found: error
+
   build-source:
     runs-on: ubuntu-latest
     steps:
@@ -66,7 +97,7 @@ jobs:
           path: dist/*.tar.gz
 
   deploy:
-    needs: [build, build-source]
+    needs: [build, build-windows, build-source]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     environment:
@@ -110,6 +141,16 @@ jobs:
             echo "HAS_MANYLINUX_WHEELS=false" >> $GITHUB_ENV
           fi
 
+          # Check for Windows wheels
+          if ls dist/*-win_amd64.whl 1> /dev/null 2>&1; then
+            echo "Found Windows wheels:"
+            ls -la dist/*-win_amd64.whl
+            echo "HAS_WINDOWS_WHEELS=true" >> $GITHUB_ENV
+          else
+            echo "No Windows wheels found."
+            echo "HAS_WINDOWS_WHEELS=false" >> $GITHUB_ENV
+          fi
+
           # Check for source distribution
           if ls dist/*.tar.gz 1> /dev/null 2>&1; then
             echo "Found source distribution:"
@@ -131,8 +172,8 @@ jobs:
       # wheels but no sdist (or vice versa) cannot be corrected, only yanked.
       - name: Verify the release is complete
         run: |
-          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
-            echo "::error::Incomplete release - wheels: $HAS_MANYLINUX_WHEELS, sdist: $HAS_SOURCE_DIST"
+          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_WINDOWS_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
+            echo "::error::Incomplete release - Linux wheels: $HAS_MANYLINUX_WHEELS, Windows wheels: $HAS_WINDOWS_WHEELS, sdist: $HAS_SOURCE_DIST"
             exit 1
           fi
 
@@ -146,15 +187,16 @@ jobs:
         run: |
           uv tool install twine
           uv tool run twine upload --non-interactive --skip-existing \
-            dist/*-manylinux*.whl dist/*.tar.gz
+            dist/*-manylinux*.whl dist/*-win_amd64.whl dist/*.tar.gz
 
 
   # Optional: Test installation job
   test-install:
     needs: deploy
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Install uv
@@ -163,19 +205,18 @@ jobs:
           version: "latest"
 
       - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
 
       - name: Wait for PyPI propagation
-        run: sleep 60
+        run: python -c "import time; time.sleep(60)"
 
       - name: Test installation from PyPI
         run: |
-          # Create a temporary environment and test installation
-          uv venv test-env
-          source test-env/bin/activate
-
-          # Install from PyPI
-          uv pip install navconfig
+          # Install into the interpreter selected by setup-python on either OS.
+          uv pip install --system --python ${{ matrix.python-version }} --only-binary navconfig navconfig
 
           # Test basic import
           python -c "import navconfig; print(f'NavConfig {navconfig.__version__} installed successfully')"
