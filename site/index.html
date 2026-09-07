@@ -5,105 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NavConfig &mdash; Universal Configuration Management for Python</title>
 <meta name="description" content="NavConfig is a configuration management library for Python projects: .env files, INI/TOML/YAML, Redis and HashiCorp Vault behind a single point of truth.">
-<style>
-  :root {
-    --bg: #ffffff;
-    --bg-soft: #f6f8fa;
-    --bg-code: #f6f8fa;
-    --fg: #1f2328;
-    --fg-muted: #59636e;
-    --border: #d1d9e0;
-    --accent: #0550ae;
-    --accent-soft: #ddf4ff;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0d1117;
-      --bg-soft: #151b23;
-      --bg-code: #151b23;
-      --fg: #e6edf3;
-      --fg-muted: #9198a1;
-      --border: #3d444d;
-      --accent: #6cb6ff;
-      --accent-soft: #121d2f;
-    }
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: var(--sans);
-    font-size: 16px;
-    line-height: 1.6;
-  }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-
-  header.hero {
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-soft);
-    padding: 3rem 1.5rem 2.5rem;
-  }
-  .wrap { max-width: 1100px; margin: 0 auto; }
-  .hero h1 { margin: 0 0 .35rem; font-size: 2.5rem; letter-spacing: -.02em; }
-  .hero p.tagline { margin: 0 0 1.25rem; font-size: 1.15rem; color: var(--fg-muted); max-width: 46rem; }
-  .badges { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .badge {
-    font-size: .8rem; padding: .2rem .6rem; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--bg); color: var(--fg-muted);
-  }
-
-  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2.5rem; padding: 2.5rem 1.5rem 4rem; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; gap: 1rem; } nav.toc { position: static !important; } }
-
-  nav.toc { position: sticky; top: 1.5rem; align-self: start; font-size: .9rem; }
-  nav.toc strong { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); margin-bottom: .5rem; }
-  nav.toc ol { list-style: none; margin: 0; padding: 0; }
-  nav.toc li { margin: .15rem 0; }
-  nav.toc a { color: var(--fg-muted); display: block; padding: .15rem 0; }
-  nav.toc a:hover { color: var(--accent); }
-
-  main { min-width: 0; }
-  section { margin-bottom: 3rem; }
-  h2 { font-size: 1.6rem; margin: 0 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); letter-spacing: -.01em; }
-  h3 { font-size: 1.15rem; margin: 1.75rem 0 .5rem; }
-  p, ul, ol { margin: 0 0 1rem; }
-  ul, ol { padding-left: 1.35rem; }
-  li { margin: .25rem 0; }
-
-  code {
-    font-family: var(--mono); font-size: .875em;
-    background: var(--accent-soft); padding: .12em .35em; border-radius: 5px;
-  }
-  pre {
-    background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
-    padding: 1rem; overflow-x: auto; margin: 0 0 1rem; line-height: 1.5;
-  }
-  pre code { background: none; padding: 0; font-size: .85rem; }
-
-  .table-scroll { overflow-x: auto; margin-bottom: 1rem; }
-  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
-  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; vertical-align: top; }
-  th { background: var(--bg-soft); font-weight: 600; }
-
-  .note {
-    border-left: 3px solid var(--accent); background: var(--accent-soft);
-    padding: .75rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 1rem;
-  }
-  .note p:last-child { margin-bottom: 0; }
-  .note strong { color: var(--fg); }
-
-  footer {
-    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
-    color: var(--fg-muted); font-size: .9rem; background: var(--bg-soft);
-  }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <header class="hero">
   <div class="wrap">
@@ -112,16 +17,20 @@
       INI/TOML/YAML, Redis and HashiCorp Vault behind a single, shared point of truth.</p>
     <div class="badges">
       <span class="badge">MIT License</span>
-      <span class="badge">Python &ge; 3.10</span>
-      <span class="badge">v3.0</span>
+      <span class="badge">Python &ge; 3.10.1</span>
       <a class="badge" href="https://github.com/phenobarbital/navconfig">GitHub</a>
       <a class="badge" href="https://pypi.org/project/navconfig/">PyPI</a>
     </div>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="index.html" aria-current="page">Documentation</a>
+      <a href="usage.html">Usage guide</a>
+      <a href="https://github.com/phenobarbital/navconfig">GitHub</a>
+    </nav>
   </div>
 </header>
 
 <div class="wrap layout">
-  <nav class="toc">
+  <nav class="toc" aria-label="On this page">
     <strong>On this page</strong>
     <ol>
       <li><a href="#overview">Overview</a></li>
@@ -139,13 +48,13 @@
     </ol>
   </nav>
 
-  <main>
+  <main id="main-content">
 
     <section id="overview">
       <h2>Overview</h2>
       <p>NavConfig is the default configuration layer of the Navigator Framework, and works equally well as a
         stand-alone tool for any Python application. It loads configuration directives from several sources and
-        combines them into one immutable object shared across modules:</p>
+        combines them into one configuration container shared across modules:</p>
       <ul>
         <li>Environment files (<code>.env</code>)</li>
         <li>INI files, through <code>configparser</code></li>
@@ -160,14 +69,22 @@
         environment without touching application code.</p>
     </section>
 
+    <section id="getting-started">
+      <h2>Start with a working application</h2>
+      <p>The <a href="usage.html#quickstart">usage guide</a> walks through installation, a complete
+        <code>.env</code> file and a Python application with expected output. It also covers
+        <a href="usage.html#ini">INI sections</a>, <a href="usage.html#typed-values">typed values</a>
+        and <a href="usage.html#troubleshooting">troubleshooting</a>.</p>
+    </section>
+
     <section id="install">
       <h2>Installation</h2>
 <pre><code>pip install navconfig</code></pre>
       <p>Optional backends are exposed as extras:</p>
-<pre><code>pip install navconfig[redis]      # Redis reader
-pip install navconfig[hvac]      # HashiCorp Vault
-pip install navconfig[logstash]  # Logstash logging handler
-pip install navconfig[all]       # everything</code></pre>
+<pre><code>pip install "navconfig[redis]"      # Redis reader
+pip install "navconfig[hvac]"      # HashiCorp Vault
+pip install "navconfig[logstash]"  # Logstash logging handler
+pip install "navconfig[all]"       # everything</code></pre>
     </section>
 
     <section id="cli">
@@ -198,7 +115,7 @@ pip install navconfig[all]       # everything</code></pre>
       <p>This generates the following structure in the current directory:</p>
 <pre><code>.
 |-- env/
-|   |-- .env          shared across environments, no ENV= pin
+|   |-- .env          template for new environments, no ENV= pin
 |   +-- dev/
 |       +-- .env      pinned to ENV=dev
 |-- etc/
@@ -206,7 +123,7 @@ pip install navconfig[all]       # everything</code></pre>
 |-- logs/
 +-- templates/</code></pre>
       <ul>
-        <li><code>env/.env</code> &mdash; values shared by every environment; <code>kardex env new</code> uses it as the template for new ones.</li>
+        <li><code>env/.env</code> &mdash; the template used by <code>kardex env new</code>; it is not automatically merged into each environment at runtime.</li>
         <li><code>env/dev/.env</code> &mdash; environment variables: secrets, feature flags, paths.</li>
         <li><code>etc/config.ini</code> &mdash; INI settings consumed by NavConfig, including the <code>[logging]</code> section.</li>
         <li><code>logs/</code> &mdash; where rotating log files are written.</li>
@@ -219,7 +136,7 @@ pip install navconfig[all]       # everything</code></pre>
 
     <section id="split">
       <h2>Split configuration across several files</h2>
-      <p>NavConfig loads <code>.env</code> first and then a set of supplementary files, which keeps unrelated
+      <p>NavConfig loads <code>.env</code> first and then supplementary files, which keeps unrelated
         concerns apart. Pass <code>--split</code> to create them all:</p>
 <pre><code>kardex env create --env dev --split</code></pre>
 <pre><code>env/dev/
@@ -229,8 +146,13 @@ pip install navconfig[all]       # everything</code></pre>
 |-- .env.api         HTTP layer settings
 |-- .env.cache       Redis / cache backend settings
 +-- .env.local       local overrides, loaded last (keep out of git)</code></pre>
-      <p>Files are loaded in that order, so <code>.env.local</code> always wins. Everything ends up in the same
-        flat namespace, so <code>config.get("DBHOST")</code> works regardless of which file declared it.</p>
+      <p>By default, auto-discovery loads <code>.env</code> first and then other <code>.env*</code> files
+        alphabetically. Set <code>AUTO_DISCOVERY=false</code> before starting Python to use the default
+        loader's fixed order shown above. All files contribute to a flat namespace.</p>
+      <p>With the default Vault loader, base <code>.env</code> values take priority over supplementary
+        values unless <code>NAVCONFIG_FILE_OVERRIDE_ENABLED=true</code> is set. That flag lets files
+        override Vault in the merged mapping too. Existing process variables are preserved by default,
+        and some typed accessors read those directly; avoid defining the same key in multiple sources.</p>
     </section>
 
     <section id="environments">
@@ -302,7 +224,7 @@ kardex vault save "DSN:postgres://user:pass@host:5432/db" API_KEY:abc123</code><
     --logstash-port 5044 \
     --logstash-level INFO</code></pre>
       <div class="note">
-        <p><strong>Note.</strong> The Logstash handler needs <code>pip install navconfig[logstash]</code>.
+        <p><strong>Note.</strong> The Logstash handler needs <code>pip install "navconfig[logstash]"</code>.
           NavConfig warns and falls back to the remaining handlers when the dependency or the server is
           unavailable.</p>
       </div>
@@ -331,10 +253,13 @@ APP_NAME = config.APP_NAME          # attribute access also works</code></pre>
 <pre><code>config.get("APP_NAME")                  # str
 config.getint("PORT", fallback=8080)    # int
 config.getboolean("DEBUG")              # bool
-config.getlist("ALLOWED_HOSTS")         # list (comma-separated)
-config.getdict("EXTRA")                 # dict</code></pre>
+config.getlist("ALLOWED_HOSTS")         # list (comma-separated)</code></pre>
       <p>An optional <code>fallback</code> is returned when the key is not found:</p>
-<pre><code>config.get("MISSING_KEY", "default_value")</code></pre>
+<pre><code>config.get("MISSING_KEY", fallback="default_value")</code></pre>
+
+      <p>The second positional argument selects an INI section. Always pass defaults with
+        <code>fallback=</code>. See <a href="usage.html#typed-values">typed values and dictionaries</a>
+        for complete examples.</p>
 
       <h3>Initialization</h3>
       <p>NavConfig resolves the project layout and loads the environment the first time one of its

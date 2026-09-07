@@ -65,7 +65,7 @@ kardex = "navconfig.cli:main"
 [project.urls]
 Homepage = "https://github.com/phenobarbital/navconfig"
 Repository = "https://github.com/phenobarbital/navconfig"
-Documentation = "https://github.com/phenobarbital/navconfig"
+Documentation = "https://phenobarbital.github.io/navconfig/"
 "Bug Tracker" = "https://github.com/phenobarbital/navconfig/issues"
 Funding = "https://paypal.me/phenobarbital"
 "Say Thanks!" = "https://saythanks.io/to/phenobarbital"
