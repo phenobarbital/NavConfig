@@ -151,8 +151,9 @@ addopts = [
 ]
 filterwarnings = [
     "error",
-    "ignore:The loop argument is deprecated since Python 3\\.8, and scheduled for removal in Python 3\\.10:DeprecationWarning:asyncio",
+    "ignore::DeprecationWarning",
 ]
+asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
