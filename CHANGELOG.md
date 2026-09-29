@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+* Process-wide Vault document cache (`navconfig.readers.vault_cache`): at most
+  one remote read per `(url, token, mount, version, path)` within the TTL,
+  shared across `VaultReader` instances, with negative caching of missing
+  paths and single-flight loading. Configure with `VAULT_CACHE_TTL` (seconds,
+  default `300`, `0` = never expire).
+* Async API: `await config.aload_vault(paths)`, `await config.aget(key)`,
+  `await config.aexists(key)`, plus `VaultReader.aget/aexists/alist/aload`.
+* `config.invalidate_vault_cache()`, `VaultReader.invalidate()` and
+  `VaultReader.refresh()`.
+
+### Changed
+* Kardex external lookups perform a single `get()` per reader instead of
+  `exists()` + `get()`.
+* `VaultReader.set`/`delete` now split nested keys on the **last** `/`
+  (as `get` already did): behavior change for keys like `a/b/KEY`.
+* `reload_current_env()` invalidates the Vault cache first.
+
+### Fixed
+* `Kardex.__contains__` now checks every enabled reader, not only the first.
+
 ## [3.0.0] - 2026-08-21
 
 Breaking release: the `kardex` CLI is now organised in sub-commands and the
