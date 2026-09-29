@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": null,
-  "completed_at": null,
+  "completed_at": "2026-09-29T17:40:16+00:00",
   "tasks": [
     {
       "id": "TASK-001",
@@ -14,15 +14,17 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
       "parallel": false,
       "parallelism_notes": "Foundation module, stdlib only; every later task imports it.",
       "assigned_to": null,
-      "started_at": null,
-      "file": "sdd/tasks/active/TASK-001-vault-document-cache.md"
+      "started_at": "2026-09-29T17:21:16+00:00",
+      "file": "sdd/tasks/completed/TASK-001-vault-document-cache.md",
+      "completed_at": "2026-09-29T17:22:27+00:00",
+      "verification": "verified"
     },
     {
       "id": "TASK-002",
@@ -31,7 +33,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -40,8 +42,10 @@
       "parallel": false,
       "parallelism_notes": "Imports vault_cache from TASK-001; modifies vault.py which TASK-003 depends on.",
       "assigned_to": null,
-      "started_at": null,
-      "file": "sdd/tasks/active/TASK-002-vault-reader-cache-async.md"
+      "started_at": "2026-09-29T17:21:16+00:00",
+      "file": "sdd/tasks/completed/TASK-002-vault-reader-cache-async.md",
+      "completed_at": "2026-09-29T17:28:14+00:00",
+      "verification": "verified"
     },
     {
       "id": "TASK-003",
@@ -50,7 +54,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -59,8 +63,10 @@
       "parallel": false,
       "parallelism_notes": "Calls VaultReader.aget/aload/invalidate added in TASK-002.",
       "assigned_to": null,
-      "started_at": null,
-      "file": "sdd/tasks/active/TASK-003-kardex-vault-integration.md"
+      "started_at": "2026-09-29T17:21:16+00:00",
+      "file": "sdd/tasks/completed/TASK-003-kardex-vault-integration.md",
+      "completed_at": "2026-09-29T17:28:46+00:00",
+      "verification": "verified"
     },
     {
       "id": "TASK-004",
@@ -69,7 +75,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -78,8 +84,10 @@
       "parallel": false,
       "parallelism_notes": "Documents final API and runs full suite; must follow all code tasks.",
       "assigned_to": null,
-      "started_at": null,
-      "file": "sdd/tasks/active/TASK-004-vault-cache-docs-changelog.md"
+      "started_at": "2026-09-29T17:21:16+00:00",
+      "file": "sdd/tasks/completed/TASK-004-vault-cache-docs-changelog.md",
+      "completed_at": "2026-09-29T17:31:16+00:00",
+      "verification": "verified"
     }
   ]
 }
