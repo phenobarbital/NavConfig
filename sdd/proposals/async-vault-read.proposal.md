@@ -4,7 +4,7 @@ title: Cache Vault documents per path and support async Vault load + cache
 slug: async-vault-read
 type: feature
 mode: enrichment
-status: discussion
+status: accepted
 source:
   kind: inline
   jira_key: null
@@ -25,6 +25,7 @@ updated: 2026-09-29
 > **Mode**: enrichment
 > **Confidence**: high (localization), medium (async approach)
 > **Source**: `inline`
+> **Spec**: sdd/specs/async-vault-read.spec.md
 
 ---
 
