@@ -22,5 +22,5 @@ if __name__ == '__main__':
     web.run_app(
         app,
         host=config.get('HOST', '0.0.0.0'),
-        port=config.getint('PORT', fallback=9090)
+        port=config.getint('PORT', fallback=9191)
     )
