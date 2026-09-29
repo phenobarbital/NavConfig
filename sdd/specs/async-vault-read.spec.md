@@ -1,6 +1,6 @@
 ---
 type: feature
-base_branch: main
+base_branch: dev
 projects: [navconfig]
 tags: [vault, cache, async, performance]
 ---
