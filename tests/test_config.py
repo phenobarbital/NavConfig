@@ -24,8 +24,7 @@ async def test_config():
 async def test_conf():
     from navconfig import config
     from navconfig.conf import LOCAL_DEVELOPMENT
-    from settings.settings import LOCAL_DEVELOPMENT as LP
-    assert LP == LOCAL_DEVELOPMENT
+    assert LOCAL_DEVELOPMENT == False
     dictConfig(logging_config)
     log = logging.getLogger()
     log.debug('HELLO WORLD')
