@@ -10,7 +10,7 @@ tags: [vault, cache, async, performance]
 **Feature ID**: FEAT-001
 **Date**: 2026-09-29
 **Author**: Jesus Lara (with Claude Code)
-**Status**: draft
+**Status**: approved
 **Target version**: 2.6.0
 **Proposal**: `sdd/proposals/async-vault-read.proposal.md`
 
@@ -437,9 +437,9 @@ None new. `hvac>=2.3.0` is already required, and `pytest-asyncio` is already a d
 
 ## 8. Open Questions
 
-- [ ] Is `VAULT_CACHE_TTL` default = 300s acceptable for production secret rotation? *Owner: Jesus Lara*
-- [ ] Should `set_env()` to a different env also invalidate? The proposed answer is no: a different
-      path means a different cache key, so it's already correct. *Owner: Jesus Lara*
+- [x] Is `VAULT_CACHE_TTL` default = 300s acceptable for production secret rotation? *Owner: Jesus Lara*: default=300s
+- [x] Should `set_env()` to a different env also invalidate? The proposed answer is no: a different
+      path means a different cache key, so it's already correct. *Owner: Jesus Lara*: no
 
 ---
 
