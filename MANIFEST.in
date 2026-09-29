@@ -1,21 +1,45 @@
-include LICENSE
-include CHANGES.rst
-include CONTRIBUTING.md
-include SECURITY.md
-include INSTALL.md
+# Include all Python source files
+include *.py
+recursive-include navconfig *.py
+recursive-include navconfig *.pyi
+recursive-include navconfig *.pyx
+recursive-include navconfig *.pxd
+
+# Include package data
+include navconfig/py.typed
+recursive-include navconfig *.yaml
+recursive-include navconfig *.yml
+recursive-include navconfig *.toml
+recursive-include navconfig *.sample
+
+# Include documentation
 include README.md
-include USAGE.md
-include Makefile
+include LICENSE
+include CHANGELOG.md
 
-graft navconfig
-graft tests
+# Include configuration files
+include pyproject.toml
+include setup.py
 
-# Exclude tests, settings, env, examples, and bin folders
+# Include Cython source files for debugging/development
+recursive-include navconfig *.pyx
+recursive-include navconfig *.pxd
+
+# Exclude build artifacts and cache
 global-exclude *.pyc
-prune docs
-prune settings
+global-exclude *.pyo
+global-exclude *.so
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude *.egg-info
+prune build
+prune dist
+prune .git
+prune .venv
 prune env
+prune .tox
+
+# Exclude test files from distribution
+prune tests
 prune examples
-prune bin
-recursive-exclude */__pycache__
-prune */__pycache__
+prune docs/_build

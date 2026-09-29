@@ -1,0 +1,42 @@
+[navconfig]
+# NavConfig core settings.
+# Application/project name used by NavConfig.
+APP_NAME = MyApp
+# Default environment used when ENV is not set.
+ENV = dev
+
+[general]
+# General application settings.
+DEBUG = true
+APP_NAME = MyApp
+
+[logging]
+# Logging configuration.
+# Log directory (relative or absolute path).
+logdir = logs
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+loglevel = DEBUG
+# Echo log output to the console (true/false).
+logging_echo = true
+# Enable rotating file handler (true/false).
+filehandler_enabled = false
+# Enable Logstash handler (true/false).
+logstash_enabled = false
+# Logstash server host.
+# logging_host = localhost
+# Logstash server TCP port.
+# logging_port = 5044
+# Minimum level forwarded to Logstash.
+# logstash_logging = INFO
+# Seconds the Logstash handler waits when flushing its queue.
+# logstash_flush_timeout = 10
+# Enable email alerts on CRITICAL errors (true/false).
+mailer_enabled = false
+# Disable loggers from third-party libraries (true/false).
+logging_disable_other = false
+# Comma-separated list of handlers to use.
+handlers = console
+
+[temp]
+# Temporary file directory.
+temp_path = /tmp

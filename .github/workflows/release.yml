@@ -1,4 +1,4 @@
-name: Python package build and publish
+name: Python package build and publish with uv
 
 on:
   release:
@@ -6,93 +6,219 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    runs-on: ubuntu-latest
+    # No matrix on purpose: the manylinux action below builds *every* interpreter
+    # listed in `python-versions` inside its own container, so a matrix would just
+    # rebuild the identical set of wheels N times. Add new versions to
+    # `python-versions` instead.
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install twine
-
-      - name: Build wheels on Ubuntu
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build wheels (manylinux)
         uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_x86_64
         with:
-          python-versions: 'cp39-cp39 cp310-cp310 cp311-cp311 cp312-cp312'
-          build-requirements: 'cython numpy'
-
-      - name: Build wheels on Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          pip install cibuildwheel
-          cibuildwheel --output-dir dist
-          # You may need to adjust the above command based on your package's specific requirements
+          python-versions: 'cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314'
+          build-requirements: 'uv setuptools>=74.0.0 Cython>=3.1.4 wheel>=0.44.0'
+          system-packages: 'libmemcached-devel openssl-devel zlib-devel'
+          # No pre-build-command on purpose. The wheels only need the build
+          # requirements above (setuptools/Cython/wheel) to cythonize the .pyx
+          # sources; the runtime dependencies are never imported at build time.
+          # A `uv sync` here resolved the *whole* dependency tree against
+          # whichever interpreter uv discovered inside the manylinux image --
+          # which is now the free-threaded CPython 3.14t -- and orjson ships no
+          # free-threaded wheels, so it fell back to its Rust sdist and failed
+          # with "orjson does not support free-threaded Python".
+          package-path: '.'
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: wheels-linux
           path: dist/*.whl
 
-  deploy:
-    needs: build
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Build wheels (Windows)
+        # Build isolation installs only the requirements in [build-system].
+        run: uv build --wheel --python ${{ matrix.python-version }}
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.python-version }}
+          path: dist/*-win_amd64.whl
+          if-no-files-found: error
+
+  build-source:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4.1.7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          path: dist
-
-      - name: Move wheel files to 'dist' directory
-        run: |
-          find dist -name '*.whl' -exec mv {} dist \;
-
-      - name: Check for wheel types
-        id: check_wheels
-        run: |
-          echo "Checking for wheel types..."
-          if ls dist/*-manylinux*.whl 1> /dev/null 2>&1; then
-            echo "Found manylinux wheels."
-            echo "HAS_MANYLINUX_WHEELS=true" >> $GITHUB_ENV
-          fi
-          if ls dist/*-win_*.whl 1> /dev/null 2>&1; then
-            echo "Found Windows wheels."
-            echo "HAS_WINDOWS_WHEELS=true" >> $GITHUB_ENV
-          fi
-
-      - name: List files in dist
-        run: ls -l dist
+          version: "latest"
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        run: uv python install 3.11
+
+      - name: Build source distribution
+        run: |
+          # Pin the interpreter explicitly: left to its own discovery uv can pick
+          # a free-threaded build (3.13t/3.14t), and some dependencies (orjson)
+          # publish no free-threaded wheels and refuse to compile there.
+          uv sync --extra build --no-dev --python 3.11
+
+          # Build source distribution
+          uv build --sdist --python 3.11
+
+      - name: Upload source artifacts
+        uses: actions/upload-artifact@v4
         with:
-          python-version: '3.x'
+          name: source-dist
+          path: dist/*.tar.gz
 
-      - name: Install twine
-        run: pip install twine
+  deploy:
+    needs: [build, build-windows, build-source]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/navconfig
+    permissions:
+      id-token: write  # For trusted publishing to PyPI
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-      - name: Publish manylinux wheels to Production PyPI
-        if: env.HAS_MANYLINUX_WHEELS == 'true'
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+
+      - name: Organize distribution files
+        run: |
+          mkdir -p dist
+
+          # Move all wheel files to dist directory
+          find dist-artifacts -name '*.whl' -exec mv {} dist/ \;
+
+          # Move source distribution to dist directory
+          find dist-artifacts -name '*.tar.gz' -exec mv {} dist/ \;
+
+      - name: Check for distribution files
+        id: check_dist
+        run: |
+          echo "Checking for distribution files..."
+
+          # Check for manylinux wheels
+          if ls dist/*-manylinux*.whl 1> /dev/null 2>&1; then
+            echo "Found manylinux wheels:"
+            ls -la dist/*-manylinux*.whl
+            echo "HAS_MANYLINUX_WHEELS=true" >> $GITHUB_ENV
+          else
+            echo "No manylinux wheels found."
+            echo "HAS_MANYLINUX_WHEELS=false" >> $GITHUB_ENV
+          fi
+
+          # Check for Windows wheels
+          if ls dist/*-win_amd64.whl 1> /dev/null 2>&1; then
+            echo "Found Windows wheels:"
+            ls -la dist/*-win_amd64.whl
+            echo "HAS_WINDOWS_WHEELS=true" >> $GITHUB_ENV
+          else
+            echo "No Windows wheels found."
+            echo "HAS_WINDOWS_WHEELS=false" >> $GITHUB_ENV
+          fi
+
+          # Check for source distribution
+          if ls dist/*.tar.gz 1> /dev/null 2>&1; then
+            echo "Found source distribution:"
+            ls -la dist/*.tar.gz
+            echo "HAS_SOURCE_DIST=true" >> $GITHUB_ENV
+          else
+            echo "No source distribution found."
+            echo "HAS_SOURCE_DIST=false" >> $GITHUB_ENV
+          fi
+
+      - name: List all distribution files
+        run: |
+          echo "All files in dist directory:"
+          ls -la dist/
+          echo ""
+          echo "File count: $(ls -1 dist/ | wc -l)"
+
+      # Refuse to publish a partial release: a version that lands on PyPI with
+      # wheels but no sdist (or vice versa) cannot be corrected, only yanked.
+      - name: Verify the release is complete
+        run: |
+          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_WINDOWS_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
+            echo "::error::Incomplete release - Linux wheels: $HAS_MANYLINUX_WHEELS, Windows wheels: $HAS_WINDOWS_WHEELS, sdist: $HAS_SOURCE_DIST"
+            exit 1
+          fi
+
+      # Wheels and sdist go up in a single twine invocation so the release is
+      # published as one unit. --skip-existing keeps a re-run idempotent instead
+      # of failing on files that already uploaded before an earlier attempt died.
+      - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-        run: twine upload dist/*-manylinux*.whl
+        run: |
+          uv tool install twine
+          uv tool run twine upload --non-interactive --skip-existing \
+            dist/*-manylinux*.whl dist/*-win_amd64.whl dist/*.tar.gz
 
-      - name: Publish Windows wheels to Production PyPI
-        if: env.HAS_WINDOWS_WHEELS == 'true'
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
-        run: twine upload dist/*-win_*.whl
+
+  # Optional: Test installation job
+  test-install:
+    needs: deploy
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Wait for PyPI propagation
+        run: python -c "import time; time.sleep(60)"
+
+      - name: Test installation from PyPI
+        run: |
+          # Install into the interpreter selected by setup-python on either OS.
+          uv pip install --system --python ${{ matrix.python-version }} --only-binary navconfig navconfig
+
+          # Test basic import
+          python -c "import navconfig; print(f'NavConfig {navconfig.__version__} installed successfully')"
+          python -c "from navconfig import config; print('Config object created successfully')"
+        continue-on-error: true  # Don't fail the release if tests fail

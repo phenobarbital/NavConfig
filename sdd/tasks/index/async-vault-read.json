@@ -1,0 +1,85 @@
+{
+  "feature": "async-vault-read",
+  "feature_id": "FEAT-001",
+  "spec": "sdd/specs/async-vault-read.spec.md",
+  "type": "feature",
+  "base_branch": "dev",
+  "created_at": null,
+  "completed_at": null,
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "slug": "vault-document-cache",
+      "title": "VaultDocumentCache module (TTL, negative entries, single-flight)",
+      "feature_id": "FEAT-001",
+      "feature": "async-vault-read",
+      "spec": "sdd/specs/async-vault-read.spec.md",
+      "status": "pending",
+      "priority": "high",
+      "effort": "M",
+      "depends_on": [],
+      "parallel": false,
+      "parallelism_notes": "Foundation module, stdlib only; every later task imports it.",
+      "assigned_to": null,
+      "started_at": null,
+      "file": "sdd/tasks/active/TASK-001-vault-document-cache.md"
+    },
+    {
+      "id": "TASK-002",
+      "slug": "vault-reader-cache-async",
+      "title": "VaultReader refactor (cache-through reads, write-through, async API)",
+      "feature_id": "FEAT-001",
+      "feature": "async-vault-read",
+      "spec": "sdd/specs/async-vault-read.spec.md",
+      "status": "pending",
+      "priority": "high",
+      "effort": "L",
+      "depends_on": [
+        "TASK-001"
+      ],
+      "parallel": false,
+      "parallelism_notes": "Imports vault_cache from TASK-001; modifies vault.py which TASK-003 depends on.",
+      "assigned_to": null,
+      "started_at": null,
+      "file": "sdd/tasks/active/TASK-002-vault-reader-cache-async.md"
+    },
+    {
+      "id": "TASK-003",
+      "slug": "kardex-vault-integration",
+      "title": "Kardex integration (single-get lookup, __contains__ fix, async API)",
+      "feature_id": "FEAT-001",
+      "feature": "async-vault-read",
+      "spec": "sdd/specs/async-vault-read.spec.md",
+      "status": "pending",
+      "priority": "high",
+      "effort": "M",
+      "depends_on": [
+        "TASK-002"
+      ],
+      "parallel": false,
+      "parallelism_notes": "Calls VaultReader.aget/aload/invalidate added in TASK-002.",
+      "assigned_to": null,
+      "started_at": null,
+      "file": "sdd/tasks/active/TASK-003-kardex-vault-integration.md"
+    },
+    {
+      "id": "TASK-004",
+      "slug": "vault-cache-docs-changelog",
+      "title": "Docs + CHANGELOG for Vault cache & async API",
+      "feature_id": "FEAT-001",
+      "feature": "async-vault-read",
+      "spec": "sdd/specs/async-vault-read.spec.md",
+      "status": "pending",
+      "priority": "medium",
+      "effort": "S",
+      "depends_on": [
+        "TASK-003"
+      ],
+      "parallel": false,
+      "parallelism_notes": "Documents final API and runs full suite; must follow all code tasks.",
+      "assigned_to": null,
+      "started_at": null,
+      "file": "sdd/tasks/active/TASK-004-vault-cache-docs-changelog.md"
+    }
+  ]
+}

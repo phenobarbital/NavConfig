@@ -1,0 +1,104 @@
+:root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --bg-code: #f6f8fa;
+    --fg: #1f2328;
+    --fg-muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #0550ae;
+    --accent-soft: #ddf4ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --bg-soft: #151b23;
+      --bg-code: #151b23;
+      --fg: #e6edf3;
+      --fg-muted: #9198a1;
+      --border: #3d444d;
+      --accent: #6cb6ff;
+      --accent-soft: #121d2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header.hero {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+    padding: 3rem 1.5rem 2.5rem;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 .35rem; font-size: 2.5rem; letter-spacing: -.02em; }
+  .hero p.tagline { margin: 0 0 1.25rem; font-size: 1.15rem; color: var(--fg-muted); max-width: 46rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .badge {
+    font-size: .8rem; padding: .2rem .6rem; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg-muted);
+  }
+
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2.5rem; padding: 2.5rem 1.5rem 4rem; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; gap: 1rem; } nav.toc { position: static !important; } }
+
+  nav.toc { position: sticky; top: 1.5rem; align-self: start; font-size: .9rem; }
+  nav.toc strong { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); margin-bottom: .5rem; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: .15rem 0; }
+  nav.toc a { color: var(--fg-muted); display: block; padding: .15rem 0; }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 3rem; }
+  h2 { font-size: 1.6rem; margin: 0 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); letter-spacing: -.01em; }
+  h3 { font-size: 1.15rem; margin: 1.75rem 0 .5rem; }
+  p, ul, ol { margin: 0 0 1rem; }
+  ul, ol { padding-left: 1.35rem; }
+  li { margin: .25rem 0; }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--accent-soft); padding: .12em .35em; border-radius: 5px;
+  }
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem; overflow-x: auto; margin: 0 0 1rem; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; font-size: .85rem; }
+
+  .table-scroll { overflow-x: auto; margin-bottom: 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: .75rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 1rem;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note strong { color: var(--fg); }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
+    color: var(--fg-muted); font-size: .9rem; background: var(--bg-soft);
+  }
+
+.site-nav { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin: 1.5rem 0 0; }
+.site-nav a { font-weight: 600; padding: .35rem 0; }
+.site-nav a[aria-current="page"] { border-bottom: 2px solid var(--accent); }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.skip-link { position: absolute; top: -5rem; left: 1rem; padding: .75rem; background: var(--bg); z-index: 1; }
+.skip-link:focus { top: 1rem; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
