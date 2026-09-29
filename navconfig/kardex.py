@@ -1,29 +1,22 @@
+import asyncio
+import contextlib
+import logging
+import os
+import warnings
+from collections.abc import Callable, Iterable
+from configparser import ConfigParser, NoOptionError, NoSectionError, ParsingError
+from pathlib import Path
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
 )
-import os
-import contextlib
-import asyncio
-import warnings
-from collections.abc import Callable
-import logging
-from configparser import (
-    ConfigParser,
-    ParsingError,
-    NoOptionError,
-    NoSectionError
-)
-from pathlib import Path
-from dotenv import load_dotenv
+
 import jsonpickle
+from dotenv import load_dotenv
+
+from .exceptions import ConfigError, KardexError, ReaderNotSet
+from .loaders import import_loader, pyProjectLoader
 from .utils.functions import strtobool
 from .utils.types import Singleton
-from .loaders import import_loader, pyProjectLoader
-from .exceptions import ConfigError, KardexError, ReaderNotSet
-
 
 ## redis:
 try:
@@ -71,7 +64,7 @@ class Kardex(metaclass=Singleton):
         self._ini: Callable = None
         self._current_env: str = None
         # Cache for multiple environments
-        self._env_cache: Dict[str, Dict] = {}
+        self._env_cache: dict[str, dict] = {}
 
         # asyncio loop
         try:
@@ -146,7 +139,7 @@ class Kardex(metaclass=Singleton):
         # Defined as initialized:
         self.__initialized__ = True
 
-    def _resolve_cache_backend(self) -> Optional[str]:
+    def _resolve_cache_backend(self) -> str | None:
         """Resolve which cache backend to use.
 
         Priority:
@@ -187,7 +180,7 @@ class Kardex(metaclass=Singleton):
         ``CACHE_BACKEND`` (preferred) or the legacy ``USE_REDIS`` flag.
         """
         # --- Cache backend (redis) ---
-        self._cache_backend: Optional[str] = self._resolve_cache_backend()
+        self._cache_backend: str | None = self._resolve_cache_backend()
         self._use_cache: bool = False
 
         if self._cache_backend == "redis" and REDIS_LOADER:
@@ -237,7 +230,7 @@ class Kardex(metaclass=Singleton):
         if cf.exists():
             try:
                 self._ini.read(cf)
-            except IOError as err:
+            except OSError as err:
                 logging.exception(f"NavConfig: INI file doesn't exist: {err}")
             except ParsingError as ex:
                 logging.exception(f"Navconfig: unable to parse INI file: {ex}")
@@ -252,7 +245,7 @@ class Kardex(metaclass=Singleton):
         return self.__initialized__
 
     @property
-    def cache_backend(self) -> Optional[str]:
+    def cache_backend(self) -> str | None:
         """Return the active cache backend name ('redis') or None."""
         return self._cache_backend if self._use_cache else None
 
@@ -394,11 +387,13 @@ class Kardex(metaclass=Singleton):
             raise KardexError(str(err)) from err
 
     def _get_external(self, key: str) -> Any:
-        """Get value fron an External Reader."""
+        """Get value from an External Reader (a single get() per reader)."""
         for _, reader in self._readers.items():
             try:
-                if reader.enabled is True and reader.exists(key) is True:
-                    return reader.get(key)
+                if reader.enabled is True:
+                    val = reader.get(key)
+                    if val is not None:
+                        return val
             except RuntimeError:
                 continue
         return None
@@ -540,8 +535,11 @@ class Kardex(metaclass=Singleton):
             return True
         else:
             for _, reader in self._readers.items():
-                val = reader.exists(key)
-                return val is True
+                try:
+                    if reader.enabled is True and reader.exists(key) is True:
+                        return True
+                except RuntimeError:
+                    continue
             return False
 
     def exists(self, key: str) -> bool:
@@ -555,6 +553,69 @@ class Kardex(metaclass=Singleton):
             if val is not None:
                 return True
             return False
+
+    async def _aget_external(self, key: str) -> Any:
+        """Async external lookup: reader.aget when available, else a thread."""
+        for _, reader in self._readers.items():
+            try:
+                if reader.enabled is True:
+                    if hasattr(reader, "aget"):
+                        val = await reader.aget(key)
+                    else:
+                        val = await asyncio.to_thread(reader.get, key)
+                    if val is not None:
+                        return val
+            except RuntimeError:
+                continue
+        return None
+
+    async def aget(
+        self, key: str, section: str | None = None, fallback: Any = None
+    ) -> Any:
+        """Async variant of :meth:`get` with the same resolution order."""
+        if section is not None:
+            if section in self._mapping_:
+                return self._mapping_[section]
+            elif self._ini:
+                with contextlib.suppress(NoOptionError, NoSectionError):
+                    return self._ini.get(section, key)
+        if key in self._mapping_:
+            return self._mapping_[key]
+        if key in os.environ:
+            return self._unserialize(os.getenv(key, fallback))
+        if val := await self._aget_external(key):
+            return self._unserialize(val)
+        return fallback
+
+    async def aexists(self, key: str) -> bool:
+        """Async variant of :meth:`exists`."""
+        if key in os.environ or key in self._mapping_:
+            return True
+        return await self._aget_external(key) is not None
+
+    async def aload_vault(
+        self, paths: Iterable[str] | None = None
+    ) -> dict[str, bool]:
+        """Prefetch Vault documents into the shared cache without blocking.
+
+        Args:
+            paths: Vault paths to prefetch (defaults to the reader's env path).
+
+        Returns:
+            Mapping of path -> found; ``{}`` when Vault is not enabled.
+        """
+        reader = self._readers.get("vault")
+        if not getattr(self, "_use_vault", False) or reader is None:
+            return {}
+        if getattr(reader, "enabled", False) is not True:
+            return {}
+        return await reader.aload(paths)
+
+    def invalidate_vault_cache(self, path: str | None = None) -> None:
+        """Drop cached Vault documents (no-op when Vault is disabled)."""
+        reader = self._readers.get("vault")
+        if reader is not None and hasattr(reader, "invalidate"):
+            reader.invalidate(path)
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
@@ -703,7 +764,7 @@ class Kardex(metaclass=Singleton):
         """Get currently active environment."""
         return self._current_env
 
-    def list_available_envs(self) -> List[str]:
+    def list_available_envs(self) -> list[str]:
         """List all available environments from filesystem."""
         envs = set()
 
@@ -719,7 +780,7 @@ class Kardex(metaclass=Singleton):
 
         return sorted(envs)
 
-    def get_env_info(self) -> Dict[str, Any]:
+    def get_env_info(self) -> dict[str, Any]:
         """Get comprehensive information about current environment."""
         info = {
             'current_env': self._current_env,
@@ -789,4 +850,5 @@ class Kardex(metaclass=Singleton):
 
     def reload_current_env(self):
         """Reload current environment from source."""
+        self.invalidate_vault_cache()
         self.set_env(self._current_env, reload=True)
