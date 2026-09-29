@@ -147,3 +147,5 @@ file_env
 client_secrets.json
 credentials.txt
 examples/encrypt_env.py
+# parrot LLM-wiki state (local retrieval plane)
+.parrot/
