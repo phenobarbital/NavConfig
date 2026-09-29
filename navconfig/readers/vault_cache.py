@@ -6,8 +6,7 @@ import logging
 import os
 import threading
 import time
-from collections.abc import Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Final

@@ -1,30 +1,22 @@
+import asyncio
+import contextlib
+import logging
+import os
+import warnings
+from collections.abc import Callable, Iterable
+from configparser import ConfigParser, NoOptionError, NoSectionError, ParsingError
+from pathlib import Path
 from typing import (
     Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
 )
-import os
-import contextlib
-import asyncio
-import warnings
-from collections.abc import Callable
-import logging
-from configparser import (
-    ConfigParser,
-    ParsingError,
-    NoOptionError,
-    NoSectionError
-)
-from pathlib import Path
-from dotenv import load_dotenv
+
 import jsonpickle
+from dotenv import load_dotenv
+
+from .exceptions import ConfigError, KardexError, ReaderNotSet
+from .loaders import import_loader, pyProjectLoader
 from .utils.functions import strtobool
 from .utils.types import Singleton
-from .loaders import import_loader, pyProjectLoader
-from .exceptions import ConfigError, KardexError, ReaderNotSet
-
 
 ## redis:
 try:
@@ -75,7 +67,7 @@ class Kardex(metaclass=Singleton):
         self._ini: Callable = None
         self._current_env: str = None
         # Cache for multiple environments
-        self._env_cache: Dict[str, Dict] = {}
+        self._env_cache: dict[str, dict] = {}
 
         # asyncio loop
         try:
@@ -150,7 +142,7 @@ class Kardex(metaclass=Singleton):
         # Defined as initialized:
         self.__initialized__ = True
 
-    def _resolve_cache_backend(self) -> Optional[str]:
+    def _resolve_cache_backend(self) -> str | None:
         """Resolve which cache backend to use.
 
         Priority:
@@ -191,7 +183,7 @@ class Kardex(metaclass=Singleton):
         ``CACHE_BACKEND`` (preferred) or the legacy ``USE_REDIS`` flag.
         """
         # --- Cache backend (redis) ---
-        self._cache_backend: Optional[str] = self._resolve_cache_backend()
+        self._cache_backend: str | None = self._resolve_cache_backend()
         self._use_cache: bool = False
 
         if self._cache_backend == "redis" and REDIS_LOADER:
@@ -241,7 +233,7 @@ class Kardex(metaclass=Singleton):
         if cf.exists():
             try:
                 self._ini.read(cf)
-            except IOError as err:
+            except OSError as err:
                 logging.exception(f"NavConfig: INI file doesn't exist: {err}")
             except ParsingError as ex:
                 logging.exception(f"Navconfig: unable to parse INI file: {ex}")
@@ -256,7 +248,7 @@ class Kardex(metaclass=Singleton):
         return self.__initialized__
 
     @property
-    def cache_backend(self) -> Optional[str]:
+    def cache_backend(self) -> str | None:
         """Return the active cache backend name ('redis') or None."""
         return self._cache_backend if self._use_cache else None
 
@@ -813,7 +805,7 @@ class Kardex(metaclass=Singleton):
         """Get currently active environment."""
         return self._current_env
 
-    def list_available_envs(self) -> List[str]:
+    def list_available_envs(self) -> list[str]:
         """List all available environments from filesystem."""
         envs = set()
 
@@ -829,7 +821,7 @@ class Kardex(metaclass=Singleton):
 
         return sorted(envs)
 
-    def get_env_info(self) -> Dict[str, Any]:
+    def get_env_info(self) -> dict[str, Any]:
         """Get comprehensive information about current environment."""
         info = {
             'current_env': self._current_env,
