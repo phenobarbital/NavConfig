@@ -54,7 +54,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -64,7 +64,9 @@
       "parallelism_notes": "Calls VaultReader.aget/aload/invalidate added in TASK-002.",
       "assigned_to": null,
       "started_at": "2026-09-29T17:21:16+00:00",
-      "file": "sdd/tasks/active/TASK-003-kardex-vault-integration.md"
+      "file": "sdd/tasks/completed/TASK-003-kardex-vault-integration.md",
+      "completed_at": "2026-09-29T17:28:46+00:00",
+      "verification": "verified"
     },
     {
       "id": "TASK-004",
