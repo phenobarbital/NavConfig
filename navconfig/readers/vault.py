@@ -179,7 +179,7 @@ class VaultReader(AbstractReader):
         except Exception as ex:
             raise ValueError(
                 f"Error writing to Vault: {ex}"
-            )
+            ) from ex
         self._cache.put(self._cache_key(secret_path), doc)
 
     def delete(self, key: str, secret_path: str = None) -> bool:
@@ -288,8 +288,8 @@ class VaultReader(AbstractReader):
             return_exceptions=True,
         )
         out: dict[str, bool] = {}
-        for p, res in zip(targets, results):
-            if isinstance(res, BaseException):
+        for p, res in zip(targets, results, strict=True):
+            if isinstance(res, Exception):
                 logging.warning(f"Vault prefetch failed for '{p}': {res}")
                 out[p] = False
             else:

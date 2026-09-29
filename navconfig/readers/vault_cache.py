@@ -68,6 +68,7 @@ class VaultDocumentCache:
         self._entries: dict[CacheKey, CacheEntry] = {}
         self._key_locks: dict[CacheKey, threading.Lock] = {}
         self._lock = threading.Lock()
+        self._generation = 0  # bumped by put/invalidate; fences stale loads
 
     @property
     def ttl(self) -> float:
@@ -104,9 +105,13 @@ class VaultDocumentCache:
                 entry = self._entries.get(key)
                 if entry is not None and self._is_fresh(entry):
                     return entry.data
+            with self._lock:
+                gen = self._generation
             data = loader()  # outside the global lock
             with self._lock:
-                self._entries[key] = CacheEntry(data, time.monotonic())
+                # a put()/invalidate() during the load makes this result stale
+                if self._generation == gen:
+                    self._entries[key] = CacheEntry(data, time.monotonic())
             return data
 
     def put(self, key: CacheKey, data: dict | object) -> None:
@@ -117,6 +122,7 @@ class VaultDocumentCache:
             data: Document dict or MISSING.
         """
         with self._lock:
+            self._generation += 1
             self._entries[key] = CacheEntry(data, time.monotonic())
 
     def invalidate(
@@ -135,9 +141,9 @@ class VaultDocumentCache:
                 doomed = list(self._entries)
             else:
                 doomed = [k for k in self._entries if predicate(k)]
+            self._generation += 1
             for k in doomed:
-                del self._entries[k]
-                self._key_locks.pop(k, None)
+                del self._entries[k]  # per-key locks are kept: they may be held
             return len(doomed)
 
 

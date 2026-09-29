@@ -126,3 +126,25 @@ def test_singleton_ttl_from_env(monkeypatch):
     vault_cache._reset_document_cache()
     assert get_document_cache().ttl == 300.0
     vault_cache._reset_document_cache()
+
+
+def test_cache_put_during_load_not_overwritten():
+    cache = VaultDocumentCache(ttl=60)
+
+    def loader():
+        cache.put(_key(), {"fresh": True})  # write-through while loading
+        return {"stale": True}
+
+    assert cache.get_or_load(_key(), loader) == {"stale": True}
+    assert cache.get_or_load(_key(), lambda: {"never": 1}) == {"fresh": True}
+
+
+def test_cache_invalidate_during_load_drops_stale():
+    cache = VaultDocumentCache(ttl=60)
+
+    def loader():
+        cache.invalidate()
+        return {"stale": True}
+
+    cache.get_or_load(_key(), loader)
+    assert cache.get_or_load(_key(), lambda: {"new": 1}) == {"new": 1}
