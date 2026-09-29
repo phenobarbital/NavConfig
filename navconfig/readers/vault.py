@@ -1,15 +1,21 @@
-from typing import Any
-import os
+import asyncio
+import copy
 import logging
+import os
+from collections.abc import Iterable
+from typing import Any
+
 import hvac
-from ..exceptions import ReaderNotSet
-from .abstract import AbstractReader
 import urllib3
 
+from ..exceptions import ReaderNotSet
+from .abstract import AbstractReader
+from .vault_cache import MISSING, CacheKey, get_document_cache, token_fingerprint
 
 # Disable warnings for insecure requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 class VaultReader(AbstractReader):
     """VaultReader.
@@ -31,6 +37,10 @@ class VaultReader(AbstractReader):
         self.version = int(os.getenv("VAULT_VERSION", 2))
         self._mount = os.getenv("VAULT_MOUNT_POINT", "navigator")
         self._env = os.getenv("VAULT_ENV") or env or os.getenv("ENV", "")
+        # normalized so readers differing only by a trailing slash share cache
+        self._url = url.rstrip("/")
+        self._token_fp = token_fingerprint(token or "")
+        self._cache = get_document_cache()
         if not token:
             raise ValueError("VAULT_TOKEN is not set")
         try:
@@ -50,6 +60,71 @@ class VaultReader(AbstractReader):
     def close(self) -> None:
         pass
 
+    def _split_key(self, key: str) -> tuple[str, str]:
+        """Split 'a/b/KEY' on the LAST '/'; bare keys resolve to self._env.
+
+        Args:
+            key: Secret key, optionally prefixed by a path.
+
+        Returns:
+            Tuple of (secret_path, secret_key).
+        """
+        path, sep, name = key.rpartition("/")
+        if not sep or not path:
+            return self._env, name if sep else key
+        return path, name
+
+    def _cache_key(self, path: str) -> CacheKey:
+        """Build the shared-cache key for ``path`` on this reader's Vault."""
+        return CacheKey(self._url, self._token_fp, self._mount, self.version, path)
+
+    def _fetch_document(self, path: str) -> dict | object:
+        """Perform ONE hvac read of the KV document at ``path``.
+
+        Returns:
+            The document dict, or MISSING when the path does not exist.
+
+        Raises:
+            ValueError: Unsupported KV version.
+            Exception: Any transient hvac error (never cached).
+        """
+        try:
+            if self.version == 1:
+                response = self.client.secrets.kv.v1.read_secret(
+                    path=path, mount_point=self._mount
+                )
+                return response["data"]
+            if self.version == 2:
+                response = self.client.secrets.kv.v2.read_secret_version(
+                    path=path, mount_point=self._mount
+                )
+                return response["data"]["data"]
+        except hvac.exceptions.InvalidPath:
+            return MISSING
+        raise ValueError("Invalid KV version specified")
+
+    def _read_document(self, path: str) -> dict | object:
+        """Read a document through the shared cache."""
+        return self._cache.get_or_load(
+            self._cache_key(path), lambda: self._fetch_document(path)
+        )
+
+    def _write_document(self, path: str, doc: dict) -> None:
+        """Write a whole document to Vault (kv v1/v2)."""
+        if self.version == 1:
+            self.client.secrets.kv.v1.create_or_update_secret(
+                path=path, secret=doc, mount_point=self._mount
+            )
+        elif self.version == 2:
+            self.client.secrets.kv.v2.create_or_update_secret(
+                path=path, secret=doc, mount_point=self._mount
+            )
+
+    @staticmethod
+    def _copy(value: Any) -> Any:
+        """Deep-copy a value read from the cache so callers can't mutate it."""
+        return copy.deepcopy(value)
+
     def get(
         self,
         key: str,
@@ -59,40 +134,22 @@ class VaultReader(AbstractReader):
     ) -> Any:
         if self.enabled is False:
             raise ReaderNotSet()
-        data = {}
+        secret_path, secret_key = self._split_key(key)
         try:
-            secret_parts = key.split("/")
-            secret_key = secret_parts.pop()
-            secret_path = "/".join(secret_parts)
-            if not secret_path:
-                secret_path = self._env
-        except ValueError:
-            secret_path = self._env
-            secret_key = key
-        try:
-            if self.version == 1:
-                response = self.client.secrets.kv.v1.read_secret(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]
-            elif self.version == 2:
-                response = self.client.secrets.kv.v2.read_secret_version(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]["data"]
-        except hvac.exceptions.InvalidPath:
+            data = self._read_document(secret_path)
+        except Exception as e:  # pylint: disable=W0703
+            logger.debug("Vault get error for %s: %s", key, e)
             return default
-        except Exception as e:
-            logging.debug(f"Vault get error for {key}: {e}")
+        if data is MISSING:
             return default
-
         if secret_key == "*":
-            return data
-
+            return self._copy(data)
         secret_data = data.get(secret_key, default)
         if sub_key is not None:
-            return secret_data.get(sub_key, default)
-        return secret_data
+            if not isinstance(secret_data, dict):
+                return default
+            return self._copy(secret_data.get(sub_key, default))
+        return self._copy(secret_data)
 
     def exists(
         self,
@@ -100,33 +157,14 @@ class VaultReader(AbstractReader):
     ) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
-        data = {}
+        secret_path, secret_key = self._split_key(key)
         try:
-            secret_parts = key.split("/")
-            secret_key = secret_parts.pop()
-            secret_path = "/".join(secret_parts)
-            if not secret_path:
-                secret_path = self._env
-        except ValueError:
-            secret_path = self._env
-            secret_key = key
-        try:
-            if self.version == 1:
-                response = self.client.secrets.kv.v1.read_secret(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]
-            elif self.version == 2:
-                response = self.client.secrets.kv.v2.read_secret_version(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]["data"]
-        except hvac.exceptions.InvalidPath:
+            data = self._read_document(secret_path)
+        except Exception as e:  # pylint: disable=W0703
+            logger.debug("Vault exists error for %s: %s", key, e)
             return False
-        except Exception as e:
-            logging.debug(f"Vault exists error for {key}: {e}")
+        if data is MISSING:
             return False
-
         if secret_key == "*":
             return True
         return secret_key in data
@@ -139,113 +177,58 @@ class VaultReader(AbstractReader):
     ) -> None:
         if self.enabled is False:
             raise ReaderNotSet()
-        try:
-            secret_path, secret_key = key.split("/", 1)
-            if not secret_path:
-                secret_path = self._env
-        except ValueError:
-            secret_path = self._env
-            secret_key = key
-        try:
-            if self.version == 1:
-                # Read the existing secret data
-                existing_data = {}
-                try:
-                    read_response = self.client.secrets.kv.v1.read_secret(
-                        path=secret_path, mount_point=self._mount
-                    )
-                    existing_data = read_response['data']
-                except hvac.exceptions.InvalidPath:
-                    # If the path doesn't exist yet, it's fine
-                    pass
-
-                # Update the existing data with the new key-value pair
-                existing_data[secret_key] = value
-
-                # Write the updated data back to the path
-                self.client.secrets.kv.v1.create_or_update_secret(
-                    path=secret_path,
-                    secret=existing_data,
-                    mount_point=self._mount,
-                )
-            elif self.version == 2:
-                # For KV v2, you need to provide the full data for the path
-                # Fetch existing data if you want to preserve other keys
-                existing_data = {}
-                try:
-                    read_response = self.client.secrets.kv.v2.read_secret_version(
-                        path=secret_path, mount_point=self._mount
-                    )
-                    existing_data = read_response['data']['data']
-                except hvac.exceptions.InvalidPath:
-                    # If the path doesn't exist yet, it's fine
-                    pass
-
-                # Update the existing data with the new key-value pair
-                existing_data[secret_key] = value
-
-                # Write the updated data back to the path
-                self.client.secrets.kv.v2.create_or_update_secret(
-                    path=secret_path,
-                    secret=existing_data,
-                    mount_point=self._mount
-                )
-        except Exception as ex:
-            raise ValueError(
-                f"Error writing to Vault: {ex}"
-            )
+        secret_path, secret_key = self._split_key(key)
+        ckey = self._cache_key(secret_path)
+        # the per-key lock makes read-modify-write-put atomic against other
+        # writers and loaders of the same document (cache never diverges)
+        with self._cache.locked(ckey):
+            try:
+                current = self._fetch_document(secret_path)
+                doc = {} if current is MISSING else copy.deepcopy(current)
+                doc[secret_key] = value
+                self._write_document(secret_path, doc)
+            except Exception as ex:
+                raise ValueError(
+                    f"Error writing to Vault: {ex}"
+                ) from ex
+            self._cache.put(ckey, doc)
 
     def delete(self, key: str, secret_path: str = None) -> bool:
         if self.enabled is False:
-            raise ReaderNotSet()  # Or some appropriate exception
-
+            raise ReaderNotSet()
+        if secret_path:
+            # explicit path wins; the key is then the bare secret name
+            _, secret_key = self._split_key(key)
+        else:
+            secret_path, secret_key = self._split_key(key)
+        ckey = self._cache_key(secret_path)
         try:
-            secret_path, secret_key = key.split("/", 1)
-            if not secret_path:
-                secret_path = self._env
-        except ValueError:
-            secret_path = self._env
-            secret_key = key
-
-        try:
-            if self.version == 1:
-                current_secret = self.client.secrets.kv.v1.read_secret(
-                    path=secret_path,
-                    mount_point=self._mount
-                )['data']
-                if secret_key in current_secret:
-                    del current_secret[secret_key]
-                    self.client.secrets.kv.v1.create_or_update_secret(
-                        path=secret_path,
-                        secret=current_secret,
-                        mount_point=self._mount
-                    )
-            elif self.version == 2:
-                current_secret = self.client.secrets.kv.v2.read_secret_version(
-                    path=secret_path,
-                    mount_point=self._mount
-                )['data']['data']
-                if secret_key in current_secret:
-                    del current_secret[secret_key]
-                    self.client.secrets.kv.v2.create_or_update_secret(
-                        path=secret_path,
-                        secret=current_secret,
-                        mount_point=self._mount
-                    )
+            with self._cache.locked(ckey):
+                current = self._fetch_document(secret_path)
+                if current is MISSING:
+                    raise KeyError(f"path '{secret_path}' does not exist")
+                doc = copy.deepcopy(current)
+                if secret_key in doc:
+                    del doc[secret_key]
+                    self._write_document(secret_path, doc)
+                    self._cache.put(ckey, doc)
             return True
-        except Exception as e:
-            logging.warning(
-                f"Error deleting key '{key}' from '{secret_path}': {e}"
+        except Exception as e:  # pylint: disable=W0703
+            logger.warning(
+                "Error deleting key '%s' from '%s': %s", key, secret_path, e
             )
             return False
 
     def list(self, path: str = None, filter: str = None) -> dict:
-        """
-        List and return all secrets from the specified path.
+        """List and return all secrets from the specified path.
 
-        This method now returns the actual secret data (key-value pairs)
-        instead of just listing secret names, making it compatible with
-        the unified vault loader.
+        Args:
+            path: Secret path (defaults to the reader's env path).
+            filter: Only keys starting with this prefix are returned.
+
+        Returns:
+            A deep copy of the cached document (so callers can't mutate the
+            cache), or ``{}`` when the path is missing or on error.
         """
         if self.enabled is False:
             raise ReaderNotSet()
@@ -253,38 +236,122 @@ class VaultReader(AbstractReader):
         secret_path = path or self._env
 
         try:
-            if self.version == 1:
-                # For KV v1, read the secret directly
-                response = self.client.secrets.kv.v1.read_secret(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]
-
-            elif self.version == 2:
-                # For KV v2, read the secret version
-                response = self.client.secrets.kv.v2.read_secret_version(
-                    path=secret_path, mount_point=self._mount
-                )
-                data = response["data"]["data"]
-            else:
-                raise ValueError("Invalid KV version specified")
-
-            # Apply filter if specified
+            data = self._read_document(secret_path)
+            if data is MISSING:
+                logger.debug("No secrets found at vault path '%s'", secret_path)
+                return {}
             if filter:
                 data = {
-                    k: v for k, v in data.items()
+                    k: self._copy(v) for k, v in data.items()
                     if k.startswith(filter)
                 }
-
-            logging.debug(f"Retrieved {len(data)} secrets from vault path '{secret_path}'")
+            else:
+                data = self._copy(data)
+            logger.debug(
+                "Retrieved %d secrets from vault path '%s'", len(data), secret_path
+            )
             return data
+        except Exception as e:  # pylint: disable=W0703
+            logger.warning("Error listing secrets at path '%s': %s", secret_path, e)
+            return {}
 
-        except hvac.exceptions.InvalidPath:
-            logging.debug(f"No secrets found at vault path '{secret_path}'")
-            return {}
-        except Exception as e:
-            logging.warning(f"Error listing secrets at path '{secret_path}': {e}")
-            return {}
+    def invalidate(self, path: str | None = None) -> None:
+        """Drop this reader's cached documents.
+
+        Args:
+            path: Only this path; all of this reader's paths when None.
+        """
+        mine = (self._url, self._token_fp, self._mount, self.version)
+
+        def _match(k: CacheKey) -> bool:
+            if (k.url, k.token_fp, k.mount, k.version) != mine:
+                return False
+            return path is None or k.path == path
+
+        self._cache.invalidate(_match)
+
+    def refresh(self, path: str | None = None) -> dict:
+        """Invalidate ``path`` and re-read it from Vault.
+
+        Args:
+            path: Path to refresh (defaults to the reader's env path).
+
+        Returns:
+            The freshly read document (``{}`` if missing).
+        """
+        target = path or self._env
+        self.invalidate(target)
+        return self.list(target)
+
+    async def aget(
+        self,
+        key: str,
+        default: Any = None,
+        sub_key: str | None = None,
+    ) -> Any:
+        """Async wrapper over :meth:`get` (runs in a worker thread).
+
+        Args:
+            key: Secret key, optionally prefixed by a path.
+            default: Value returned when the key is missing or on error.
+            sub_key: Optional key inside a dict-valued secret.
+
+        Returns:
+            The secret value, or ``default``.
+        """
+        return await asyncio.to_thread(self.get, key, default, "secrets", sub_key)
+
+    async def aexists(self, key: str) -> bool:
+        """Async wrapper over :meth:`exists`.
+
+        Args:
+            key: Secret key, optionally prefixed by a path.
+
+        Returns:
+            True when the key exists in Vault.
+        """
+        return await asyncio.to_thread(self.exists, key)
+
+    async def alist(
+        self, path: str | None = None, filter: str | None = None
+    ) -> dict:
+        """Async wrapper over :meth:`list`.
+
+        Args:
+            path: Secret path (defaults to the reader's env path).
+            filter: Only keys starting with this prefix are returned.
+
+        Returns:
+            The document copy, as :meth:`list`.
+        """
+        return await asyncio.to_thread(self.list, path, filter)
+
+    async def aload(
+        self, paths: Iterable[str] | None = None
+    ) -> dict[str, bool]:
+        """Prefetch documents concurrently into the shared cache.
+
+        Args:
+            paths: Paths to prefetch; defaults to ``[self._env]``.
+
+        Returns:
+            Mapping of path -> found. Failures log a warning and map to False.
+        """
+        if self.enabled is False:
+            raise ReaderNotSet()
+        targets = list(paths) if paths is not None else [self._env]
+        results = await asyncio.gather(
+            *(asyncio.to_thread(self._read_document, p) for p in targets),
+            return_exceptions=True,
+        )
+        out: dict[str, bool] = {}
+        for p, res in zip(targets, results, strict=True):
+            if isinstance(res, Exception):
+                logger.warning("Vault prefetch failed for '%s': %s", p, res)
+                out[p] = False
+            else:
+                out[p] = isinstance(res, dict)
+        return out
 
     def list_paths(self, path: str = None) -> list:
         """

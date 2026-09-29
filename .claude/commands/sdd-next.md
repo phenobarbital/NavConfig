@@ -4,23 +4,55 @@ model: haiku
 
 # /sdd-next — Suggest Next Unblocked SDD Tasks
 
-Read `sdd/tasks/.index.json`, identify unblocked tasks, and suggest assignments.
-Shows worktree context to help the user decide where to run each task.
+Aggregate tasks across all per-spec indexes (`sdd/tasks/index/*.json`),
+identify unblocked tasks, and suggest assignments. Shows worktree context
+to help the user decide where to run each task.
+
+## Usage
+```
+/sdd-next
+/sdd-next --project <project> [--tag <tag>]     # FEAT-576 taxonomy filter
+```
 
 ## Guardrails
 - Only suggest tasks with status `"pending"` and all dependencies `"done"`.
-- If `sdd/tasks/.index.json` does not exist, inform the user and suggest running `/sdd-task` first.
+- If `sdd/tasks/index/` is empty or does not exist, inform the user and suggest running `/sdd-task` first.
+- **Skip `sdd/tasks/index/_orphans.json`** — orphans have no resolvable feature; they are surfaced by `/sdd-status`, never suggested by `/sdd-next`.
 - Sort by priority (high → medium → low), then by effort (S → M → L → XL).
 
 ## Steps
 
-### 1. Read the Index
-Read `sdd/tasks/.index.json`.
+### 1. Read All Per-Spec Indexes (FEAT-145)
+
+Glob `sdd/tasks/index/*.json` (excluding `_orphans.json`) and aggregate
+the `tasks[]` arrays:
+
+```bash
+TASKS=$(jq -s '[.[] | select(.feature != "_orphans") | .tasks[]]' sdd/tasks/index/*.json)
+```
+
+If `--project` / `--tag` is given (FEAT-576), resolve the matching specs and
+keep only tasks whose index's `spec` is in the taxonomy list (AND across flags,
+OR within a repeated flag):
+
+```bash
+SPECS=$(python -m scripts.sdd.doc_taxonomy --kind spec --paths-only --project <p> --tag <t>)
+TASKS=$(jq -s --arg specs "$SPECS" '[.[] | select(.feature != "_orphans") | select(.spec as $s | ($specs | split("\n")) | index($s)) | .tasks[]]' sdd/tasks/index/*.json)
+```
+
+If no per-spec index files exist, suggest the user run `/sdd-task` first.
 
 ### 2. Detect Active Worktrees
 Run `git worktree list` to identify which feature worktrees are currently active.
 Map each active worktree to its feature ID by matching the worktree name pattern
 `feat-<FEAT-ID>-<slug>` or `task-<TASK-ID>-<slug>`.
+
+Additionally, call the worktree status library for richer data:
+```bash
+WT_REPORTS=$(python -m scripts.sdd.worktree_status --json 2>/dev/null || echo "[]")
+```
+Build a lookup from `feature_slug` → `WorktreeReport`. This provides task progress
+counts and `ready_for_done` flags that the bare `git worktree list` cannot give.
 
 ### 3. Compute Unblocked Tasks
 For each task with `status: "pending"`:
@@ -34,6 +66,20 @@ Group unblocked tasks by feature. For each task, determine:
 - **Needs new worktree**: no active worktree for this feature → show the
   `git worktree add` command.
 - **Parallel task**: marked `parallel: true` → can use its own worktree.
+
+For features with a `WorktreeReport`:
+- If `ready_for_done: true`: do NOT suggest new tasks. Instead show:
+  ```
+  FEAT-550 — Token Budget Bedrock
+    ✅ All 14 tasks done — ready for /sdd-done FEAT-550
+  ```
+- If tasks are partially done: annotate the feature header with progress:
+  ```
+  FEAT-582 — SDD Status Worktrees  (3/5 done in worktree)
+    🟢 Active worktree: feat-FEAT-582-sdd-status-worktrees
+  ```
+
+The progress count comes from: `done_count = sum(1 for t in report.tasks if t.status in ("done", "done-with-issues"))`.
 
 ### 5. Sort and Present
 Sort unblocked tasks by priority, then effort. Output:
@@ -81,8 +127,27 @@ After the unblocked list, show a brief summary of what's currently running:
   TASK-021 — Trivy Toolkit  [in task-021-trivy-toolkit]
 ```
 
+### 7. Show Ready Ledger Issues (FEAT-566, best-effort)
+
+Alongside unblocked tasks, surface open, unclaimed ledger issues — discovered
+work that has no `TASK-<NNN>` yet. Never fatal (a missing/unbuilt ledger
+prints nothing here, it does not block the rest of `/sdd-next`):
+
+```bash
+wikitoolkit ledger ready 2>/dev/null || true
+```
+
+```
+🗒  Ready ledger issues (not yet promoted to a task):
+  issue:3f8a1c9e [major] Leak in connection pool (bug)
+     → /sdd-fix issue:3f8a1c9e        (plan-fix routes its group to the Fast or SDD lane; supersedes the deprecated --from-issue flow, FEAT-572)
+```
+
+If the command prints nothing (or fails), omit this section entirely —
+do not print an empty header.
+
 ## Reference
-- Index file: `sdd/tasks/.index.json`
+- Per-spec index files: `sdd/tasks/index/*.json` (excluding `_orphans.json`)
 - Active worktrees: `git worktree list`
 - Worktree policy: `CLAUDE.md` (section "Worktree Policy")
 - SDD methodology: `sdd/WORKFLOW.md`
