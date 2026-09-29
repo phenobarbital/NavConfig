@@ -159,3 +159,43 @@ async def test_reader_aload_concurrent(fake_hvac):
     assert fake_hvac.reads == {"a": 1, "b": 1, "missing": 1}
     assert r.get("a/k") == 1
     assert fake_hvac.reads["a"] == 1
+
+
+def test_reader_concurrent_set_cache_matches_vault(fake_hvac):
+    r = VaultReader()
+    threads = [
+        threading.Thread(target=r.set, args=(f"K{i}", str(i))) for i in range(8)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert r.list() == fake_hvac.store["dev"]
+    assert all(r.get(f"K{i}") == str(i) for i in range(8))
+
+
+def test_reader_nested_values_are_deep_copied(fake_hvac):
+    fake_hvac.store["dev"]["L"] = {"inner": [1, 2]}
+    r = VaultReader()
+    r.get("L")["inner"].append(3)
+    r.get("L", sub_key="inner").append(4)
+    r.list()["L"]["inner"].append(5)
+    assert r.get("L") == {"inner": [1, 2]}
+
+
+def test_reader_sub_key_on_missing_key_returns_default(fake_hvac):
+    assert VaultReader().get("NOPE", default="d", sub_key="x") == "d"
+
+
+def test_reader_trailing_slash_url_shares_cache(fake_hvac, monkeypatch):
+    VaultReader().get("A")
+    monkeypatch.setenv("VAULT_URL", "http://vault.test/")
+    VaultReader().get("A")
+    assert fake_hvac.total == 1
+
+
+def test_reader_delete_honours_secret_path(fake_hvac):
+    fake_hvac.store["other"] = {"K": "v", "J": "w"}
+    r = VaultReader()
+    assert r.delete("K", secret_path="other") is True
+    assert fake_hvac.store["other"] == {"J": "w"}

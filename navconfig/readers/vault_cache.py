@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import threading
 import time
 from collections.abc import Callable
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Final
 
@@ -66,19 +69,58 @@ class VaultDocumentCache:
         """
         self._ttl = float(ttl)
         self._entries: dict[CacheKey, CacheEntry] = {}
-        self._key_locks: dict[CacheKey, threading.Lock] = {}
+        # per-key [lock, refcount]; removed once nobody holds or awaits it
+        self._key_locks: dict[CacheKey, list] = {}
         self._lock = threading.Lock()
-        self._generation = 0  # bumped by put/invalidate; fences stale loads
+        # per-key generation: bumped by put/invalidate to fence stale loads
+        self._gens: dict[CacheKey, int] = {}
 
     @property
     def ttl(self) -> float:
-        """Configured TTL in seconds."""
+        """Configured TTL in seconds (``<= 0`` means entries never expire)."""
         return self._ttl
 
     def _is_fresh(self, entry: CacheEntry) -> bool:
         if self._ttl <= 0:
             return True
         return (time.monotonic() - entry.fetched_at) < self._ttl
+
+    def _acquire(self, key: CacheKey) -> threading.Lock:
+        """Acquire the per-key lock (refcounted so it can be pruned safely)."""
+        with self._lock:
+            slot = self._key_locks.get(key)
+            if slot is None:
+                slot = self._key_locks[key] = [threading.Lock(), 0]
+            slot[1] += 1
+        slot[0].acquire()
+        return slot[0]
+
+    def _release(self, key: CacheKey, lock: threading.Lock) -> None:
+        lock.release()
+        with self._lock:
+            slot = self._key_locks.get(key)
+            if slot is not None:
+                slot[1] -= 1
+                if slot[1] <= 0:
+                    del self._key_locks[key]
+                    if key not in self._entries:
+                        self._gens.pop(key, None)
+
+    @contextmanager
+    def locked(self, key: CacheKey) -> Iterator[None]:
+        """Hold the single-flight lock of ``key`` (for read-modify-write).
+
+        Writers use this so a set()/delete() and its ``put`` are atomic with
+        respect to loaders and other writers of the same document.
+
+        Args:
+            key: Cache key whose lock to hold.
+        """
+        lock = self._acquire(key)
+        try:
+            yield
+        finally:
+            self._release(key, lock)
 
     def get_or_load(
         self, key: CacheKey, loader: Callable[[], dict | object]
@@ -97,20 +139,17 @@ class VaultDocumentCache:
             entry = self._entries.get(key)
             if entry is not None and self._is_fresh(entry):
                 return entry.data
-            key_lock = self._key_locks.get(key)
-            if key_lock is None:
-                key_lock = self._key_locks[key] = threading.Lock()
-        with key_lock:
+        with self.locked(key):
             with self._lock:
                 entry = self._entries.get(key)
                 if entry is not None and self._is_fresh(entry):
                     return entry.data
-            with self._lock:
-                gen = self._generation
+                gen = self._gens.get(key, 0)
             data = loader()  # outside the global lock
             with self._lock:
-                # a put()/invalidate() during the load makes this result stale
-                if self._generation == gen:
+                # a put()/invalidate() of THIS key during the load makes the
+                # result stale; other keys' activity is irrelevant
+                if self._gens.get(key, 0) == gen:
                     self._entries[key] = CacheEntry(data, time.monotonic())
             return data
 
@@ -122,29 +161,30 @@ class VaultDocumentCache:
             data: Document dict or MISSING.
         """
         with self._lock:
-            self._generation += 1
+            self._gens[key] = self._gens.get(key, 0) + 1
             self._entries[key] = CacheEntry(data, time.monotonic())
 
     def invalidate(
         self, predicate: Callable[[CacheKey], bool] | None = None
     ) -> int:
-        """Drop matching entries.
+        """Drop matching entries and fence in-flight loads of matching keys.
 
         Args:
             predicate: Selects keys to drop; all when None.
 
         Returns:
-            Number of entries dropped.
+            Number of cached entries dropped.
         """
         with self._lock:
-            if predicate is None:
-                doomed = list(self._entries)
-            else:
-                doomed = [k for k in self._entries if predicate(k)]
-            self._generation += 1
-            for k in doomed:
-                del self._entries[k]  # per-key locks are kept: they may be held
-            return len(doomed)
+            candidates = set(self._entries) | set(self._key_locks)
+            if predicate is not None:
+                candidates = {k for k in candidates if predicate(k)}
+            dropped = 0
+            for k in candidates:
+                self._gens[k] = self._gens.get(k, 0) + 1
+                if self._entries.pop(k, None) is not None:
+                    dropped += 1
+            return dropped
 
 
 _cache: VaultDocumentCache | None = None
@@ -154,6 +194,9 @@ _cache_lock = threading.Lock()
 def get_document_cache() -> VaultDocumentCache:
     """Return the module singleton; TTL read once from VAULT_CACHE_TTL.
 
+    A value ``<= 0`` disables expiry; an unparsable value logs a warning
+    and falls back to 300 seconds.
+
     Returns:
         The process-wide VaultDocumentCache.
     """
@@ -161,9 +204,13 @@ def get_document_cache() -> VaultDocumentCache:
     if _cache is None:
         with _cache_lock:
             if _cache is None:
+                raw = os.getenv("VAULT_CACHE_TTL", "300")
                 try:
-                    ttl = float(os.getenv("VAULT_CACHE_TTL", "300"))
+                    ttl = float(raw)
                 except ValueError:
+                    logging.getLogger(__name__).warning(
+                        "Invalid VAULT_CACHE_TTL=%r; using 300 seconds", raw
+                    )
                     ttl = 300.0
                 _cache = VaultDocumentCache(ttl=ttl)
     return _cache

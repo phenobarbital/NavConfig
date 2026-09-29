@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 import os
 from collections.abc import Iterable
@@ -14,6 +15,7 @@ from .vault_cache import MISSING, CacheKey, get_document_cache, token_fingerprin
 # Disable warnings for insecure requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 class VaultReader(AbstractReader):
     """VaultReader.
@@ -35,7 +37,8 @@ class VaultReader(AbstractReader):
         self.version = int(os.getenv("VAULT_VERSION", 2))
         self._mount = os.getenv("VAULT_MOUNT_POINT", "navigator")
         self._env = os.getenv("VAULT_ENV") or env or os.getenv("ENV", "")
-        self._url = url
+        # normalized so readers differing only by a trailing slash share cache
+        self._url = url.rstrip("/")
         self._token_fp = token_fingerprint(token or "")
         self._cache = get_document_cache()
         if not token:
@@ -72,6 +75,7 @@ class VaultReader(AbstractReader):
         return path, name
 
     def _cache_key(self, path: str) -> CacheKey:
+        """Build the shared-cache key for ``path`` on this reader's Vault."""
         return CacheKey(self._url, self._token_fp, self._mount, self.version, path)
 
     def _fetch_document(self, path: str) -> dict | object:
@@ -118,7 +122,8 @@ class VaultReader(AbstractReader):
 
     @staticmethod
     def _copy(value: Any) -> Any:
-        return dict(value) if isinstance(value, dict) else value
+        """Deep-copy a value read from the cache so callers can't mutate it."""
+        return copy.deepcopy(value)
 
     def get(
         self,
@@ -133,15 +138,17 @@ class VaultReader(AbstractReader):
         try:
             data = self._read_document(secret_path)
         except Exception as e:  # pylint: disable=W0703
-            logging.debug(f"Vault get error for {key}: {e}")
+            logger.debug("Vault get error for %s: %s", key, e)
             return default
         if data is MISSING:
             return default
         if secret_key == "*":
-            return dict(data)
+            return self._copy(data)
         secret_data = data.get(secret_key, default)
         if sub_key is not None:
-            return secret_data.get(sub_key, default)
+            if not isinstance(secret_data, dict):
+                return default
+            return self._copy(secret_data.get(sub_key, default))
         return self._copy(secret_data)
 
     def exists(
@@ -154,7 +161,7 @@ class VaultReader(AbstractReader):
         try:
             data = self._read_document(secret_path)
         except Exception as e:  # pylint: disable=W0703
-            logging.debug(f"Vault exists error for {key}: {e}")
+            logger.debug("Vault exists error for %s: %s", key, e)
             return False
         if data is MISSING:
             return False
@@ -171,44 +178,57 @@ class VaultReader(AbstractReader):
         if self.enabled is False:
             raise ReaderNotSet()
         secret_path, secret_key = self._split_key(key)
-        try:
-            current = self._fetch_document(secret_path)
-            doc = {} if current is MISSING else dict(current)
-            doc[secret_key] = value
-            self._write_document(secret_path, doc)
-        except Exception as ex:
-            raise ValueError(
-                f"Error writing to Vault: {ex}"
-            ) from ex
-        self._cache.put(self._cache_key(secret_path), doc)
+        ckey = self._cache_key(secret_path)
+        # the per-key lock makes read-modify-write-put atomic against other
+        # writers and loaders of the same document (cache never diverges)
+        with self._cache.locked(ckey):
+            try:
+                current = self._fetch_document(secret_path)
+                doc = {} if current is MISSING else copy.deepcopy(current)
+                doc[secret_key] = value
+                self._write_document(secret_path, doc)
+            except Exception as ex:
+                raise ValueError(
+                    f"Error writing to Vault: {ex}"
+                ) from ex
+            self._cache.put(ckey, doc)
 
     def delete(self, key: str, secret_path: str = None) -> bool:
         if self.enabled is False:
             raise ReaderNotSet()
-        secret_path, secret_key = self._split_key(key)
+        if secret_path:
+            # explicit path wins; the key is then the bare secret name
+            _, secret_key = self._split_key(key)
+        else:
+            secret_path, secret_key = self._split_key(key)
+        ckey = self._cache_key(secret_path)
         try:
-            current = self._fetch_document(secret_path)
-            if current is MISSING:
-                raise KeyError(f"path '{secret_path}' does not exist")
-            doc = dict(current)
-            if secret_key in doc:
-                del doc[secret_key]
-                self._write_document(secret_path, doc)
-                self._cache.put(self._cache_key(secret_path), doc)
+            with self._cache.locked(ckey):
+                current = self._fetch_document(secret_path)
+                if current is MISSING:
+                    raise KeyError(f"path '{secret_path}' does not exist")
+                doc = copy.deepcopy(current)
+                if secret_key in doc:
+                    del doc[secret_key]
+                    self._write_document(secret_path, doc)
+                    self._cache.put(ckey, doc)
             return True
         except Exception as e:  # pylint: disable=W0703
-            logging.warning(
-                f"Error deleting key '{key}' from '{secret_path}': {e}"
+            logger.warning(
+                "Error deleting key '%s' from '%s': %s", key, secret_path, e
             )
             return False
 
     def list(self, path: str = None, filter: str = None) -> dict:
-        """
-        List and return all secrets from the specified path.
+        """List and return all secrets from the specified path.
 
-        Returns the actual secret data (key-value pairs), as a shallow
-        copy of the cached document, so it is compatible with the unified
-        vault loader and callers can't mutate the cache.
+        Args:
+            path: Secret path (defaults to the reader's env path).
+            filter: Only keys starting with this prefix are returned.
+
+        Returns:
+            A deep copy of the cached document (so callers can't mutate the
+            cache), or ``{}`` when the path is missing or on error.
         """
         if self.enabled is False:
             raise ReaderNotSet()
@@ -218,23 +238,29 @@ class VaultReader(AbstractReader):
         try:
             data = self._read_document(secret_path)
             if data is MISSING:
-                logging.debug(f"No secrets found at vault path '{secret_path}'")
+                logger.debug("No secrets found at vault path '%s'", secret_path)
                 return {}
             if filter:
                 data = {
-                    k: v for k, v in data.items()
+                    k: self._copy(v) for k, v in data.items()
                     if k.startswith(filter)
                 }
             else:
-                data = dict(data)
-            logging.debug(f"Retrieved {len(data)} secrets from vault path '{secret_path}'")
+                data = self._copy(data)
+            logger.debug(
+                "Retrieved %d secrets from vault path '%s'", len(data), secret_path
+            )
             return data
         except Exception as e:  # pylint: disable=W0703
-            logging.warning(f"Error listing secrets at path '{secret_path}': {e}")
+            logger.warning("Error listing secrets at path '%s': %s", secret_path, e)
             return {}
 
     def invalidate(self, path: str | None = None) -> None:
-        """Drop this reader's cached documents (one path, or all)."""
+        """Drop this reader's cached documents.
+
+        Args:
+            path: Only this path; all of this reader's paths when None.
+        """
         mine = (self._url, self._token_fp, self._mount, self.version)
 
         def _match(k: CacheKey) -> bool:
@@ -245,7 +271,14 @@ class VaultReader(AbstractReader):
         self._cache.invalidate(_match)
 
     def refresh(self, path: str | None = None) -> dict:
-        """Invalidate ``path`` (default: env path) and re-read it."""
+        """Invalidate ``path`` and re-read it from Vault.
+
+        Args:
+            path: Path to refresh (defaults to the reader's env path).
+
+        Returns:
+            The freshly read document (``{}`` if missing).
+        """
         target = path or self._env
         self.invalidate(target)
         return self.list(target)
@@ -256,17 +289,41 @@ class VaultReader(AbstractReader):
         default: Any = None,
         sub_key: str | None = None,
     ) -> Any:
-        """Async wrapper over :meth:`get` (runs in a worker thread)."""
+        """Async wrapper over :meth:`get` (runs in a worker thread).
+
+        Args:
+            key: Secret key, optionally prefixed by a path.
+            default: Value returned when the key is missing or on error.
+            sub_key: Optional key inside a dict-valued secret.
+
+        Returns:
+            The secret value, or ``default``.
+        """
         return await asyncio.to_thread(self.get, key, default, "secrets", sub_key)
 
     async def aexists(self, key: str) -> bool:
-        """Async wrapper over :meth:`exists`."""
+        """Async wrapper over :meth:`exists`.
+
+        Args:
+            key: Secret key, optionally prefixed by a path.
+
+        Returns:
+            True when the key exists in Vault.
+        """
         return await asyncio.to_thread(self.exists, key)
 
     async def alist(
         self, path: str | None = None, filter: str | None = None
     ) -> dict:
-        """Async wrapper over :meth:`list`."""
+        """Async wrapper over :meth:`list`.
+
+        Args:
+            path: Secret path (defaults to the reader's env path).
+            filter: Only keys starting with this prefix are returned.
+
+        Returns:
+            The document copy, as :meth:`list`.
+        """
         return await asyncio.to_thread(self.list, path, filter)
 
     async def aload(
@@ -290,7 +347,7 @@ class VaultReader(AbstractReader):
         out: dict[str, bool] = {}
         for p, res in zip(targets, results, strict=True):
             if isinstance(res, Exception):
-                logging.warning(f"Vault prefetch failed for '{p}': {res}")
+                logger.warning("Vault prefetch failed for '%s': %s", p, res)
                 out[p] = False
             else:
                 out[p] = isinstance(res, dict)

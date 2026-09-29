@@ -24,6 +24,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * `VaultReader.set`/`delete` now split nested keys on the **last** `/`
   (as `get` already did): behavior change for keys like `a/b/KEY`.
 * `reload_current_env()` invalidates the Vault cache first.
+* `Kardex._get_external` now returns the first non-`None` value from
+  `reader.get()` (the built-in redis and vault readers return `None` for
+  absent keys, so results are unchanged for them).
+* `VaultReader.get`/`list` return deep copies of cached values;
+  `VaultReader.delete` now honours its `secret_path` argument.
+* `VAULT_CACHE_TTL`: negative values mean "never expire"; an invalid value
+  logs a warning and falls back to 300.
 
 ### Fixed
 * `Kardex.__contains__` now checks every enabled reader, not only the first.

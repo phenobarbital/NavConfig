@@ -41,6 +41,9 @@ except ModuleNotFoundError:
     HVAULT_LOADER = None
 
 
+_NOT_FOUND = object()  # sentinel: key not resolvable without external readers
+
+
 class Kardex(metaclass=Singleton):
     """
     Kardex.
@@ -496,13 +499,21 @@ class Kardex(metaclass=Singleton):
         elif key in os.environ:
             return dict(os.getenv(key))
 
-    def get(self, key: str, section: str = None, fallback: Any = None) -> Any:
+    def _resolve_local(self, key: str, section: str | None, fallback: Any) -> Any:
+        """Resolve a key from INI section, ``_mapping_`` and ``os.environ``.
+
+        Shared by :meth:`get` and :meth:`aget` so both keep one resolution
+        order.
+
+        Args:
+            key: Variable name.
+            section: Optional INI section.
+            fallback: Value used when the environment variable is unset.
+
+        Returns:
+            The resolved value, or ``_NOT_FOUND`` when only the external
+            readers can answer.
         """
-        get.
-            Interface for get variable from differents sources
-        """
-        val = None
-        # if not val and if section, get from INI
         if section is not None:
             if section in self._mapping_:
                 return self._mapping_[section]
@@ -511,11 +522,18 @@ class Kardex(metaclass=Singleton):
                     return self._ini.get(section, key)
         if key in self._mapping_:
             return self._mapping_[key]
-        # get ENV value
         if key in os.environ:
-            val = os.getenv(key, fallback)
-            val = self._unserialize(val)
-            return val
+            return self._unserialize(os.getenv(key, fallback))
+        return _NOT_FOUND
+
+    def get(self, key: str, section: str = None, fallback: Any = None) -> Any:
+        """
+        get.
+            Interface for get variable from differents sources
+        """
+        found = self._resolve_local(key, section, fallback)
+        if found is not _NOT_FOUND:
+            return found
         # get data from external readers:
         if val := self._get_external(key):
             val = self._unserialize(val)
@@ -563,7 +581,14 @@ class Kardex(metaclass=Singleton):
             return False
 
     async def _aget_external(self, key: str) -> Any:
-        """Async external lookup: reader.aget when available, else a thread."""
+        """Async external lookup: reader.aget when available, else a thread.
+
+        Args:
+            key: Variable name.
+
+        Returns:
+            The first non-None value from an enabled reader, else None.
+        """
         for _, reader in self._readers.items():
             try:
                 if reader.enabled is True:
@@ -580,23 +605,35 @@ class Kardex(metaclass=Singleton):
     async def aget(
         self, key: str, section: str | None = None, fallback: Any = None
     ) -> Any:
-        """Async variant of :meth:`get` with the same resolution order."""
-        if section is not None:
-            if section in self._mapping_:
-                return self._mapping_[section]
-            elif self._ini:
-                with contextlib.suppress(NoOptionError, NoSectionError):
-                    return self._ini.get(section, key)
-        if key in self._mapping_:
-            return self._mapping_[key]
-        if key in os.environ:
-            return self._unserialize(os.getenv(key, fallback))
+        """Async variant of :meth:`get` with the same resolution order.
+
+        Args:
+            key: Variable name.
+            section: Optional INI section.
+            fallback: Value returned when nothing resolves.
+
+        Returns:
+            The resolved value, or ``fallback``.
+        """
+        found = self._resolve_local(key, section, fallback)
+        if found is not _NOT_FOUND:
+            return found
         if val := await self._aget_external(key):
             return self._unserialize(val)
         return fallback
 
     async def aexists(self, key: str) -> bool:
-        """Async variant of :meth:`exists`."""
+        """Async variant of :meth:`exists`.
+
+        A key whose stored value is ``None`` is reported as absent, as in
+        :meth:`exists`.
+
+        Args:
+            key: Variable name.
+
+        Returns:
+            True when the key resolves from environ, mapping or a reader.
+        """
         if key in os.environ or key in self._mapping_:
             return True
         return await self._aget_external(key) is not None
@@ -620,7 +657,11 @@ class Kardex(metaclass=Singleton):
         return await reader.aload(paths)
 
     def invalidate_vault_cache(self, path: str | None = None) -> None:
-        """Drop cached Vault documents (no-op when Vault is disabled)."""
+        """Drop cached Vault documents (no-op when Vault is disabled).
+
+        Args:
+            path: Only this Vault path; all of the reader's paths when None.
+        """
         reader = self._readers.get("vault")
         if reader is not None and hasattr(reader, "invalidate"):
             reader.invalidate(path)

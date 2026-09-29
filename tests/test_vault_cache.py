@@ -148,3 +148,52 @@ def test_cache_invalidate_during_load_drops_stale():
 
     cache.get_or_load(_key(), loader)
     assert cache.get_or_load(_key(), lambda: {"new": 1}) == {"new": 1}
+
+
+def test_cache_generation_is_per_key():
+    cache = VaultDocumentCache(ttl=60)
+
+    def loader():
+        cache.put(_key("other"), {"x": 1})  # unrelated key
+        return {"a": 1}
+
+    cache.get_or_load(_key("a"), loader)
+    assert cache.get_or_load(_key("a"), lambda: {"never": 1}) == {"a": 1}
+
+
+def test_cache_key_locks_pruned():
+    cache = VaultDocumentCache(ttl=60)
+    cache.get_or_load(_key("a"), lambda: {"a": 1})
+    assert cache._key_locks == {}
+
+
+def test_cache_locked_serializes_writers():
+    cache = VaultDocumentCache(ttl=60)
+    inside = []
+    overlap = []
+
+    def writer():
+        with cache.locked(_key()):
+            inside.append(1)
+            if len(inside) > 1:
+                overlap.append(1)
+            time.sleep(0.02)
+            inside.pop()
+
+    threads = [threading.Thread(target=writer) for _ in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not overlap
+
+
+def test_singleton_negative_ttl_never_expires(monkeypatch):
+    monkeypatch.setenv("VAULT_CACHE_TTL", "-1")
+    vault_cache._reset_document_cache()
+    cache = get_document_cache()
+    calls = []
+    cache.get_or_load(_key(), lambda: calls.append(1) or {})
+    cache.get_or_load(_key(), lambda: calls.append(1) or {})
+    assert len(calls) == 1
+    vault_cache._reset_document_cache()
