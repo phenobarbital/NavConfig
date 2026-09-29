@@ -14,14 +14,14 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
       "parallel": false,
       "parallelism_notes": "Foundation module, stdlib only; every later task imports it.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T17:21:16+00:00",
       "file": "sdd/tasks/active/TASK-001-vault-document-cache.md"
     },
     {
@@ -31,7 +31,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -40,7 +40,7 @@
       "parallel": false,
       "parallelism_notes": "Imports vault_cache from TASK-001; modifies vault.py which TASK-003 depends on.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T17:21:16+00:00",
       "file": "sdd/tasks/active/TASK-002-vault-reader-cache-async.md"
     },
     {
@@ -50,7 +50,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -59,7 +59,7 @@
       "parallel": false,
       "parallelism_notes": "Calls VaultReader.aget/aload/invalidate added in TASK-002.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T17:21:16+00:00",
       "file": "sdd/tasks/active/TASK-003-kardex-vault-integration.md"
     },
     {
@@ -69,7 +69,7 @@
       "feature_id": "FEAT-001",
       "feature": "async-vault-read",
       "spec": "sdd/specs/async-vault-read.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -78,7 +78,7 @@
       "parallel": false,
       "parallelism_notes": "Documents final API and runs full suite; must follow all code tasks.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T17:21:16+00:00",
       "file": "sdd/tasks/active/TASK-004-vault-cache-docs-changelog.md"
     }
   ]
