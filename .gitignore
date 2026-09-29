@@ -149,3 +149,7 @@ credentials.txt
 examples/encrypt_env.py
 # parrot LLM-wiki state (local retrieval plane)
 .parrot/
+.claude/worktrees/
+navconfig.code-workspace
+elvis.json
+.mcp.json
