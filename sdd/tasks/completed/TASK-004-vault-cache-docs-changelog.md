@@ -114,6 +114,6 @@ navconfig/version.py  __version__ = "2.5.2"
 
 **Completed by**:
 **Date**:
-**Notes**:
+**Notes**: Full suite excluding tests/test_uvloop.py and tests/test_config.py: 89 passed (artifacts/logs/FEAT-001-pytest.log). tests/test_config.py fails/hangs in the worktree independent of this feature (same result with changes stashed; test_config asserts cwd == main checkout path). Version mismatch: navconfig/version.py says 2.5.2 but CHANGELOG has [3.0.0]; entry kept as [Unreleased].
 
 **Deviations from spec**:
