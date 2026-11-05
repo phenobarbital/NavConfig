@@ -4,6 +4,19 @@ on:
   release:
     types: [created]
 
+  # Dry run of the whole release path. `publish` is gated on
+  # `github.event_name == 'release'`, so a manual run builds every wheel, runs
+  # the completeness gate and `twine check`, and never uploads anything.
+  #
+  # NOTE: workflow_dispatch only becomes available once this file is on the
+  # default branch. To dry-run from a feature branch before merging, add that
+  # branch to the `push` filter below, push, and remove it again afterwards.
+  workflow_dispatch:
+
+  push:
+    branches:
+      - 'ci/release-dryrun-**'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,7 +47,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux
-          path: dist/*.whl
+          path: dist/*-manylinux*.whl
+          if-no-files-found: error
 
   build-windows:
     runs-on: windows-latest
@@ -67,6 +81,88 @@ jobs:
           path: dist/*-win_amd64.whl
           if-no-files-found: error
 
+  build-macos:
+    # macos-15 is arm64 (Apple Silicon) and pinned on purpose:
+    #   * macos-13 was retired on 2025-12-04 -- jobs pinned to it queue forever.
+    #   * macos-latest now resolves to the macOS 26 image, which moves under us.
+    # Intel macOS wheels would need a separate `macos-15-intel` job; until then
+    # Intel users install from the sdist.
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    env:
+      # Pin the deployment target so the platform tag is macosx_11_0_* instead
+      # of inheriting whatever target the discovered interpreter was built with.
+      # ARCHFLAGS is deliberately NOT set: forcing `-arch arm64` under a
+      # universal2 interpreter would produce arm64-only binaries that sysconfig
+      # still tags `universal2`, i.e. a wheel claiming Intel support it lacks.
+      # The tag is asserted explicitly after the build instead.
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # `actions/python-versions` publishes no darwin-arm64 build before
+          # 3.10.11, so keep these as minor versions (resolved to the newest
+          # patch). Pinning an exact old patch here will fail to install.
+          python-version: ${{ matrix.python-version }}
+          architecture: arm64
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Build wheels (macOS arm64)
+        # Build isolation installs only the requirements in [build-system].
+        run: uv build --wheel --python ${{ matrix.python-version }}
+
+      - name: Verify the platform tag covers Apple Silicon
+        # Guards against publishing a wheel whose filename does not actually
+        # serve Apple Silicon (e.g. a plain `x86_64` tag from a mis-selected
+        # interpreter). `universal2` is accepted: it contains an arm64 slice.
+        run: |
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if [ ${#wheels[@]} -eq 0 ]; then
+            echo "::error::uv build produced no wheel"
+            exit 1
+          fi
+          for whl in "${wheels[@]}"; do
+            name=$(basename "$whl")
+            case "$name" in
+              *macosx*arm64.whl|*macosx*universal2.whl)
+                echo "ok: $name" ;;
+              *)
+                echo "::error::$name is not an Apple Silicon wheel. Expected a macosx_*_arm64 or macosx_*_universal2 tag."
+                exit 1 ;;
+            esac
+          done
+
+      - name: Verify the binaries contain arm64 slices
+        # The extensions link nothing outside libSystem/libpython, so there are
+        # no dylibs to vendor -- delocate runs purely as an architecture gate,
+        # to fail here rather than ship x86_64 binaries under an arm64 tag.
+        run: |
+          for whl in dist/*-macosx*.whl; do
+            echo "::group::$(basename "$whl")"
+            uv tool run --from delocate delocate-listdeps --all "$whl"
+            uv tool run --from delocate delocate-wheel --require-archs arm64 \
+              -w "$RUNNER_TEMP/archcheck" "$whl"
+            echo "::endgroup::"
+          done
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.python-version }}
+          path: dist/*-macosx*.whl
+          if-no-files-found: error
+
   build-source:
     runs-on: ubuntu-latest
     steps:
@@ -95,16 +191,15 @@ jobs:
         with:
           name: source-dist
           path: dist/*.tar.gz
+          if-no-files-found: error
 
-  deploy:
-    needs: [build, build-windows, build-source]
+  # Everything that can be checked WITHOUT credentials lives here, so a manual
+  # (workflow_dispatch) run exercises the full aggregation and gating logic --
+  # which is exactly where a silent failure can hide -- without touching PyPI.
+  validate-dist:
+    name: Validate the distribution set
+    needs: [build, build-windows, build-macos, build-source]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/navconfig
-    permissions:
-      id-token: write  # For trusted publishing to PyPI
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -151,6 +246,17 @@ jobs:
             echo "HAS_WINDOWS_WHEELS=false" >> $GITHUB_ENV
           fi
 
+          # Check for macOS wheels. build-macos already asserted every one of
+          # them carries an Apple Silicon tag, so any macosx wheel here is one.
+          if ls dist/*-macosx*.whl 1> /dev/null 2>&1; then
+            echo "Found macOS wheels:"
+            ls -la dist/*-macosx*.whl
+            echo "HAS_MACOS_WHEELS=true" >> $GITHUB_ENV
+          else
+            echo "No macOS wheels found."
+            echo "HAS_MACOS_WHEELS=false" >> $GITHUB_ENV
+          fi
+
           # Check for source distribution
           if ls dist/*.tar.gz 1> /dev/null 2>&1; then
             echo "Found source distribution:"
@@ -170,33 +276,73 @@ jobs:
 
       # Refuse to publish a partial release: a version that lands on PyPI with
       # wheels but no sdist (or vice versa) cannot be corrected, only yanked.
+      # Every new platform gets a check here -- NOT a glob in the upload step.
       - name: Verify the release is complete
         run: |
-          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] || [ "$HAS_WINDOWS_WHEELS" != "true" ] || [ "$HAS_SOURCE_DIST" != "true" ]; then
-            echo "::error::Incomplete release - Linux wheels: $HAS_MANYLINUX_WHEELS, Windows wheels: $HAS_WINDOWS_WHEELS, sdist: $HAS_SOURCE_DIST"
+          if [ "$HAS_MANYLINUX_WHEELS" != "true" ] \
+            || [ "$HAS_WINDOWS_WHEELS" != "true" ] \
+            || [ "$HAS_MACOS_WHEELS" != "true" ] \
+            || [ "$HAS_SOURCE_DIST" != "true" ]; then
+            echo "::error::Incomplete release - Linux wheels: $HAS_MANYLINUX_WHEELS, Windows wheels: $HAS_WINDOWS_WHEELS, macOS wheels: $HAS_MACOS_WHEELS, sdist: $HAS_SOURCE_DIST"
             exit 1
           fi
+
+      - name: Validate package metadata
+        run: |
+          uv tool install twine
+          uv tool run twine check dist/*
+
+  publish:
+    needs: validate-dist
+    runs-on: ubuntu-latest
+    # The only step of the release path that a dry run must never reach.
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/navconfig
+    permissions:
+      id-token: write  # For trusted publishing to PyPI
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+
+      - name: Organize distribution files
+        run: |
+          mkdir -p dist
+          find dist-artifacts -name '*.whl' -exec mv {} dist/ \;
+          find dist-artifacts -name '*.tar.gz' -exec mv {} dist/ \;
+          ls -la dist/
 
       # Wheels and sdist go up in a single twine invocation so the release is
       # published as one unit. --skip-existing keeps a re-run idempotent instead
       # of failing on files that already uploaded before an earlier attempt died.
+      #
+      # `dist/*` on purpose, NOT a list of per-platform globs: a glob list
+      # silently drops any wheel whose platform tag nobody remembered to add
+      # (that is how macOS wheels would have gone missing). validate-dist is
+      # the gate that makes uploading everything in dist/ safe.
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.NAVCONFIG_PYPI_API_TOKEN }}
         run: |
           uv tool install twine
-          uv tool run twine upload --non-interactive --skip-existing \
-            dist/*-manylinux*.whl dist/*-win_amd64.whl dist/*.tar.gz
+          uv tool run twine upload --non-interactive --skip-existing dist/*
 
-
-  # Optional: Test installation job
   test-install:
-    needs: deploy
+    needs: publish
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-15]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Install uv
@@ -208,17 +354,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
 
       - name: Wait for PyPI propagation
         run: python -c "import time; time.sleep(60)"
 
       - name: Test installation from PyPI
         run: |
-          # Install into the interpreter selected by setup-python on either OS.
+          # --only-binary: a wheel must exist for this OS/interpreter. Falling
+          # back to the sdist here would hide exactly the failure we test for.
           uv pip install --system --python ${{ matrix.python-version }} --only-binary navconfig navconfig
 
           # Test basic import
           python -c "import navconfig; print(f'NavConfig {navconfig.__version__} installed successfully')"
           python -c "from navconfig import config; print('Config object created successfully')"
-        continue-on-error: true  # Don't fail the release if tests fail

@@ -17,6 +17,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `await config.aexists(key)`, plus `VaultReader.aget/aexists/alist/aload`.
 * `config.invalidate_vault_cache()`, `VaultReader.invalidate()` and
   `VaultReader.refresh()`.
+* macOS (Apple Silicon) binary wheels for CPython 3.10-3.14, built on the
+  `macos-15` arm64 runner, with platform-tag and arm64-slice verification
+  before upload. Intel macOS still installs from the source distribution.
+* `.github/workflows/build.yml`: compiles the Cython extensions and runs the
+  test suite on Linux, Windows and macOS for every push and pull request, so
+  platform-specific build breakage surfaces before a release is cut.
 
 ### Changed
 * Kardex external lookups perform a single `get()` per reader instead of
@@ -31,9 +37,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `VaultReader.delete` now honours its `secret_path` argument.
 * `VAULT_CACHE_TTL`: negative values mean "never expire"; an invalid value
   logs a warning and falls back to 300.
+* The release workflow now refuses to publish unless Linux, Windows **and**
+  macOS wheels plus the sdist are all present, and uploads `dist/*` instead
+  of a hand-maintained list of per-platform globs that silently dropped any
+  platform tag not named in it.
+* `setup.py` selects `/O2` or `-O2` according to the detected compiler
+  instead of relying on MSVC accepting the GCC spelling.
+* Package classifiers name the supported operating systems instead of
+  claiming `OS Independent`, which was never true of the binary wheels.
 
 ### Fixed
 * `Kardex.__contains__` now checks every enabled reader, not only the first.
+* Dropped `CYTHON_COMPILING_IN_PYPY=1` from the `navconfig.exceptions`
+  extension. The macro told Cython-generated C it was running under PyPy,
+  enabling PyPy-only code paths on CPython.
 
 ## [3.0.0] - 2026-08-21
 
