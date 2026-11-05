@@ -4,6 +4,7 @@ These must run without a scaffolded project: the whole point of
 ``kardex env create`` is to bootstrap one, so importing the CLI may never
 require ``env/`` to exist already.
 """
+import os
 import subprocess
 import sys
 from configparser import ConfigParser
@@ -22,6 +23,43 @@ from navconfig.commands.vault import (
 # Initialization order
 # ---------------------------------------------------------------------------
 
+def _cli_env(tmp_path) -> dict:
+    """Build a minimal environment for a CLI subprocess.
+
+    The CLI must not observe the caller's own configuration, so the
+    environment is constructed rather than inherited. Windows forces one
+    exception: CPython cannot initialise without ``SystemRoot`` -- it needs it
+    to reach the crypto provider that seeds hash randomisation -- and dies
+    with ``_Py_HashRandomization_Init: failed to get random numbers to
+    initialize Python`` before any of this project's code runs. So the few
+    OS-level variables the interpreter itself requires are passed through.
+
+    Args:
+        tmp_path: Directory the CLI should treat as the project root.
+
+    Returns:
+        Environment mapping for :func:`subprocess.run`.
+    """
+    env = {"SITE_ROOT": str(tmp_path)}
+    if sys.platform == "win32":
+        for name in (
+            "SystemRoot",
+            "SYSTEMROOT",
+            "windir",
+            "COMSPEC",
+            "PATHEXT",
+            "TEMP",
+            "TMP",
+            "PATH",
+        ):
+            value = os.environ.get(name)
+            if value is not None:
+                env[name] = value
+    else:
+        env["PATH"] = "/usr/bin:/bin"
+    return env
+
+
 def test_cli_importable_without_project(tmp_path):
     """``kardex`` must load in a directory that has no env/ folder.
 
@@ -32,7 +70,7 @@ def test_cli_importable_without_project(tmp_path):
     result = subprocess.run(
         [sys.executable, "-m", "navconfig.cli", "env", "create"],
         cwd=tmp_path,
-        env={"PATH": "/usr/bin:/bin", "SITE_ROOT": str(tmp_path)},
+        env=_cli_env(tmp_path),
         capture_output=True,
         text=True,
         check=False,
