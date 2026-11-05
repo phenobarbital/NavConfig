@@ -52,7 +52,9 @@
 ## Out of scope
 
 - Linux aarch64 and Windows arm64 wheels.
-- macOS x86_64 wheels (`macos-15-intel`); Intel users fall back to the sdist.
+- A dedicated macOS x86_64 job (`macos-15-intel`): unnecessary, because
+  setup-python's universal2 interpreter already yields wheels with both
+  arm64 and x86_64 slices (verified against the Mach-O headers).
 - Migrating all three platforms to `cibuildwheel` -- recommended follow-up,
   but it rewrites the working Linux/Windows jobs and this pipeline can only
   be validated by cutting a real release.

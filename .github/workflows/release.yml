@@ -85,8 +85,12 @@ jobs:
     # macos-15 is arm64 (Apple Silicon) and pinned on purpose:
     #   * macos-13 was retired on 2025-12-04 -- jobs pinned to it queue forever.
     #   * macos-latest now resolves to the macOS 26 image, which moves under us.
-    # Intel macOS wheels would need a separate `macos-15-intel` job; until then
-    # Intel users install from the sdist.
+    # actions/setup-python hands this runner a *universal2* interpreter, so the
+    # wheels come out tagged `macosx_11_0_universal2` with real arm64 AND
+    # x86_64 slices -- verified against the Mach-O headers. Intel macOS is
+    # therefore covered too, and no `macos-15-intel` job is needed. If a future
+    # image ever yields a thin arm64 interpreter the tag becomes
+    # `macosx_*_arm64`; both are accepted below, and the arch gate adapts.
     runs-on: macos-15
     strategy:
       fail-fast: false
@@ -117,7 +121,7 @@ jobs:
         with:
           version: "latest"
 
-      - name: Build wheels (macOS arm64)
+      - name: Build wheels (macOS)
         # Build isolation installs only the requirements in [build-system].
         run: uv build --wheel --python ${{ matrix.python-version }}
 
@@ -143,15 +147,23 @@ jobs:
             esac
           done
 
-      - name: Verify the binaries contain arm64 slices
+      - name: Verify the binaries match the platform tag
         # The extensions link nothing outside libSystem/libpython, so there are
-        # no dylibs to vendor -- delocate runs purely as an architecture gate,
-        # to fail here rather than ship x86_64 binaries under an arm64 tag.
+        # no dylibs to vendor -- delocate runs purely as an architecture gate.
+        # The requirement is derived from the tag rather than hardcoded: a
+        # `universal2` wheel carrying only arm64 slices promises Intel support
+        # it does not have, and that is exactly what this must catch.
         run: |
           for whl in dist/*-macosx*.whl; do
-            echo "::group::$(basename "$whl")"
+            name=$(basename "$whl")
+            case "$name" in
+              *universal2.whl) required="x86_64,arm64" ;;
+              *arm64.whl)      required="arm64" ;;
+              *) echo "::error::unexpected platform tag in $name"; exit 1 ;;
+            esac
+            echo "::group::$name (require-archs=$required)"
             uv tool run --from delocate delocate-listdeps --all "$whl"
-            uv tool run --from delocate delocate-wheel --require-archs arm64 \
+            uv tool run --from delocate delocate-wheel --require-archs "$required" \
               -w "$RUNNER_TEMP/archcheck" "$whl"
             echo "::endgroup::"
           done

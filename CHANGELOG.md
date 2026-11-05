@@ -17,9 +17,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `await config.aexists(key)`, plus `VaultReader.aget/aexists/alist/aload`.
 * `config.invalidate_vault_cache()`, `VaultReader.invalidate()` and
   `VaultReader.refresh()`.
-* macOS (Apple Silicon) binary wheels for CPython 3.10-3.14, built on the
-  `macos-15` arm64 runner, with platform-tag and arm64-slice verification
-  before upload. Intel macOS still installs from the source distribution.
+* macOS binary wheels for CPython 3.10-3.14, built on the `macos-15` runner
+  and tagged `macosx_11_0_universal2`: a single wheel per interpreter serving
+  **both** Apple Silicon (arm64) and Intel (x86_64) Macs. The platform tag and
+  the architectures actually present in the binaries are verified before
+  upload, so a wheel can never promise an architecture it does not contain.
 * `.github/workflows/build.yml`: compiles the Cython extensions and runs the
   test suite on Linux, Windows and macOS for every push and pull request, so
   platform-specific build breakage surfaces before a release is cut.
