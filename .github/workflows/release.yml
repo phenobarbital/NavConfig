@@ -371,17 +371,25 @@ jobs:
         run: python -c "import time; time.sleep(60)"
 
       - name: Test installation from PyPI
+        shell: bash
         run: |
           # --only-binary: a wheel must exist for this OS/interpreter. Falling
           # back to the sdist here would hide exactly the failure we test for.
           uv pip install --system --python ${{ matrix.python-version }} --only-binary navconfig navconfig
 
-          # Assert the published wheel's compiled extensions load. NOT
-          # `navconfig.config`: that triggers the lazy bootstrap, which calls
-          # project_root() and needs an env/<env>/.env scaffold or SITE_ROOT.
-          # This job runs without a checkout, so there is no project to detect
-          # and that check could only ever fail -- which it silently did, until
-          # `continue-on-error: true` came off this step. `__version__` is
-          # imported eagerly, so reading it is bootstrap-free.
+          # navconfig cannot be imported without a project: `navconfig/logging/
+          # __init__.py` does `from navconfig import config, BASE_DIR`, which
+          # trips the lazy bootstrap -> project_root(). Detection is anchored on
+          # the installed package's location, not the working directory, so the
+          # scaffold needs SITE_ROOT pointing at it. This job has no checkout,
+          # so there was nothing to detect and the import check could only ever
+          # fail -- which it silently did, until `continue-on-error: true` came
+          # off this step.
+          mkdir -p navconfig-smoke
+          cd navconfig-smoke
+          python -m navconfig.cli env create
+          export SITE_ROOT="$PWD"
+
           python -c "import navconfig; print(f'NavConfig {navconfig.__version__} installed successfully')"
           python -c "import navconfig.exceptions, navconfig.utils.functions, navconfig.utils.types, navconfig.utils.json, navconfig.loaders.parsers.toml, navconfig.loaders.parsers.yaml, navconfig.logging.logger; print('all 7 extensions import')"
+          python -c "from navconfig import config; print('Config object created successfully')"

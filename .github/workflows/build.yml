@@ -49,23 +49,30 @@ jobs:
 
       - name: Install the wheel and import it
         shell: bash
-        # Run from RUNNER_TEMP, not the checkout: the repository root contains a
-        # `navconfig/` directory, so `import navconfig` there would pick up the
-        # source tree (which has no compiled extensions) instead of the wheel
-        # we just installed, and the check would prove nothing.
-        #
-        # This asserts wheel integrity -- that the compiled extensions load on
-        # this platform -- and nothing else. It deliberately does NOT touch
-        # `navconfig.config`: that attribute triggers the lazy bootstrap, which
-        # calls project_root() and needs a project to detect (an env/<env>/.env
-        # scaffold, or SITE_ROOT). There is no project in RUNNER_TEMP, by
-        # design, so requiring one here would test the harness, not the wheel.
-        # `__version__` is imported eagerly, so reading it is bootstrap-free.
         run: |
           uv pip install --system --python ${{ matrix.python-version }} dist/*.whl
-          cd "$RUNNER_TEMP"
+
+          # Work outside the checkout: the repository root holds a `navconfig/`
+          # directory that would shadow the installed wheel, so `import
+          # navconfig` there would prove nothing.
+          #
+          # navconfig needs a project to import at all: `navconfig/logging/
+          # __init__.py` does `from navconfig import config, BASE_DIR`, which
+          # trips the lazy bootstrap -> project_root(). Detection is anchored on
+          # the INSTALLED package's location (site-packages), never the working
+          # directory, so scaffolding a project is not enough on its own --
+          # SITE_ROOT has to point at it. `python -m navconfig.cli env create`
+          # is used rather than the `kardex` console script so the check does
+          # not also depend on the scripts directory being on PATH.
+          cd "$HOME"
+          mkdir -p navconfig-smoke
+          cd navconfig-smoke
+          python -m navconfig.cli env create
+          export SITE_ROOT="$PWD"
+
           python -c "import navconfig; print('navconfig', navconfig.__version__)"
           python -c "import navconfig.exceptions, navconfig.utils.functions, navconfig.utils.types, navconfig.utils.json, navconfig.loaders.parsers.toml, navconfig.loaders.parsers.yaml, navconfig.logging.logger; print('all 7 extensions import')"
+          python -c "from navconfig import config; print('config ok:', type(config).__name__)"
 
   tests:
     name: tests (${{ matrix.os }}, py${{ matrix.python-version }})
