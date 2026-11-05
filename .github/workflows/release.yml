@@ -376,6 +376,12 @@ jobs:
           # back to the sdist here would hide exactly the failure we test for.
           uv pip install --system --python ${{ matrix.python-version }} --only-binary navconfig navconfig
 
-          # Test basic import
+          # Assert the published wheel's compiled extensions load. NOT
+          # `navconfig.config`: that triggers the lazy bootstrap, which calls
+          # project_root() and needs an env/<env>/.env scaffold or SITE_ROOT.
+          # This job runs without a checkout, so there is no project to detect
+          # and that check could only ever fail -- which it silently did, until
+          # `continue-on-error: true` came off this step. `__version__` is
+          # imported eagerly, so reading it is bootstrap-free.
           python -c "import navconfig; print(f'NavConfig {navconfig.__version__} installed successfully')"
-          python -c "from navconfig import config; print('Config object created successfully')"
+          python -c "import navconfig.exceptions, navconfig.utils.functions, navconfig.utils.types, navconfig.utils.json, navconfig.loaders.parsers.toml, navconfig.loaders.parsers.yaml, navconfig.logging.logger; print('all 7 extensions import')"
