@@ -13,10 +13,14 @@ pytestmark = pytest.mark.asyncio(scope="session")
 
 
 # Your existing tests (unchanged)
-async def test_config():
-    from navconfig import config, SITE_ROOT, BASE_DIR, DEBUG
-    current_path = Path(__file__).resolve().parent.parent
-    assert current_path == SITE_ROOT
+async def test_config(test_project_root):
+    from navconfig import SITE_ROOT, BASE_DIR, DEBUG
+    # The suite runs against the disposable project scaffolded by
+    # tests/conftest.py, not against the checkout: `env/`, `etc/` and
+    # `settings/` are gitignored, so the checkout is not a NavConfig project
+    # on a clean clone.
+    assert Path(SITE_ROOT) == test_project_root
+    assert Path(BASE_DIR) == test_project_root
     debug = bool(os.getenv('DEBUG', False))
     assert debug == DEBUG
 

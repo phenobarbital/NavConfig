@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+* `tests/test_config.py` and `tests/test_kardex_vault.py` run on a clean
+  checkout, and therefore in CI, where they were skipped wholesale. Both
+  import `navconfig.config` at module level, which loads
+  `env/<ENV>/.env`; `env/`, `etc/` and `settings/` are git-ignored and
+  nothing equivalent was tracked, so on any machine but a maintainer's they
+  failed during *collection* with `NavConfig initialization failed:
+  environment assets are missing` -- and a collection error takes the whole
+  run down. `tests/conftest.py` now scaffolds a disposable project in a
+  temporary directory and exports `SITE_ROOT` before the first test module
+  imports navconfig.
+
+### Changed
+* The test suite no longer reads the configuration of the checkout it runs
+  in: it asserts against the fixture project instead of against whatever
+  `CONFIG_TEST`, `SEND_NOTIFICATIONS` and `env/` the developer happens to
+  have. The fixture declares no Vault, so the Vault tests exercise their fake
+  `hvac` client rather than a live server -- the full 128 tests now take ~2s,
+  where the 26 previously-excluded ones alone took ~300s of network I/O.
+* `.github/workflows/build.yml` runs `pytest` with no `--ignore` flags.
+
 ## [3.1.0] - 2026-11-05
 
 ### Added
