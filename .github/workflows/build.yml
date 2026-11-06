@@ -102,16 +102,8 @@ jobs:
         run: uv sync --extra dev --python ${{ matrix.python-version }}
 
       - name: Run the test suite
-        # tests/test_config.py and tests/test_kardex_vault.py cannot even be
-        # COLLECTED on a clean checkout -- they fail with "NavConfig
-        # initialization failed: environment assets are missing" because they
-        # need an `env/<environment>/.env` scaffold, and `env/` is gitignored
-        # and absent from the repository. They pass locally only for developers
-        # who have run `kardex env create`. Teaching CI to scaffold that (and
-        # deciding what those tests should assert against a default env) is
-        # follow-up work; the remaining ~102 tests run here, which is coverage
-        # this repository has never had on any platform.
-        run: >-
-          uv run --no-sync pytest -q
-          --ignore=tests/test_config.py
-          --ignore=tests/test_kardex_vault.py
+        # The whole suite runs here. tests/conftest.py scaffolds a disposable
+        # NavConfig project in a temporary directory and points SITE_ROOT at
+        # it, so the tests that need `env/<environment>/.env` no longer depend
+        # on a scaffold the repository does not track.
+        run: uv run --no-sync pytest -q
