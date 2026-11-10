@@ -15,7 +15,7 @@ import logging
 from typing import Dict, Any, Optional, List
 from pathlib import Path, PurePath
 from dotenv import load_dotenv, dotenv_values
-from .abstract import BaseLoader
+from .abstract import KEY_NOT_FOUND, BaseLoader
 
 
 def sort_key(path):
@@ -315,6 +315,42 @@ class vaultLoader(BaseLoader):
 
         # Check environment
         return os.getenv(key, default)
+
+    def reload_key(self, key: str) -> Any:
+        """Re-read ``key`` from Vault and the ``.env`` files.
+
+        Applies the same precedence as :meth:`load_environment`: the base
+        ``.env`` beats the ``.env.*`` files, and Vault beats both unless
+        ``NAVCONFIG_FILE_OVERRIDE_ENABLED`` is set. The Vault cache for the
+        current path is invalidated first, so the secret is fetched fresh.
+
+        Args:
+            key: Variable name.
+
+        Returns:
+            The value at the origin, or ``KEY_NOT_FOUND``.
+        """
+        patterns = [".env"] + [p for p in self.file_patterns if p != ".env"]
+        file_value = self._read_key_from_files(key, patterns, first_wins=True)
+        vault_value = KEY_NOT_FOUND
+        if self.vault_enabled and self.vault_reader:
+            try:
+                if hasattr(self.vault_reader, "invalidate"):
+                    self.vault_reader.invalidate(self.vault_env)
+                data = self.vault_reader.list(path=self.vault_env) or {}
+                if data.get(key) is not None:
+                    vault_value = data[key]
+                    self.vault_data[key] = vault_value
+            except Exception as e:  # pylint: disable=W0703
+                logging.warning(f"Vault refresh failed for {key}: {e}")
+        file_wins = os.getenv(
+            "NAVCONFIG_FILE_OVERRIDE_ENABLED", ""
+        ).lower() in ("true", "1", "yes")
+        if file_wins and file_value is not KEY_NOT_FOUND:
+            return file_value
+        if vault_value is not KEY_NOT_FOUND:
+            return vault_value
+        return file_value
 
     def set_environment(self, new_env: str) -> None:
         """

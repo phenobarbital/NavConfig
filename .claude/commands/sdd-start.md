@@ -65,17 +65,24 @@ Everything the step needs is in the per-spec index header resolved in §1
 (`feature_id`, `feature`, `spec`, `type`, `base_branch`):
 
 ```bash
-WT=$(python -m scripts.sdd.ensure_worktree \
+WT=$(parrot sdd worktree ensure \
        --slug "<feature-slug>" \
        --feature-id "<FEAT-ID>" \
        --spec "<spec-path>" \
        --index "sdd/tasks/index/<feature-slug>.json")
 cd "$WT"
+# Host-only, advisory: surface the output verbatim and continue (never blocks startup).
+parrot sdd worktree sync-base "$WT" --dry-run || true
 ```
+
+If the dry run reports base commits missing, suggest running
+`parrot sdd worktree sync-base "$WT"` from the host before the worker starts.
+Never run this full-base check inside a sandboxed worker: it cannot fetch there
+and would only produce a refusal.
 
 For a hotfix (`type: hotfix` in the index header) pass `--jira-key <KEY>`
 instead of `--feature-id`; the CLI applies the FEAT-466 naming and branches
-from `origin/main`.
+from `origin/<hotfix_base>` (the `hotfix_base` in `sdd/config.json`).
 
 If the command exits non-zero, **STOP** and show its message verbatim. Do NOT
 fall back to implementing on `<base_branch>` — an un-isolated implementation is
@@ -144,7 +151,7 @@ except Exception as exc:  # noqa: BLE001 — ledger emission never blocks /sdd-s
 PYEOF
 ```
 
-Log-only append (same durability guarantee as `close_task.sh`'s
+Log-only append (same durability guarantee as `parrot sdd task close`'s
 `task.closed` — spec §2: "never takes a database lock") — there is no
 SQLite writer contention to handle here.
 
@@ -267,7 +274,8 @@ Keep wiki-first and read the complete task contract through bounded references.
 Prefer task-context inspection when the engine is present; fallback keeps explicit checks.
 Use the existing declared test selector, environment protection and semantic delivery review.
 Finalize only with structured green evidence and the exact implementation HEAD; call
-python -m scripts.sdd.finalize_task, inspect returned staged paths and commit explicitly.
+parrot sdd task finalize, inspect returned staged paths and commit explicitly.
+After the semantic review, run `parrot sdd task review record --feature <slug> --task <id> --worktree <path> --summary "<review>"` and use the printed `review_ref` as `review_evidence`; never write into the evidence store by hand.
 Reject stale evidence and divergent active/completed twins; never reset unrelated staging.
 Do not compact for every task. Feature handoff uses a durable checkpoint and fresh reviewer;
 Codex/Antigravity without a verified adapter report unsupported_host, never call Claude /compact.
@@ -279,13 +287,13 @@ After the code is committed, update the per-spec index in the same branch
 > means *moving* its file from `active/` to `completed/`. Agents that paraphrase
 > this as a `Write`/copy leave the `active/` file behind; when the feature
 > branch merges, both copies land on the base branch as a "stalled" orphan.
-> `scripts/sdd/close_task.sh` does the move with `git mv` and HARD-VERIFIES that
+> `parrot sdd task close` does the move with `git mv` and HARD-VERIFIES that
 > no `active/` copy survives (exit 3 if it does). Always call it verbatim.
 
 ```bash
 # Move active → completed, stamp the index (status/completed_at/verification/file),
 # stage the change, and assert active/ is clean. Idempotent.
-scripts/sdd/close_task.sh TASK-<NNN> <feature-slug> verified
+parrot sdd task close TASK-<NNN> <feature-slug> verified
 
 # Fill in the Completion Note section of the moved file (now in completed/).
 # Then commit ONLY the staged SDD state — never "git add ." / "git add -A".
@@ -318,4 +326,4 @@ Next:
 - Per-spec index files: `sdd/tasks/index/<feature>.json`
 - Task template: `sdd/templates/task.md`
 - SDD methodology: `sdd/WORKFLOW.md`
-- Frontmatter parser: `scripts/sdd/sdd_meta.py`
+- Frontmatter parser: `parrot.sdd.scripts.sdd_meta`

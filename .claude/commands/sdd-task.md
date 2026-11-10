@@ -32,8 +32,8 @@ Promotion is always explicit — no ledger issue is ever auto-promoted.
   branches, edge cases and test bodies stay as `FILL IN` stubs.
 - Build the task graph by §3's **Task graph rules** — `depends_on` is the only
   ordering, `parallel: false` means *exclusive* — and run
-  `scripts/sdd/check_task_graph.py` on the index before committing (§4b).
-- **`TASK-<NNN>` numbers are reserved via `scripts/sdd/reserve_ids.py`
+  `parrot.sdd.scripts.check_task_graph` on the index before committing (§4b).
+- **`TASK-<NNN>` numbers are reserved via `parrot.sdd.scripts.reserve_ids`
   (FEAT-387), never hand-computed by scanning existing files for the
   highest number in use.** That scan-and-increment approach has no lock
   and no re-check against `origin/<base_branch>` immediately before
@@ -52,7 +52,7 @@ Promotion is always explicit — no ledger issue is ever auto-promoted.
 Read the spec's frontmatter to determine the base branch, switch to it, and pull from origin:
 
 ```bash
-META=$(python -c "from pathlib import Path; from scripts.sdd.sdd_meta import parse; m = parse(Path('<spec-path>')); print(m.type, m.base_branch)")
+META=$(parrot sdd docs parse "<spec-path>")
 TYPE=$(echo "$META" | awk '{print $1}')
 BASE=$(echo "$META" | awk '{print $2}')
 
@@ -60,9 +60,9 @@ git checkout "$BASE"
 git pull --ff-only origin "$BASE"
 ```
 
-For `type: hotfix`, `BASE` MUST be `main`. For `type: feature`, `BASE` defaults
-to `dev` and may be `staging` (during a release freeze) or any non-main branch
-(sub-features extend a parent feature branch — see `CLAUDE.md`).
+For `type: hotfix`, `BASE` MUST be the `hotfix_base` in `sdd/config.json`. For `type: feature`, `BASE` defaults
+to the `base_branch` in `sdd/config.json` and may be the `staging_branch` (during a release freeze) or any non-main branch
+(sub-features extend a parent feature branch — see `sdd/WORKFLOW.md`).
 
 **A hotfix normally does not reach this command at all (FEAT-466).**
 `sdd-research.md` skips `/sdd-task` entirely for `type: hotfix` runs — a
@@ -79,14 +79,14 @@ instead — the identity the rest of the flow labels this run by.
 
 **Validation:** if `TYPE == "feature"` and `BASE_BRANCH == "main"`, abort:
 ```
-⚠️  type='feature' cannot base on 'main'. Features land on dev (default)
-   or staging (during a release freeze). For changes that must base on
-   main, set type='hotfix' in the document frontmatter.
+⚠️  type='feature' cannot base on the hotfix base branch. Features land on the
+   configured base_branch (default) or staging_branch (during a release freeze).
+   For changes that must base on the hotfix base, set type='hotfix' in the document frontmatter.
 ```
 
 Note: `staging` is a valid `base_branch` for `type: feature` during a release freeze
-(FEAT-187). Use `base_branch: staging` when decomposing stabilization fixes for a
-frozen release candidate.
+(FEAT-187). Use the `staging_branch` from `sdd/config.json` as `base_branch` when decomposing
+stabilization fixes for a frozen release candidate.
 
 **Abort conditions (do NOT stash or auto-resolve):**
 - Working tree dirty: `⚠️  Cannot sync <BASE>: working tree has uncommitted changes. Stash or commit first, then re-run /sdd-task.`
@@ -103,11 +103,28 @@ Read the spec file provided by the user (e.g., `sdd/specs/<feature>.spec.md`).
 - If spec is not `status: approved`, warn and ask to confirm.
 - Extract: Feature ID, title, module breakdown, acceptance criteria, dependencies.
 
+### 2b. Advisory Decision-Audit Check
+
+```bash
+parrot sdd spec consequences <spec-path> --advisory
+```
+
+Advisory only (FEAT-784): it **never refuses** decomposition and always exits 0. It is silent when the
+repository is not configured or the spec has no generated report; when an existing report is
+`conflict`, `invalid`, `incomplete` or stale it prints a warning — copy that warning into the §6 output
+and continue.
+
 ### 3. Plan Task Decomposition
 Analyze the spec and identify atomic tasks:
 - One task per module, class, or distinct deliverable.
 - Order tasks to respect implementation dependencies.
 - Aim for tasks completable in 1–4 hours each.
+
+**Documentation task (FEAT-801).** When the spec's `docs.policy` is `required`, emit exactly one
+task *Documentation — <pages>* that creates/updates the listed `wiki/` pages from
+`sdd/templates/techwiki-page.md`, `depends_on` every task that creates a symbol the pages document
+(last in the graph), validation command `parrot sdd techwiki check --spec <spec> --root .`,
+`parallel: true`. `none`/absent: no task.
 
 **Task graph rules (`depends_on`, `parallel`, `parallelism_notes`):**
 
@@ -202,6 +219,49 @@ incomplete — same bar as the Codebase Contract. If the blueprint would be the
 full implementation, the task is too small; if it needs more than ~80 lines per
 file, the task is too big.
 
+#### Delegating flat checks to `sdd-contract-probe` (optional)
+
+The checks behind the two contracts above are flat and deterministic: does this
+symbol still exist and what is its signature, how many times does this anchor
+occur and on which line, is this "Does NOT Exist" name really absent, what is
+this file's `sha256`. When your host can launch the `sdd-contract-probe` subagent
+(Claude Code: the `Agent` tool, Haiku; Antigravity: the
+`.agents/agents/sdd-contract-probe/agent.md` subagent; Codex and other hosts: none)
+you MAY hand them to it (read-only) and keep your own effort for
+the judgement: the decomposition, the graph, what goes into each contract, and
+the blueprints.
+
+1. **Plan first, probe second.** Probe only after the decomposition is settled,
+   so every check belongs to a task. Collect the checks across all tasks and
+   dedupe them (one check per `path`+`anchor`, `module`+`name`, …).
+2. **Write probe sheets** with the kinds the agent defines: `symbol`, `import`,
+   `anchor` (every §6 Edit Sites row you use, and every MODIFY anchor),
+   `absent` (every "Does NOT Exist" candidate — scope it to the whole module,
+   never a shim), `sha256` (every `modify` target of a Delegation Contract),
+   `outline` (files the spec's §6 does not cover), `file` (a cited `path:NN` exists). Give each check a stable `id`.
+3. **Fan out**: split the sheet into groups of at most ~40 checks, grouped by
+   file, and launch all the probes in ONE message so they run in parallel. Pass
+   the repo root and the sheet; nothing else — not the spec, not your plan.
+4. **Verify before you use** (the report is advisory until checked):
+   - `head` in every report must equal `git rev-parse --short HEAD`; if not,
+     the tree moved — re-probe.
+   - Re-run yourself every `missing`, `module-missing`, `ambiguous`, `present`
+     and `error` result, every `anchor` whose count differs from the spec's §6
+     row, and at least one `found` result in ten, chosen at random. Any re-run
+     that does not reproduce the report's `output` discards that whole report:
+     do its checks yourself.
+   - Copy only verified facts into the contracts: signatures from `signature`,
+     line numbers from `lines`, occurrence counts from `count`, hashes from
+     `output`. A count of `0` is drift: stop and report it, as in rule 5 above.
+5. **Do it yourself instead** when your host cannot launch the probe (Codex; the
+   dev-loop `sdd-planner`, which runs this command with no `Agent` tool) or when the
+   whole spec needs fewer than ~10 checks — the fan-out costs more than it
+   saves. The contract rules above are the same either way.
+
+Never delegate the judgement: which imports a task needs, which plausible
+names belong in "Does NOT Exist", how a task is cut, its `depends_on`, and the
+blueprint code stay with you.
+
 ### 4. Generate Tasks
 1. Ensure `sdd/tasks/active/` directory exists (create if needed).
 2. Read the task template at `sdd/templates/task.md`.
@@ -211,7 +271,7 @@ file, the task is too big.
    compare-and-swap ledger (FEAT-387), never scan existing files and
    increment by hand:
    ```bash
-   TASK_IDS=$(python -m scripts.sdd.reserve_ids --kind task --count <N> \
+   TASK_IDS=$(parrot sdd ids reserve --kind task --count <N> \
      --base-branch "$BASE" --label <feature-slug>)
    ```
    Where `<N>` is the total number of tasks about to be generated for this
@@ -257,7 +317,8 @@ file, the task is too big.
    re-query ready work to recover an issue that is now claimed. For standalone
    promotion, locate the issue in `wikitoolkit ledger plan-fix --json` first.
    Use `wikitoolkit ledger context <issue.files...>` with repo-relative file
-   paths, not the issue ID. Include `discovered_from: <issue-id>` in the task.
+   paths, not the issue ID. Include the line `` **Discovered-from**: `issue:<id>` `` in the task —
+   `/sdd-done` closes the issue through it.
    Promotion never runs `ledger close`: filing a task is not resolution.
    Close separately only after implementation and validation, with the
    two-key evidence required by `/sdd-fix`.
@@ -298,6 +359,7 @@ and ignored by all FEAT-145 commands). Schema:
   "completed_at": null,
   "parallel_semantics": "exclusive",
   "validation_contract": "required",
+  "test_contract": {"schema": 1, "tests": ["<operand>", "..."], "markers": [], "digest": "sha256:<hex>"},
   "tasks": [
     {
       "id": "TASK-<NNN>",
@@ -348,7 +410,7 @@ complete. `design_complete: true` is a declaration the task author signs.
 - List every target file with its `action` (`create`/`modify`), and give each
   `modify` target a REAL `expected_sha256` — compute it, never guess:
   `sha256sum <path>` or
-  `python -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" <path>`.
+  `shasum -a 256 <path>` on macOS (both print the hash first; take the first field).
 - Every `create` target needs a block tagged `path=<target>` holding the new
   file's full content; every referenced block id must exist in the task file.
 - Never leave placeholders (`...`, `TODO`, `FIXME`, `XXX`, `<angle>`,
@@ -360,23 +422,56 @@ complete. `design_complete: true` is a declaration the task author signs.
 - Omit the section entirely when the task is not eligible. Most tasks are not,
   and that is the normal, expected route.
 
+#### Cache the Validation Contract (FEAT-699, mandatory)
+
+After writing the index and before §4b:
+
+When `sdd/config.json` sets `test_command`, skip this step: no `test_contract` is cached (the command runs at the merge/feature tier instead), and `/sdd-task` continues even when the spec has no `### Validation Contract` section. When `test_command` is unset the step is mandatory and `cache_test_contract` stays strict; if it cannot load the FEAT-699 `test_scope` kernel it exits non-zero with a one-line message on stderr.
+
+Otherwise run:
+```bash
+parrot sdd tests contract --spec <spec-path> --index sdd/tasks/index/<feature-slug>.json
+```
+It writes the spec §4 `### Validation Contract` into the header as `test_contract` (or removes it for
+`none — fallback`). Never hand-write `test_contract`. Exit 2 means the spec subsection is malformed or
+missing — fix the spec, do not skip the step. Each task's `## Validation Commands` lists that task's OWN
+test files; the contract is added by the selector at merge/feature tier, never copied into every task.
+
+The script accepts both authoring forms (flat `tests:`/`markers:` and the FEAT-709 `runners:` form) and always
+writes schema 2 (`runners` blocks + digest); a legacy schema-1 header is lifted on read to one pytest runner.
+Kinds, tiers and settings are validated against the runner registry (`.parrot/test_runners.toml`, `--root`);
+`check_task_graph.py` then flags `test-contract-unknown-runner`, `-tier-forbidden`, `-settings-invalid`,
+`-extension-invalid`, and warns `validation-command-unrecognised` for a task command no adapter matches.
+
 #### Validation Commands (mandatory, per task — FEAT-563)
 
 Every generated task MUST carry a `## Validation Commands` section placed right
 after `## Acceptance Criteria`: one bullet per command, each a backticked
-`pytest` invocation whose operands are **test files or node ids** — never a
-directory, never `tests/` or `packages/<dist>/tests`, never a bare `pytest`.
+invocation that a **registered test runner** recognises — `pytest`, `vitest`,
+`cargo test`, `parrot e2e`, or an `[extensions]` entry in
+`.parrot/test_runners.toml` (`pnpm`/`npm`/`yarn test` stand for `vitest run`
+unless the vitest runner's `test_script` setting says otherwise). A pytest
+command's operands are **test files or node ids** — never a directory, never
+a tests root such as `<tests>/`, never a bare `pytest`; the other runners are
+rejected only when over-broad (e.g. `vitest run` with no filter).
 
 ```markdown
 ## Validation Commands
-- `pytest packages/ai-parrot/tests/flows/dev_loop/test_scope/test_mirror.py -q`
-- `pytest tests/sdd_scripts/test_check_task_graph.py::test_validation_contract_findings -q`
+- `pytest <tests>/path/test_module.py -q`
+- `pytest <tests>/path/test_module.py::test_case -q`
 ```
 
 This is what the sdd-coder guard rewrites a broad pytest to. New per-spec index
 headers MUST include `"validation_contract": "required"`; `check_task_graph`
-then reports `missing-validation-commands`, `broad-validation-command` and
+then reports `missing-validation-commands`, `non-pytest-validation-command`
+(no registered runner recognises the command), `broad-validation-command` and
 `directory-validation-target` as errors (`validation-path-unknown` warns).
+
+A command no registered runner recognises (`go test ./pkg/cart`, `make test`)
+is an error, unless `sdd/config.json` sets `test_command` (FEAT-633 rev 0.8
+C29): that command runs instead of `select_tests`, so `check_task_graph` only
+warns `non-pytest-validation-command`. Write the narrowest command of the
+repository's own runner for the task's tests either way.
 
 #### Complexity Contract (mandatory, per task)
 
@@ -387,7 +482,7 @@ a JSON block with `schema_version: 1`.
   Create / Modify" table exactly.
 - **`contract_symbols`**: A list of exact symbol IDs referenced by the
   Codebase Contract (e.g.,
-  `"sym:packages/ai-parrot/src/parrot/flows/dev_loop/sdd_coder/models.py#RosterConfig"`).
+  `"sym:<src>/<pkg>/module.py#ClassName"`).
   If there are no existing symbol references, use an empty list `[]` (do not
   omit the field — an absent list means legacy/unknown coverage).
 - Legacy tasks without this section default to unknown complexity.
@@ -400,7 +495,7 @@ Example:
   "schema_version": 1,
   "targets": [
     {
-      "path": "packages/ai-parrot/src/parrot/flows/dev_loop/sdd_coder/complexity.py",
+      "path": "<src>/<pkg>/module.py",
       "action": "MODIFY"
     }
   ],
@@ -413,7 +508,7 @@ Example:
 Run the deterministic graph check on the index you just wrote:
 
 ```bash
-python -m scripts.sdd.check_task_graph sdd/tasks/index/<feature-slug>.json
+parrot sdd task graph sdd/tasks/index/<feature-slug>.json
 ```
 
 - **Errors** (exit 1) block the commit: `file-overlap` (two tasks declare the
@@ -424,9 +519,13 @@ python -m scripts.sdd.check_task_graph sdd/tasks/index/<feature-slug>.json
   `possible-missing-dependency` → add the edge or confirm the reference is not
   a use; `duplicate-notes` / `exclusive-without-notes` → write per-task notes.
 - FEAT-563 validation-contract codes: `missing-validation-commands`,
-  `broad-validation-command`, `directory-validation-target` (errors when the
-  header requires the contract) and `validation-path-unknown` (warning) — add
-  or fix the task's `## Validation Commands` section.
+  `non-pytest-validation-command` (no registered runner — pytest, vitest,
+  cargo, parrot-e2e or a `.parrot/test_runners.toml` extension — recognises
+  the command), `broad-validation-command`, `directory-validation-target`
+  (errors when the header requires the contract) and `validation-path-unknown`
+  (warning) — add or fix the task's `## Validation Commands` section.
+  `non-pytest-validation-command` is a warning instead when `sdd/config.json`
+  sets `test_command`; that warning may stay unresolved.
 - Copy the report's first line (`<N> tasks, <W> waves, max width <M>`) into the
   §6 output. A width of 1 on a multi-task feature needs a one-line justification.
 
@@ -455,6 +554,18 @@ git diff --cached --name-only
 
 # 4. Commit
 git commit -m "sdd: add <N> tasks for FEAT-<ID> — <feature-name>"
+
+# 5. Publish <BASE> — worktrees are created from origin/<BASE>, never from the local branch,
+#    so /sdd-start, sdd-worker and every worker launch cannot see an unpushed task set.
+#    The pull takes in the reserve_ids ledger commit, which is already on origin/<BASE>.
+git pull --no-rebase --no-edit origin "$BASE" && git push origin "$BASE"
+```
+
+If the pull or the push fails, do not force anything. Stop and print:
+```
+⚠️  The task set is committed on local <BASE> but NOT on origin/<BASE>. Worktrees branch from
+   origin/<BASE>, so the next /sdd-start or worker launch will not find it. Reconcile, then run:
+   git pull --no-rebase origin <BASE> && git push origin <BASE>
 ```
 
 ### 6. Output
@@ -486,7 +597,7 @@ Worktree: not created. /sdd-task produces versioned artifacts only — the
 
 Next:
   /sdd-start <task-id>        # creates the worktree, then begins the task
-  # or, unattended:  claude --agent sdd-worker --model sonnet --verbose
+  # or, unattended:  parrot sdd launch worker FEAT-<NNN> --tmux --detach
 ```
 
 ## Reference

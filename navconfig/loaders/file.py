@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from pathlib import PurePath
 from .abstract import BaseLoader
 
@@ -74,6 +75,12 @@ class fileLoader(BaseLoader):
                 f"No environment files found in {self.env_path}. "
                 f"Looking for: {', '.join(self.file_patterns)}"
             )
+
+    def reload_key(self, key: str) -> Any:
+        """Re-read ``key`` from the ``.env`` files (same precedence as load)."""
+        return self._read_key_from_files(
+            key, self.file_patterns, first_wins=not self.override
+        )
 
     def save_environment(self):
         raise NotImplementedError
