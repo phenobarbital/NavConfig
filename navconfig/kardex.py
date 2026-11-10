@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 from .exceptions import ConfigError, KardexError, ReaderNotSet
 from .loaders import import_loader, pyProjectLoader
+from .loaders.abstract import KEY_NOT_FOUND
 from .utils.functions import strtobool
 from .utils.types import Singleton
 
@@ -518,11 +519,27 @@ class Kardex(metaclass=Singleton):
             return self._unserialize(os.getenv(key, fallback))
         return _NOT_FOUND
 
-    def get(self, key: str, section: str = None, fallback: Any = None) -> Any:
+    def get(
+        self,
+        key: str,
+        section: str = None,
+        fallback: Any = None,
+        refresh: bool = False,
+    ) -> Any:
         """
         get.
             Interface for get variable from differents sources
+
+        Args:
+            key: Variable name.
+            section: Optional INI section.
+            fallback: Value returned when nothing resolves.
+            refresh: Ignore the in-memory copy and re-read ``key`` from its
+                origin (env loader: ``.env`` files / Vault, then the external
+                readers); see :meth:`refresh`. Ignored when ``section`` is set.
         """
+        if refresh and section is None:
+            return self.refresh(key, fallback=fallback)
         found = self._resolve_local(key, section, fallback)
         if found is not _NOT_FOUND:
             return found
@@ -532,15 +549,71 @@ class Kardex(metaclass=Singleton):
             return val
         return fallback
 
+    def refresh(self, key: str, fallback: Any = None) -> Any:
+        """Re-read ``key`` from its origin and restore the in-memory copy.
+
+        Resolution: the current env loader (``.env`` files and, for the
+        default vault loader, a freshly fetched Vault secret) and then the
+        external readers (with their Vault cache invalidated). The value
+        found is written back to the mapping and ``os.environ`` so
+        :meth:`get`, attribute access and ``os.getenv`` agree again.
+
+        Module-level copies (``from navconfig.conf import X``) are plain
+        Python bindings and can not be refreshed; read through ``config``
+        at call time instead.
+
+        Args:
+            key: Variable name.
+            fallback: Returned when the origin has no value; the local copy
+                is left untouched in that case.
+
+        Returns:
+            The refreshed value, or ``fallback``.
+        """
+        value = KEY_NOT_FOUND
+        loader = getattr(self, "_env_loader", None)
+        if loader is not None and hasattr(loader, "reload_key"):
+            value = loader.reload_key(key)
+        if value is KEY_NOT_FOUND:
+            self.invalidate_vault_cache()
+            external = self._get_external(key)
+            if external is not None:
+                value = external
+        if value is KEY_NOT_FOUND:
+            return fallback
+        self._store_local(key, value)
+        return self._unserialize(value)
+
+    async def arefresh(self, key: str, fallback: Any = None) -> Any:
+        """Async variant of :meth:`refresh` (runs it in a worker thread)."""
+        return await asyncio.to_thread(self.refresh, key, fallback)
+
+    def _to_environ(self, value: Any) -> str:
+        """Convert ``value`` to the string stored in ``os.environ``."""
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (bool, int, float)):
+            return str(value)
+        return self._serialize(value)
+
+    def _store_local(self, key: str, value: Any) -> None:
+        """Keep ``_mapping_`` and ``os.environ`` in sync for ``key``."""
+        self._mapping_[key] = value
+        os.environ[key] = self._to_environ(value)
+
     # Config Magic Methods (dict like)
     def __setitem__(self, key: str, value: Any) -> None:
-        if key in os.environ:
-            # override an environment variable
-            value = self._serialize(value)
-            os.environ[key] = value
-        elif key in self._mapping_:
-            return self._mapping_[key]
-        # Adding to Mutable Mapping
+        """Override ``key`` in memory (mapping and ``os.environ``).
+
+        Assigning ``None`` drops the local copy, so later reads fall back to
+        the external readers or the caller's fallback; :meth:`refresh`
+        restores it from the origin.
+        """
+        if value is None:
+            self._mapping_.pop(key, None)
+            os.environ.pop(key, None)
+            return
+        self._store_local(key, value)
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -595,7 +668,11 @@ class Kardex(metaclass=Singleton):
         return None
 
     async def aget(
-        self, key: str, section: str | None = None, fallback: Any = None
+        self,
+        key: str,
+        section: str | None = None,
+        fallback: Any = None,
+        refresh: bool = False,
     ) -> Any:
         """Async variant of :meth:`get` with the same resolution order.
 
@@ -607,6 +684,8 @@ class Kardex(metaclass=Singleton):
         Returns:
             The resolved value, or ``fallback``.
         """
+        if refresh and section is None:
+            return await self.arefresh(key, fallback=fallback)
         found = self._resolve_local(key, section, fallback)
         if found is not _NOT_FOUND:
             return found
@@ -660,13 +739,11 @@ class Kardex(metaclass=Singleton):
 
     ## attribute name
     def __getattr__(self, key: str) -> Any:
-        val = None
-        if key in os.environ:
-            val = os.getenv(key)
-        elif key in self._mapping_:
-            val = self._mapping_[key]
-        else:
-            # get data from external readers:
+        if key.startswith("__"):
+            raise AttributeError(key)
+        # Same resolution order as get(): mapping, os.environ, readers.
+        val = self._resolve_local(key, None, None)
+        if val is _NOT_FOUND:
             val = self._get_external(key)
         if val:
             return self._unserialize(val)

@@ -9,7 +9,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/jesuslara/proyectos/navconfig/.venv/bin/wikitoolkit claude-hook",
+            "command": "wikitoolkit claude-hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "parrot sdd hooks dangerous-actions --hook",
             "timeout": 10
           }
         ]

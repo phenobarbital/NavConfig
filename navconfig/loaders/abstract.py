@@ -11,6 +11,9 @@ from ..project import validate_project_environment
 # Matches INI-style section headers (e.g. ``[AUTH_BACKENDS]``) on their own line.
 _SECTION_HEADER = re.compile(r"^\s*\[[^\]]*\]\s*$")
 
+# Sentinel returned by ``BaseLoader.reload_key`` when the origin has no value.
+KEY_NOT_FOUND = object()
+
 
 def _strip_section_headers(content: str) -> str:
     """Remove INI-style ``[section]`` lines from a .env file content.
@@ -72,6 +75,57 @@ class BaseLoader(ABC):
     @abstractmethod
     def save_environment(self):
         pass
+
+    def reload_key(self, key: str) -> Any:
+        """Re-read a single variable straight from this loader's origin.
+
+        Bypasses ``os.environ`` and any in-memory mapping. Loaders that can
+        not resolve one key in isolation keep this default.
+
+        Args:
+            key: Variable name.
+
+        Returns:
+            The value at the origin, or ``KEY_NOT_FOUND``.
+        """
+        return KEY_NOT_FOUND
+
+    def _read_key_from_files(
+        self, key: str, patterns: list, first_wins: bool = True
+    ) -> Any:
+        """Read ``key`` from the ``.env`` files in ``patterns`` order.
+
+        Mirrors the loaders' precedence: with ``first_wins`` the first file
+        defining the key wins (``load_dotenv(override=False)``), otherwise
+        the last one does.
+
+        Args:
+            key: Variable name.
+            patterns: File names relative to ``env_path``.
+            first_wins: Stop at the first file defining the key.
+
+        Returns:
+            The value, or ``KEY_NOT_FOUND``.
+        """
+        found = KEY_NOT_FOUND
+        if not isinstance(self.env_path, PurePath):
+            return found
+        for name in patterns:
+            path = self.env_path / name
+            try:
+                if not path.is_file() or path.stat().st_size == 0:
+                    continue
+                with open(path, "r", encoding="utf-8") as fh:
+                    content = _strip_section_headers(fh.read())
+            except OSError as err:
+                logging.debug(f"NavConfig: unable to read {path}: {err}")
+                continue
+            values = dotenv_values(stream=StringIO(content))
+            if values.get(key) is not None:
+                found = values[key]
+                if first_wins:
+                    break
+        return found
 
     def load_from_file(self, path):
         with open(path, "r", encoding="utf-8") as fh:

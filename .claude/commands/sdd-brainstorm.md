@@ -60,36 +60,36 @@ Read `<staging-dir>/intake.json` (validate against
 Ask exactly two questions before Round 1:
 
 1. Is this a regular **feature** or a **hotfix**?
-   - `feature` lands on `dev` (default) or, during a release freeze, on `staging`.
-     Features NEVER land on `main`.
-   - `hotfix` lands on `main`. After the PR to `main` merges, the change is
-     propagated back to `staging` and `dev` automatically by
-     `.github/workflows/sync-down.yml` (FEAT-187).
-2. If `feature`, which base branch? (default: `dev`; use `staging` during a release
+   - `feature` lands on the `base_branch` (default) or, during a release freeze, on the `staging_branch`.
+     Features NEVER land on the `hotfix_base`.
+   - `hotfix` lands on the `hotfix_base`. After that PR merges, the change is
+     propagated back to the staging and integration branches by your sync-down
+     automation, if you run one (FEAT-187).
+2. If `feature`, which base branch? (default: the `base_branch` in `sdd/config.json`; use the `staging_branch` during a release
    freeze; for sub-features pick the parent feature branch.)
-   If `hotfix`, base is fixed to `main` — no choice.
+   If `hotfix`, base is fixed to the `hotfix_base` — no choice.
 
 Record the answers; they will populate the YAML frontmatter at the top of the
 generated brainstorm doc. Validation rules:
-- `type: hotfix` REQUIRES `base_branch: main`.
-- `type: feature` with `base_branch: main` is NOT allowed — use `staging` or `dev`.
+- `type: hotfix` REQUIRES `base_branch` to be the `hotfix_base` in `sdd/config.json`.
+- `type: feature` with `base_branch` equal to the `hotfix_base` in `sdd/config.json` is NOT allowed — use the `base_branch` or `staging_branch` from `sdd/config.json`.
 
 **Validation:** if `TYPE == "feature"` and `BASE_BRANCH == "main"`, abort:
 ```
-⚠️  type='feature' cannot base on 'main'. Features land on dev (default)
-   or staging (during a release freeze). For changes that must base on
-   main, set type='hotfix' in the document frontmatter.
+⚠️  type='feature' cannot base on the hotfix base branch. Features land on the
+   configured base_branch (default) or staging_branch (during a release freeze).
+   For changes that must base on the hotfix base, set type='hotfix' in the document frontmatter.
 ```
 
 ```yaml
 ---
 type: feature | hotfix
-base_branch: dev | staging   # for type=feature (defaults to dev)
+base_branch: <branch>   # for type=feature (defaults to `base_branch` in sdd/config.json)
                               # or 'main' (mandatory for type=hotfix)
 ---
 ```
 
-If the user does not answer, default to `type: feature, base_branch: dev`.
+If the user does not answer, default to `type: feature` with the `base_branch` from `sdd/config.json`.
 
 **Round 1 — Clarify intent and scope:**
 Ask 3–5 targeted questions about:
@@ -139,7 +139,30 @@ you reference in the brainstorm, you MUST:
    out not to exist, record it in the "Does NOT Exist" subsection. This is critical
    for preventing downstream agents from hallucinating these references.
 
+**Delegate the flat checks (FEAT-708).** Turn every reference you intend to put in
+Code Context into a probe check, then hand them to the shared read-only Haiku
+subagent `sdd-contract-probe` (the same one `/sdd-task` §3 uses; Haiku on Claude Code):
+
+| Claim | Probe check |
+|---|---|
+| `from parrot.X import Y` | `{"id": "cN", "kind": "import", "module": "parrot.X", "name": "Y"}` |
+| `path/file.py:42` | `{"id": "cN", "kind": "file", "path": "<repo-relative>", "line": 42}` |
+| `class Foo(Bar):` | `{"id": "cN", "kind": "symbol", "path": "<file>", "name": "Foo"}` — keep `expected` yourself |
+| `"Does NOT exist: X"` | `{"id": "cN", "kind": "absent", "name": "X", "scope": "<whole module dir>"}` |
+| `path:NN` + verbatim line | `{"id": "cN", "kind": "anchor", "path": "<file>", "anchor": "<line>"}` |
+
+Launch the probes in ONE message (groups of ≤ ~40 checks, grouped by file), each
+with only the repository root and its probe sheet:
+- Claude Code: `Agent({subagent_type: "sdd-contract-probe", description: "Verify codebase claims",
+  prompt: "Repository root: <abs path>\nProbe sheet: <JSON array>"})`;
+- Antigravity: ask the `sdd-contract-probe` subagent
+  (`.agents/agents/sdd-contract-probe/agent.md`) with that same prompt;
+- any other host (Codex included) has no probe agent: verify inline.
+Do not wait — continue with Step 5. With fewer than ~10 checks, or when your host
+cannot launch the probe, verify inline as above instead.
+
 ### 5. Generate Options
+If contract probes are running (Step 4), generate options now; their results are applied in Step 10.
 Produce **at least 3** distinct approaches. For each option:
 - Descriptive name and explanation (WHAT, not HOW).
 - Pros and cons (be honest about tradeoffs).
@@ -184,16 +207,27 @@ Evaluate the feature's decomposition potential for parallel development:
    **Update the frontmatter `type` and `base_branch` values to match the
    user's Round 0 answers.** Do NOT strip the frontmatter.
    **Fill `projects` and `tags` (FEAT-576).** `projects` lists the parts of the
-   codebase this brainstorm concerns — derive them from the Code Context paths
-   (`packages/<dist>/…` → `<dist>`; `packages/ai-parrot-server/ui/` → `admin-ui`;
-   `parrot_tools`/`parrot_loaders`/`parrot_pipelines` → their `ai-parrot-*` dist;
-   `scripts/sdd/`, `.claude/commands/`, `sdd/templates/` → `sdd-tooling`;
-   `flows/dev_loop` → `dev-loop`; other `parrot/…` → `ai-parrot`). The vocabulary
-   is `KNOWN_PROJECTS` in `scripts/sdd/sdd_meta.py`; an unknown value is allowed
-   but warns. `tags`: 2–6 lowercase kebab-case keywords. Never leave
+   codebase this brainstorm concerns — derive them from the Code Context paths using the project areas in `sdd/CONVENTIONS.md` (§ Project areas), or the `projects` list in `sdd/config.json` when set.
+   An unknown value is allowed but warns. `tags`: 2–6 lowercase kebab-case keywords. Never leave
    `projects: []` when the Code Context names code paths.
 3. Set `Status: exploration`.
-4. **Commit (ONLY the brainstorm file — NEVER unrelated changes):**
+4. **Collect the contract probes** (if launched in Step 4). Verify each report
+   with `/sdd-task` §3's rules for `sdd-contract-probe` (HEAD match, re-run
+   negatives + one `found` in ten; a non-reproducing re-run discards the report
+   and its checks run inline). Classify each claim:
+
+   | Probe result | Claim status |
+   |---|---|
+   | `import` `found`/`reexported`; `file` `found`; `anchor` `found`; `absent` `absent` | `verified` (evidence = `path:lines[0]`) |
+   | `symbol` `found` and `signature` == `expected` (whitespace-normalized) | `verified` |
+   | `symbol` `found` and `signature` ≠ `expected` | `stale` (evidence = actual `signature` + line) |
+   | `anchor` `ambiguous`; `absent` `present` (the "missing" thing exists) | `stale` |
+   | `import` `missing`/`module-missing`; `symbol`/`file`/`anchor` `missing`; `file` `short` | `missing` |
+
+   Then fix Code Context: add `lines` to verified refs, drop `missing` refs,
+   replace `stale` signatures with the probe's `signature`, and remove a
+   "Does NOT Exist" entry whose `absent` check came back `present`.
+5. **Commit (ONLY the brainstorm file — NEVER unrelated changes):**
    ```bash
    # Unstage everything first to ensure a clean staging area
    git reset HEAD
@@ -239,4 +273,4 @@ When `/sdd-spec` is invoked with a feature name that has a `.brainstorm.md` in `
 - Proposal template: `sdd/templates/proposal.md`
 - Spec template: `sdd/templates/spec.md`
 - SDD methodology: `sdd/WORKFLOW.md`
-- Worktree policy: `CLAUDE.md` (section "Worktree Policy")
+- Worktree policy: `sdd/WORKFLOW.md` (section "Git Configuration")
